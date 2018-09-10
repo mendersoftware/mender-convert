@@ -1,0 +1,30 @@
+language: bash
+
+sudo: required
+
+os: linux
+
+install: true
+
+before_script:
+
+script:
+  - |
+    wget -c http://downloads.raspberrypi.org/raspbian/images/raspbian-2018-06-29/2018-06-27-raspbian-stretch.zip
+    unzip 2018-06-27-raspbian-stretch.zip
+  - |
+    ./mender-conversion-tool.sh prepare_image --embedded 2018-06-27-raspbian-stretch.img
+    ret=$?
+    if [[ $ret -ne 0 ]]; then
+      echo -e "\nError: Processing embedded image failed."
+      exit $ret
+    fi
+  - |
+    ./mender-conversion-tool.sh make_all --embedded 2018-06-27-raspbian-stretch.img --image mender_raspberrypi3.sdimg --device-type raspberrypi3 --mender mender --artifact release-1_1.5.0 --demo-ip 192.168.10.2
+    ret=$?
+    if [[ $ret -ne 0 ]]; then
+      echo -e "\nError: Builing .sdimg failed."
+      exit $ret
+    fi
+    echo "Success."
+    exit 0
