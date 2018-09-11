@@ -16,26 +16,64 @@
 
 application_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 output_dir=${application_dir}/output
+uboot_dir=${output_dir}/uboot-mender
 bin_dir_pi=${output_dir}/bin/raspberrypi
 sdimg_base_dir=$output_dir/sdimg
+GCC_VERSION="6.3.1"
 
 echo "Running: $(basename $0)"
 declare -a sdimgmappings
 declare -a sdimg_partitions=("boot" "primary" "secondary" "data")
 
+version() {
+  echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'
+}
+
+# Takes following arguments:
+#
+#  $1 - ARM toolchain
 build_uboot_files() {
+  local CROSS_COMPILE=${1}-
+  local ARCH=arm
+  local branch="mender-rpi-2017.09"
+  local commit="988e0ec54"
+  local uboot_repo_vc_dir=$uboot_dir/.git
+
+  export CROSS_COMPILE=$CROSS_COMPILE
+  export ARCH=$ARCH
+
   mkdir -p $bin_dir_pi
 
-  echo -e "Downloading U-Boot related files..."
+  echo -e "Building U-Boot related files..."
 
-  wget -q -O $bin_dir_pi/boot.scr \
-    https://github.com/mirzak/mender-conversion-tools/raw/mirza/wip/bin/raspberrypi/boot.scr
-  wget -q -O $bin_dir_pi/fw_printenv \
-    https://github.com/mirzak/mender-conversion-tools/raw/mirza/wip/bin/raspberrypi/fw_printenv
+  if [ ! -d $uboot_repo_vc_dir ]; then
+    git clone https://github.com/mendersoftware/uboot-mender.git -b $branch
+    git checkout $commit
+  fi
+
+  cd $uboot_dir
+
+  make --quiet distclean
+  make rpi_3_32b_defconfig && make
+  make envtools
+
+  cat<<-'EOF' >boot.cmd
+	fdt addr ${fdt_addr} && fdt get value bootargs /chosen bootargs
+	run mender_setup
+	mmc dev ${mender_uboot_dev}
+	load ${mender_uboot_root} ${kernel_addr_r} /boot/zImage
+	bootz ${kernel_addr_r} - ${fdt_addr}
+	run mender_try_to_recover
+	EOF
+
+  $uboot_dir/tools/mkimage -A arm -T script -C none -n "Boot script" -d "boot.cmd" boot.scr
+
   wget -q -O $bin_dir_pi/init_resize.sh \
     https://raw.githubusercontent.com/mirzak/mender-conversion-tools/mirza/wip/bin/raspberrypi/init_resize.sh
-  wget -q -O $bin_dir_pi/u-boot.bin \
-    https://github.com/mirzak/mender-conversion-tools/raw/mirza/wip/bin/raspberrypi/u-boot.bin
+
+  cp -t $bin_dir_pi $uboot_dir/boot.scr $uboot_dir/tools/env/fw_printenv $uboot_dir/u-boot.bin
+
+  cd $output_dir
 }
 
 # Takes following arguments:
@@ -80,7 +118,6 @@ install_files() {
 
   sudo cp ${bin_dir_pi}/u-boot.bin ${boot_dir}/kernel7.img
   sudo cp ${bin_dir_pi}/boot.scr ${boot_dir}
-  sudo cp ${bin_dir_pi}/init_resize.sh  ${rootfs_dir}/usr/lib/raspi-config/init-resize.sh
 
   sudo cp ${boot_dir}/config.txt ${output_dir}/config.txt
 
@@ -112,6 +149,23 @@ do_install_bootloader() {
     exit 1
   fi
 
+  if [ -z "${toolchain}" ]; then
+    echo "ARM toolchain not set. Aborting."
+    exit 1
+  fi
+
+  if [[ $(which ${toolchain}-gcc) = 1 ]]; then
+    echo "Error: ARM GCC not found in PATH. Aborting."
+    exit 1
+  fi
+
+  local gcc_version=$(${toolchain}-gcc -dumpversion)
+
+  if [ $(version $gcc_version) -ne $(version $GCC_VERSION) ]; then
+    echo "Error: Invalid ARM GCC version ($gcc_version). Expected $GCC_VERSION. Aborting."
+    exit 1
+  fi
+
   [ ! -f $image ] && { echo "$image - file not found. Aborting."; exit 1; }
 
   # Map & mount Mender compliant image.
@@ -120,7 +174,7 @@ do_install_bootloader() {
   mkdir -p $output_dir && cd $output_dir
 
   # Build patched U-Boot files.
-  build_uboot_files
+  build_uboot_files $toolchain
 
   mount_sdimg ${sdimgmappings[@]}
 
