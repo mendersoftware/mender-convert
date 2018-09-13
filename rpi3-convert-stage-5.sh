@@ -15,6 +15,7 @@
 #    limitations under the License.
 
 application_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+files_dir=${application_dir}/files
 output_dir=${application_dir}/output
 uboot_dir=${output_dir}/uboot-mender
 bin_dir_pi=${output_dir}/bin/raspberrypi
@@ -67,9 +68,6 @@ build_uboot_files() {
 	EOF
 
   $uboot_dir/tools/mkimage -A arm -T script -C none -n "Boot script" -d "boot.cmd" boot.scr
-
-  wget -q -O $bin_dir_pi/init_resize.sh \
-    https://raw.githubusercontent.com/mirzak/mender-conversion-tools/mirza/wip/bin/raspberrypi/init_resize.sh
 
   cp -t $bin_dir_pi $uboot_dir/boot.scr $uboot_dir/tools/env/fw_printenv $uboot_dir/u-boot.bin
 
@@ -137,7 +135,7 @@ install_files() {
 
   # Override init script to expand the data part instead of rootfs, which it
   # normally expands in standard Raspberry Pi distributions.
-  sudo install -m 755 ${bin_dir_pi}/init_resize.sh \
+  sudo install -m 755 ${files_dir}/init_resize.sh \
       ${rootfs_dir}/usr/lib/raspi-config/init_resize.sh
 }
 
