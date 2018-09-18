@@ -215,11 +215,6 @@ do_make_sdimg() {
     exit 1
   fi
 
-  if [[ ! -f ${embeddedimage} ]]; then
-    echo "Source embedded image not found. Aborting."
-    exit 1
-  fi
-
   mkdir -p $output_dir && cd $output_dir
 
   # In case of missing .sdimg name use the default format.
