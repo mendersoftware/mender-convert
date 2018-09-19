@@ -83,6 +83,7 @@ build_env_lock_boot_files() {
 
   make
   make DESTDIR=$grubenv_build_dir install
+  cd $output_dir
   rm -rf $grubenv_dir
 }
 
