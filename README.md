@@ -1,6 +1,3 @@
-[![Build Status](https://travis-ci.org/mendersoftware/mender-crossbuild.svg?branch=master)](https://travis-ci.org/mendersoftware/mender-crossbuild)
-[![codecov](https://codecov.io/gh/mendersoftware/mender-crossbuild/branch/master/graph/badge.svg)](https://codecov.io/gh/mendersoftware/mender-crossbuild)
-
 Mender: over-the-air updater for embedded Linux devices
 ==============================================
 
