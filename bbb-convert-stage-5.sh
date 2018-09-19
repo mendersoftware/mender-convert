@@ -91,8 +91,7 @@ build_env_lock_boot_files() {
 #
 #  $1 - linux kernel version
 build_grub_efi() {
-  local grub_arm=$output_dir/grub/arm
-  local grub_linux=$output_dir/grub/linux
+  local grub_build=$output_dir/grub/build
   local grub_repo_vc_dir=$output_dir/grub/.git
   local repo_clean=0
 
@@ -113,28 +112,21 @@ build_grub_efi() {
     git checkout 9b37229f0
   fi
 
-  mkdir -p $grub_arm
-  mkdir -p $grub_linux
-
-  # First build linux tools.
+  mkdir -p $grub_build
+  # Build GRUB tools (grub-mkimage) and ARM modules in one step
   ./autogen.sh
-  ./configure --quiet CC=gcc --target=x86_64 --with-platform=efi --prefix=$grub_linux
-  make --quiet
+  ./configure --host=x86_64-linux-gnu TARGET_CC=${toolchain}-gcc \
+     TARGET_OBJCOPY=${toolchain}-objcopy \
+     TARGET_STRIP=${toolchain}-strip \
+     TARGET_NM=${toolchain}-nm \
+     TARGET_RANLIB=${toolchain}-ranlib \
+     --target=arm --with-platform=efi --exec-prefix=$grub_build \
+     --prefix=$grub_build --disable-werror
+  local cores=$(nproc)
+  make --quiet -j$cores
   make --quiet install
-
-  # Clean workspace.
-  make --quiet clean
-  make --quiet distclean
-
-  # Now build ARM modules.
-  ./configure --host=$toolchain --with-platform=efi --prefix=$grub_arm \
-      CFLAGS="-Os -march=armv7-a" CCASFLAGS="-march=armv7-a" --disable-werror
-  make --quiet
-  make --quiet install
-
-  # Build grub.efi binary.
-  $grub_linux/bin/grub-mkimage  -v -p /$efi_boot -o grub.efi --format=arm-efi \
-      -d $grub_arm/lib/grub/arm-efi/  boot linux ext2 fat serial part_msdos \
+  ${grub_build}/bin/grub-mkimage  -v -p /$efi_boot -o grub.efi --format=arm-efi \
+      -d $grub_build/lib/grub/arm-efi/  boot linux ext2 fat serial part_msdos \
       part_gpt  normal efi_gop iso9660 configfile search loadenv test cat echo \
       gcry_sha256 halt hashsum loadenv reboot
 
@@ -182,7 +174,7 @@ install_files() {
   cd ${output_dir}
 
   sudo install -m 0644 ${output_dir}/grub/grub.efi $efi_boot_dir
-  sudo install -m 0755 ${output_dir}/grub/arm/bin/grub-editenv $rootfs_dir/usr/bin
+  sudo install -m 0755 ${output_dir}/grub/build/bin/grub-editenv $rootfs_dir/usr/bin
 
   sudo install -m 0755 $grubenv_build_dir/usr/bin/fw_printenv $rootfs_dir/sbin/fw_printenv
   sudo install -m 0755 $grubenv_build_dir/usr/bin/fw_setenv $rootfs_dir/sbin/fw_setenv
