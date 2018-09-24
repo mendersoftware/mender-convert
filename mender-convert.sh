@@ -397,6 +397,10 @@ do_install_mender_to_mender_disk_image() {
     stage_4_args="${stage_4_args} -t ${tenant_token}"
   fi
 
+  if [ -n "${keep}" ]; then
+    stage_4_args="${stage_4_args} -k"
+  fi
+
   eval set -- " ${stage_4_args}"
 
   export -f create_device_maps
