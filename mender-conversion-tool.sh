@@ -67,7 +67,7 @@ Examples:
 
         ./mender-conversion-tool.sh install_mender --image <sdimg_file_path>
                 --device-type beaglebone --artifact release-1_1.5.0
-                --server 192.168.10.2 --mender <mender_binary_path>
+                --demo-ip 192.168.10.2 --mender <mender_binary_path>
 
         Output: ./output/*.sdimg file with Mender client related files installed
 
