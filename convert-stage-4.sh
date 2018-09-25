@@ -10,7 +10,7 @@ Usage: $0 [options]
     Options: [-i|--image | -m|--mender | -a|--artifact | -d|--device-type |
               -p|--demo-ip | -u| --production-url | -o| --hosted-token]
 
-        --image          - .sdimg generated with mender-conversion-tool
+        --image          - .sdimg generated with mender-convert tool
         --mender         - mender client binary file
         --artifact       - artifact info
         --device-type    - target device type identification
@@ -20,9 +20,9 @@ Usage: $0 [options]
 
     Examples:
 
-        ./mender-conversion-tool.sh install_mender --image <sdimg_file_path>
+        ./mender-convert.sh install_mender --image <sdimg_file_path>
                 --device-type beaglebone --artifact release-1_1.5.0
-                --server 192.168.10.2 --mender <mender_binary_path>
+                --demo-ip 192.168.10.2 --mender <mender_binary_path>
 
 EOF
   exit 1

@@ -9,7 +9,7 @@ Usage: $0 [options]
 
     Options: [-i|--image | -t|--toolchain -k|--keep | -d|--device-type]
 
-        --image        - .sdimg image generated with mender-conversion-tool
+        --image        - .sdimg image generated with mender-convert
         --toolchain    - ARM specific toolchain path
         --keep         - prevent deleting GRUB workspace
         --device-type  - target device type identification
@@ -18,7 +18,7 @@ Usage: $0 [options]
 
     Examples:
 
-        ./mender-conversion-tool.sh install_bootloader --image <sdimg_file_path>
+        ./mender-convert.sh install_bootloader --image <sdimg_file_path>
                 --device-type beaglebone --toolchain arm-linux-gnueabihf
 
         Note: toolchain naming convention is arch-vendor-(os-)abi
