@@ -51,13 +51,13 @@ Examples:
 
     To shrink the existing embedded image:
 
-        ./mender-conversion-tool.sh prepare_image --embedded <embedded_image_file_path>
+        ./mender-convert.sh prepare_image --embedded <embedded_image_file_path>
 
         Output: Root filesystem size (sectors): 4521984
 
     To prepare .sdimg file:
 
-        ./mender-conversion-tool.sh make_sdimg --image <sdimg_file_name>
+        ./mender-convert.sh make_sdimg --image <sdimg_file_name>
                 --embedded <embedded_image_file_path>
                 --size-data 128 --device-type beaglebone
 
@@ -65,7 +65,7 @@ Examples:
 
     To install Mender client related files:
 
-        ./mender-conversion-tool.sh install_mender --image <sdimg_file_path>
+        ./mender-convert.sh install_mender --image <sdimg_file_path>
                 --device-type beaglebone --artifact release-1_1.5.0
                 --demo-ip 192.168.10.2 --mender <mender_binary_path>
 
@@ -73,14 +73,14 @@ Examples:
 
     To install Grub/U-Boot related files:
 
-        ./mender-conversion-tool.sh install_bootloader --image <sdimg_file_path>
+        ./mender-convert.sh install_bootloader --image <sdimg_file_path>
                 --device-type beaglebone --toolchain arm-linux-gnueabihf
 
         Output: ./output/*.sdimg file with Grub/U-Boot related files installed
 
     To prepare .mender artifact file:
 
-        ./mender-conversion-tool.sh make_artifact --image <sdimg_file_path>
+        ./mender-convert.sh make_artifact --image <sdimg_file_path>
                 --device-type beaglebone --artifact release-1_1.5.0
                 --rootfs-type rootfs_a
 
@@ -88,7 +88,7 @@ Examples:
 
     To compose .sdimg file in a single step:
 
-        ./mender-conversion-tool.sh make_all --embedded <embedded_image_file_path>
+        ./mender-convert.sh make_all --embedded <embedded_image_file_path>
                 --image <sdimg_file_name> --device-type raspberrypi3
                 --mender <mender_binary_path> --artifact release-1_1.5.0
                 --demo-ip 192.168.10.2 --toolchain arm-linux-gnueabihf --keep
@@ -509,7 +509,7 @@ do_make_all() {
 PARAMS=""
 
 # Load necessary functions.
-source ${tool_dir}/mender-conversion-functions.sh
+source ${tool_dir}/mender-convert-functions.sh
 
 while (( "$#" )); do
   case "$1" in
