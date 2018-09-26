@@ -18,7 +18,8 @@ application_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 files_dir=${application_dir}/files
 output_dir=${application_dir}/output
 uboot_dir=${output_dir}/uboot-mender
-bin_dir_pi=${output_dir}/bin/raspberrypi
+bin_base_dir=${output_dir}/bin
+bin_dir_pi=${bin_base_dir}/raspberrypi
 sdimg_base_dir=$output_dir/sdimg
 GCC_VERSION="6.3.1"
 
@@ -180,6 +181,9 @@ do_install_bootloader() {
   install_files ${output_dir}/sdimg/boot ${output_dir}/sdimg/primary
 
   detach_device_maps ${mender_disk_mappings[@]}
+
+  [[ $keep -eq 0 ]] && { rm -f ${output_dir}/config.txt ${output_dir}/cmdline.txt;
+     rm -rf $uboot_dir $bin_base_dir $sdimg_base_dir; }
 
   echo -e "\nStage done."
 }
