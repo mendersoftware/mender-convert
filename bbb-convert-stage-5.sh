@@ -68,10 +68,13 @@ get_kernel_version() {
 #
 #  $1 - linux kernel version
 build_env_lock_boot_files() {
+  local grubenv_git_dir=$grubenv_dir/.git
   mkdir -p $grubenv_dir
   mkdir -p $grubenv_build_dir
 
-  git clone https://github.com/mendersoftware/grub-mender-grubenv.git $grubenv_dir
+  if [ ! -d $grubenv_git_dir ]; then
+    git clone https://github.com/mendersoftware/grub-mender-grubenv.git $grubenv_dir
+  fi
   cd $grubenv_dir
 
   # Prepare configuration file.
@@ -87,22 +90,22 @@ build_env_lock_boot_files() {
   make
   make DESTDIR=$grubenv_build_dir install
   cd $output_dir
-  rm -rf $grubenv_dir
 }
 
 # Takes following arguments:
 #
 #  $1 - linux kernel version
 build_grub_efi() {
-  local grub_build=$output_dir/grub/build
-  local grub_repo_vc_dir=$output_dir/grub/.git
+  grub_dir=$output_dir/grub
+  local grub_build=$grub_dir/build
+  local grub_repo_vc_dir=$grub_dir/.git
   local repo_clean=0
 
   local version=$(echo $1 | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 
   # Build grub modules for arm platform and executables for the host.
   if [ ! -d $grub_repo_vc_dir ]; then
-    git clone git://git.savannah.gnu.org/grub.git $output_dir/grub
+    git clone git://git.savannah.gnu.org/grub.git $grub_dir
     local repo_clean=1
   fi
 
@@ -251,7 +254,7 @@ do_install_bootloader() {
   # Clean files.
   rm -rf $output_dir/sdimg
 
-#  [[ $keep -eq 0 ]] && { rm -rf $output_dir; }
+  [[ $keep -eq 0 ]] && { rm -rf $grubenv_dir $grubenv_build_dir $grub_dir; }
   echo -e "\nAll done."
 }
 
