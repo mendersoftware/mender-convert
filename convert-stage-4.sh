@@ -55,6 +55,7 @@ tenant_token="dummy"
 declare -a sdimgmappings
 
 create_client_files() {
+  local mender_conf_dir=$mender_dir/mender.conf
   cat <<- EOF > $mender_dir/mender.service
 	[Unit]
 	Description=Mender OTA update service
@@ -72,8 +73,8 @@ create_client_files() {
 	[Install]
 	WantedBy=multi-user.target
 	EOF
-
-  cat <<- EOF > $mender_dir/mender.conf
+  if [ ! -e $mender_conf_dir ]; then
+    cat <<- EOF > $mender_dir/mender.conf
 	{
 	    "InventoryPollIntervalSeconds": 5,
 	    "RetryPollIntervalSeconds": 1,
@@ -85,6 +86,7 @@ create_client_files() {
 	    "UpdatePollIntervalSeconds": 5
 	}
 	EOF
+  fi
 
   cat <<- EOF > $mender_dir/artifact_info
 	artifact_name=${artifact}
