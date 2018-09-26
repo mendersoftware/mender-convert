@@ -246,7 +246,7 @@ do_install_mender() {
 
   # TODO: more error checking of server types
   if [ -n "${hosted_token}" ]; then
-    tenant_token=$(cat ${hosted_token} | tr -d '\n')
+    tenant_token=$(echo ${hosted_token} | tr -d '\n')
     server_url="https://hosted.mender.io"
   fi
 
