@@ -170,6 +170,8 @@ tenant_token=
 declare -a rootfs_partition_ids=("rootfs_a" "rootfs_b")
 declare -a mender_disk_mappings
 declare -a raw_disk_mappings
+#Supported devices
+declare -a supported_devices=("beaglebone" "raspberrypi3")
 
 do_raw_disk_image_shrink_rootfs() {
   if [ -z "${raw_disk_image}" ]; then
@@ -252,6 +254,11 @@ do_raw_disk_image_create_partitions() {
     echo "Raw disk image not found. Aborting."
     exit 1
   fi
+
+  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
+
+  [[ $supported -eq 0 ]] && \
+      { echo "Error: incorrect device type. Aborting."; exit 1; }
 
   mkdir -p $output_dir && cd $output_dir
 
@@ -383,6 +390,12 @@ do_install_mender_to_mender_disk_image() {
     show_help
     exit 1
   fi
+
+  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
+
+  [[ $supported -eq 0 ]] && \
+      { echo "Error: incorrect device type. Aborting."; exit 1; }
+
   # mender-image-1.5.0
   stage_4_args="-m $mender_disk_image -d $device_type -g ${mender_client} -a ${artifact_name}"
 
@@ -423,6 +436,11 @@ do_install_bootloader_to_mender_disk_image() {
     show_help
     exit 1
   fi
+
+  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
+
+  [[ $supported -eq 0 ]] && \
+      { echo "Error: incorrect device type. Aborting."; exit 1; }
 
   case "$device_type" in
     "beaglebone")
@@ -471,7 +489,13 @@ do_mender_disk_image_to_artifact() {
     rootfs_partition_id="rootfs_a"
   fi
 
-  inarray=$(echo ${rootfs_partition_ids[@]} | grep -o $rootfs_partition_id | wc -w)
+  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
+
+  [[ $supported -eq 0 ]] && \
+      { echo "Error: incorrect device type. Aborting."; exit 1; }
+
+
+  inarray=$(echo ${rootfs_types[@]} | grep -o $rootfs_type | wc -w)
 
   [[ $inarray -eq 0 ]] && \
       { echo "Error: invalid rootfs type provided. Aborting."; exit 1; }
@@ -551,12 +575,18 @@ do_mender_disk_image_to_artifact() {
   detach_device_maps ${mender_disk_mappings[@]}
 
   rm -rf $sdimg_base_dir
+  [[ $ret -ne 0 ]] && { exit 1; }
 }
 
 do_from_raw_disk_image() {
-  do_raw_disk_image_create_partitions
-  do_install_mender_to_mender_disk_image
-  do_install_bootloader_to_mender_disk_image
+  do_raw_disk_image_create_partitions || rc=$?
+  [[ $rc -ne 0 ]] && { exit 1; }
+
+  do_install_mender_to_mender_disk_image || rc=$?
+  [[ $rc -ne 0 ]] && { exit 1; }
+
+  do_install_bootloader_to_mender_disk_image || rc=$?
+  [[ $rc -ne 0 ]] && { exit 1; }
 }
 
 #read -s -p "Enter password for sudo: " sudoPW
@@ -671,4 +701,3 @@ case "$1" in
     show_help
     ;;
 esac
-

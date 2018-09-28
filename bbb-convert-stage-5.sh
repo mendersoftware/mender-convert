@@ -96,7 +96,7 @@ build_env_lock_boot_files() {
 #
 #  $1 - linux kernel version
 build_grub_efi() {
-  grub_dir=$output_dir/grub
+  local grub_dir=$output_dir/grub
   local grub_build=$grub_dir/build
   local grub_repo_vc_dir=$grub_dir/.git
   local repo_clean=0
@@ -204,7 +204,7 @@ do_install_bootloader() {
   if [ -z "${bootloader_toolchain}" ]; then
     echo "ARM GCC toolchain not set. Aborting."
     exit 1
-  fi    
+  fi
 
   if [ -z "${device_type}" ]; then
     echo "Target device type name not set. Aborting."
@@ -255,7 +255,7 @@ do_install_bootloader() {
   rm -rf $output_dir/sdimg
 
   [[ $keep -eq 0 ]] && { rm -rf $grubenv_dir $grubenv_build_dir $grub_dir; }
-  echo -e "\nAll done."
+  [[ $rc -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } || { echo -e "\nStage done."; }
 }
 
 PARAMS=""

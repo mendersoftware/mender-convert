@@ -68,11 +68,15 @@ build_uboot_files() {
 	run mender_try_to_recover
 	EOF
 
-  $uboot_dir/tools/mkimage -A arm -T script -C none -n "Boot script" -d "boot.cmd" boot.scr
+  if [ ! -e $uboot_dir/tools/mkimage ]; then
+    echo "Error: cannot build U-Boot. Aborting"
+    return 1
+  fi
 
+  $uboot_dir/tools/mkimage -A arm -T script -C none -n "Boot script" -d "boot.cmd" boot.scr
   cp -t $bin_dir_pi $uboot_dir/boot.scr $uboot_dir/tools/env/fw_printenv $uboot_dir/u-boot.bin
 
-  cd $output_dir
+  return 0
 }
 
 # Takes following arguments:
@@ -174,18 +178,20 @@ do_install_bootloader() {
   mkdir -p $output_dir && cd $output_dir
 
   # Build patched U-Boot files.
-  build_uboot_files $bootloader_toolchain
+  build_uboot_files $bootloader_toolchain || rc=$?
+  cd $output_dir
 
-  mount_mender_disk ${mender_disk_mappings[@]}
-
-  install_files ${output_dir}/sdimg/boot ${output_dir}/sdimg/primary
+  if [ "$rc" -eq 0 ]; then
+    mount_mender_disk ${mender_disk_mappings[@]}
+    install_files ${output_dir}/sdimg/boot ${output_dir}/sdimg/primary
+  fi
 
   detach_device_maps ${mender_disk_mappings[@]}
 
   [[ $keep -eq 0 ]] && { rm -f ${output_dir}/config.txt ${output_dir}/cmdline.txt;
      rm -rf $uboot_dir $bin_base_dir $sdimg_base_dir; }
 
-  echo -e "\nStage done."
+  [[ "$rc" -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } || { echo -e "\nStage done."; }
 }
 
 # Conditional once we support other boards
