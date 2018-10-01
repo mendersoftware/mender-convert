@@ -448,7 +448,7 @@ do_make_artifact() {
   fi
 
   # Find .sdimg file's dedicated device type.
-  sdimg_device_type=$( cat $sdimg_data_dir/mender/device_type | sed 's/[^=].*=//' )
+  sdimg_device_type=$( cat $sdimg_data_dir/mender/device_type | sed 's/[^=].*=//' | cut -d '"' -f 2 )
 
   # Set 'artifact name' as passed in the command line.
   sudo sed -i '/^artifact/s/=.*$/='${artifact}'/' "$rootfs_path/etc/mender/artifact_info"
