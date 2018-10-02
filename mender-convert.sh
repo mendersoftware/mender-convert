@@ -242,6 +242,10 @@ do_make_sdimg() {
            \nroot filesystem size: ${prootfs_size} sectors\
            \ndata partition size: $pdata_size sectors\n"
 
+  create_test_config_file $device_type $partition_alignment $vfat_storage_offset \
+                          $pboot_size $prootfs_size $pdata_size $menderimage_size \
+                          $sector_size
+
   create_sdimg $menderimage $menderimage_size
   format_sdimg $menderimage $menderimage_size $pboot_start $pboot_size \
                $prootfs_size $pdata_size $sector_size

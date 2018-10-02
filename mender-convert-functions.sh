@@ -13,6 +13,7 @@ declare -a sdimg_partitions=("boot" "primary" "secondary" "data")
 declare -a embedded_partitions=("boot" "rootfs")
 
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+files_dir=${tool_dir}/files
 output_dir=${tool_dir}/output
 
 embedded_base_dir=$output_dir/embedded
@@ -623,3 +624,36 @@ extract_file_from_image() {
     echo "    ${cmd}"
     $(${cmd})
 }
+
+# Takes following arguments
+#
+#  $1 - device type
+#  $2 - partition alignment in bytes
+#  $3 - boot partition storage offset in bytes
+#  $4 - boot partition size in sectors
+#  $5 - rootfs partition size in sectors
+#  $6 - data partition size in sectors
+#  $7 - complete image size in bytes
+#  $8 - sector size in bytes
+
+create_test_config_file() {
+  local device_type=$1
+  local alignment=$2
+  local boot_offset=$3
+  local boot_size_mb=$(( ((($4 * $8) / 1024) / 1024) ))
+  local rootfs_size_mb=$(( ((($5 * $8) / 1024) / 1024) ))
+  local data_size_mb=$(( ((($6 * $8) / 1024) / 1024) ))
+  local mender_image_size_mb=$(( (($7 / 1024) / 1024) ))
+
+  cp ${files_dir}/variables.template ${files_dir}/${device_type}_variables.cfg
+
+  sed -i '/^MENDER_BOOT_PART_SIZE_MB/s/=.*$/="'${boot_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_DATA_PART_SIZE_MB/s/=.*$/="'${data_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_DEVICE_TYPE/s/=.*$/="'${device_type}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_PARTITION_ALIGNMENT/s/=.*$/="'${alignment}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_STORAGE_TOTAL_SIZE_MB/s/=.*$/="'${mender_image_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET/s/=.*$/="'${boot_offset}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_CALC_ROOTFS_SIZE/s/=.*$/="'${rootfs_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_MACHINE/s/=.*$/="'${device_type}'"/' ${files_dir}/${device_type}_variables.cfg
+}
+
