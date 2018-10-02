@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Erase block size 8MiB
-erase_block=8388608
+# Partition alignment value in bytes (8MB).
+partition_alignment=8388608
+# Boot partition storage offset in bytes (8MB).
+vfat_storage_offset=8388608
+# Number of required heads in a final image.
 heads=255
+# Number of required sectors in a final image.
 sectors=63
 
 declare -a sdimg_partitions=("boot" "primary" "secondary" "data")
@@ -220,7 +224,7 @@ get_sdimg_info() {
 
 # Takes following arguments:
 #
-#  $1 - size variable to be aligned
+#  $1 - size variable to be aligned in sectors
 #  $2 - size of the sector
 #
 align_partition_size() {
@@ -229,10 +233,10 @@ align_partition_size() {
   local -n ref=$1
 
   local size_in_bytes=$(( $ref * $2 ))
-  local reminder=$(( ${size_in_bytes} % ${erase_block} ))
+  local reminder=$(( ${size_in_bytes} % ${partition_alignment} ))
 
   if [ $reminder -ne 0 ]; then
-    size_in_bytes=$(( $size_in_bytes - $reminder + ${erase_block} ))
+    size_in_bytes=$(( $size_in_bytes - $reminder + ${partition_alignment} ))
   fi
 
   local lsize=$(( $size_in_bytes / $2 ))
@@ -277,10 +281,13 @@ analyse_embedded_image() {
     echo -e "\nDetected single partition embedded image."
     rootfssize=$bootsize
     # Default size of the boot partition: 16MiB.
-    bootsize=$(( ($erase_block * 2) / $sectorsize ))
+    bootsize=$(( ($partition_alignment * 2) / $sectorsize ))
   elif [[ $count -eq 2 ]]; then
     echo -e "\nDetected multipartition ($count) embedded image."
   fi
+
+  # Boot partition storage offset is defined from the top down.
+  bootstart=$(( $vfat_storage_offset / $sectorsize ))
 
   align_partition_size bootsize $sectorsize
   align_partition_size rootfssize  $sectorsize
