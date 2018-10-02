@@ -107,8 +107,8 @@ tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 sector_size=
 # Boot partition start in sectors (512 bytes per sector).
 pboot_start=
-# Default 'boot' partition size in sectors: 16MiB
-# (i.e 16777216 bytes, equals to 'erase_block' * 2)
+# Default 'boot' partition size in sectors: 16MB
+# (i.e 16777216 bytes, equals to 'partition_alignment' * 2)
 pboot_size=
 # Default 'data' partition size in MiB.
 data_size=128
