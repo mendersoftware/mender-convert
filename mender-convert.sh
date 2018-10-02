@@ -370,6 +370,9 @@ do_install_mender() {
   export -f detach_device_maps
 
   ${tool_dir}/convert-stage-4.sh ${stage_4_args}
+
+  # Update test configuration file
+  update_test_config_file $device_type artifact-name $artifact
 }
 
 do_install_bootloader() {
@@ -386,6 +389,10 @@ do_install_bootloader() {
       export -f create_device_maps
       export -f detach_device_maps
       ${tool_dir}/bbb-convert-stage-5.sh ${stage_5_args}
+
+      # Update test configuration file
+      update_test_config_file $device_type distro-feature "mender-grub" \
+                                           mount-location "\/boot\/efi"
       ;;
     "raspberrypi3")
       stage_5_args="-i $menderimage -d $device_type -t ${toolchain} $keep"
@@ -394,6 +401,9 @@ do_install_bootloader() {
       export -f detach_device_maps
       export -f mount_sdimg
       ${tool_dir}/rpi3-convert-stage-5.sh ${stage_5_args}
+
+      # Update test configuration file
+      update_test_config_file $device_type mount-location "\/uboot"
       ;;
   esac
 }

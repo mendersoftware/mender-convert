@@ -657,3 +657,34 @@ create_test_config_file() {
   sed -i '/^MENDER_MACHINE/s/=.*$/="'${device_type}'"/' ${files_dir}/${device_type}_variables.cfg
 }
 
+# Takes following arguments
+#
+#  $1 - device type
+#  $2 - parameter name to change
+#  $3 - parameter value
+update_test_config_file() {
+  local device_type=$1
+
+  [ ! -f "${files_dir}/${device_type}_variables.cfg" ] && \
+      { echo "Error: test configuration file '${device_type}_variables.cfg' not found. Aborting."; return 1; }
+
+  shift
+
+  while test ${#} -gt 0
+  do
+    case "$1" in
+      "artifact-name")
+        sed -i '/^MENDER_ARTIFACT_NAME/s/=.*$/="'${2}'"/' ${files_dir}/${device_type}_variables.cfg
+        ;;
+      "distro-feature")
+        sed -i '/^DISTRO_FEATURES/s/=.*$/="'${2}'"/' ${files_dir}/${device_type}_variables.cfg
+        ;;
+      "mount-location")
+        sed -i '/^MENDER_BOOT_PART_MOUNT_LOCATION/s/=.*$/="'${2}'"/' ${files_dir}/${device_type}_variables.cfg
+        ;;
+    esac
+    shift 2
+  done
+
+  return 0
+}
