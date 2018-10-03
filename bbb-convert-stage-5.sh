@@ -122,6 +122,7 @@ build_grub_efi() {
      TARGET_RANLIB=${toolchain}-ranlib \
      --target=arm --with-platform=efi --exec-prefix=$grub_build \
      --prefix=$grub_build --disable-werror
+
   local cores=$(nproc)
   make --quiet -j$cores
   make --quiet install
