@@ -5,28 +5,32 @@ cat << EOF
 
 Mender conversion tool
 
-A tool for taking an existing embedded image (Debian, Ubuntu, Raspbian, etc) and
-convert it to a Mender image by restructuring partition table and adding
+A tool for taking an existing embedded image (Debian, Ubuntu, Raspbian, etc)
+and convert it to a Mender image by restructuring partition table and adding
 necessary files.
 
-Usage: $0 [prepare_image | make_sdimg | install_mender | install_bootloader | make_all] [options]
+Usage: $0 COMMAND [options]
 
-Actions:
+General commands:
 
-        prepare_image       - shrinks existing embedded image
+        from-raw-disk-image                     - composes fully functional Mender
+                                                  image compliant with Mender
+                                                  partition layout, having all
+                                                  necessary files installed
+        mender-disk-image-to-artifact           - creates Mender artifact file
+                                                  from Mender image
 
-        make_sdimg          - composes image file compliant with Mender partition
-                              layout
+Expert commands:
 
-        install_mender      - installs Mender client related files
-
-        install_bootloader  - installs Grub related files
-
-        make_artifact       - creates Mender artifact file based on .sdimg file
-
-        make_all            - composes fully functional .sdimg file compliant
-                              with Mender partition layout, having all necessary
-                              files installed
+        raw-disk-image-shrink-rootfs            - shrinks existing embedded raw
+                                                  disk image
+        raw-disk-image-create-partitions        - converts raw disk image's
+                                                  partition table to be compliant
+                                                  with Mender partition layout
+        install-mender-to-mender-disk-image     - installs Mender client related
+                                                  files
+        install-bootloader-to-mender-disk-image - installs bootloader (U-Boot/GRUB)
+                                                  related files
 
 Options: [-e|--embedded | -i|--image | -s|--size-data | -d|--device-type |
           -r|--rootfs_type | -p| --demo-ip | -c| --certificate |
@@ -43,55 +47,59 @@ Options: [-e|--embedded | -i|--image | -s|--size-data | -d|--device-type |
         hosted-token   - mender hosted token
 
         Note: root filesystem size used in .sdimg creation can be found as an
-              output from 'prepare_image' command or, in case of using unmodified
-              embedded image, can be checked with any partition manipulation
-              program (e.g. parted, fdisk, etc.).
+              output from 'raw-disk-image-shrink-rootfs' command or, in case of
+              using unmodified embedded raw disk image, can be checked with any
+              partition manipulation program (e.g. parted, fdisk, etc.).
 
 Examples:
 
-    To shrink the existing embedded image:
+    To create fully functional Mender image from raw disk image in a single step:
 
-        ./mender-convert.sh prepare_image --embedded <embedded_image_file_path>
+        ./mender-convert.sh from-raw-disk-image --embedded <embedded_image_file_path>
+                --image <sdimg_file_name> --device-type raspberrypi3
+                --mender <mender_binary_path> --artifact release-1_1.5.0
+                --demo-ip 192.168.10.2 --toolchain arm-linux-gnueabihf --keep
 
-        Output: Root filesystem size (sectors): 4521984
+        Output: ready to use Mender image with Mender client and bootloader installed
 
-    To prepare .sdimg file:
+    To create Mender artifact file from Mender image:
 
-        ./mender-convert.sh make_sdimg --image <sdimg_file_name>
-                --embedded <embedded_image_file_path>
-                --size-data 128 --device-type beaglebone
-
-	Output: ready to use ./output/*.sdimg file which can be used to flash SD card
-
-    To install Mender client related files:
-
-        ./mender-convert.sh install_mender --image <sdimg_file_path>
-                --device-type beaglebone --artifact release-1_1.5.0
-                --demo-ip 192.168.10.2 --mender <mender_binary_path>
-
-        Output: ./output/*.sdimg file with Mender client related files installed
-
-    To install Grub/U-Boot related files:
-
-        ./mender-convert.sh install_bootloader --image <sdimg_file_path>
-                --device-type beaglebone --toolchain arm-linux-gnueabihf
-
-        Output: ./output/*.sdimg file with Grub/U-Boot related files installed
-
-    To prepare .mender artifact file:
-
-        ./mender-convert.sh make_artifact --image <sdimg_file_path>
+        ./mender-convert.sh mender-disk-image-to-artifact --image <sdimg_file_path>
                 --device-type beaglebone --artifact release-1_1.5.0
                 --rootfs-type rootfs_a
 
         Note: artifact name format is: release-<release_no>_<mender_version>
 
-    To compose .sdimg file in a single step:
+Examples for expert actions:
 
-        ./mender-convert.sh make_all --embedded <embedded_image_file_path>
-                --image <sdimg_file_name> --device-type raspberrypi3
-                --mender <mender_binary_path> --artifact release-1_1.5.0
-                --demo-ip 192.168.10.2 --toolchain arm-linux-gnueabihf --keep
+    To shrink the existing embedded raw disk image:
+
+        ./mender-convert.sh raw-disk-image-shrink-rootfs --embedded <embedded_image_file_path>
+
+        Output: Root filesystem size (sectors): 4521984
+
+    To convert raw disk image's partition table to Mender layout:
+
+        ./mender-convert.sh raw-disk-image-create-partitions --image <sdimg_file_name>
+                --embedded <embedded_image_file_path>
+                --size-data 128 --device-type beaglebone
+
+	Output: repartitioned (respectively to Mender layout) raw disk image
+
+    To install Mender client related files:
+
+        ./mender-convert.sh install-mender-to-mender-disk-image --image <sdimg_file_path>
+                --device-type beaglebone --artifact release-1_1.5.0
+                --demo-ip 192.168.10.2 --mender <mender_binary_path>
+
+        Output: Mender image with Mender client related files installed
+
+    To install bootloader (U-Boot/GRUB) related files:
+
+        ./mender-convert.sh install-bootloader-to-mender-disk-image --image <sdimg_file_path>
+                --device-type beaglebone --toolchain arm-linux-gnueabihf
+
+        Output: Mender image with appropriate bootloader (U-Boot/GRUB) installed
 
 EOF
 }
@@ -138,7 +146,7 @@ declare -a rootfs_types=("rootfs_a" "rootfs_b")
 declare -a sdimgmappings
 declare -a embedmappings
 
-do_prepare_image() {
+do_raw_disk_image_shrink_rootfs() {
   if [ -z "${embeddedimage}" ]; then
     echo "Embedded image not set. Aborting."
     exit 1
@@ -204,7 +212,7 @@ do_prepare_image() {
   echo "Root filesystem size (sectors): $new_size_sectors"
 }
 
-do_make_sdimg() {
+do_raw_disk_image_create_partitions() {
   if [ -z "${embeddedimage}" ]; then
     echo "Source embedded image not set. Aborting."
     exit 1
@@ -338,7 +346,7 @@ do_make_sdimg_raspberrypi3() {
   set_fstab $device_type
 }
 
-do_install_mender() {
+do_install_mender_to_mender_disk_image() {
   # Mender executables, service and configuration files installer.
   if [ -z "$menderimage" ] || [ -z "$device_type" ] || [ -z "$mender" ] || \
      [ -z "$artifact" ]; then
@@ -375,7 +383,7 @@ do_install_mender() {
   update_test_config_file $device_type artifact-name $artifact
 }
 
-do_install_bootloader() {
+do_install_bootloader_to_mender_disk_image() {
   if [ -z "$menderimage" ] || [ -z "$device_type" ] || \
      [ -z "$toolchain" ]; then
     show_help
@@ -408,7 +416,7 @@ do_install_bootloader() {
   esac
 }
 
-do_make_artifact() {
+do_mender_disk_image_to_artifact() {
   if [ -z "${menderimage}" ]; then
     echo "Raw disk .sdimg image not set. Aborting."
     exit 1
@@ -511,10 +519,10 @@ do_make_artifact() {
   rm -rf $sdimg_base_dir
 }
 
-do_make_all() {
-  do_make_sdimg
-  do_install_mender
-  do_install_bootloader
+do_from_raw_disk_image() {
+  do_raw_disk_image_create_partitions
+  do_install_mender_to_mender_disk_image
+  do_install_bootloader_to_mender_disk_image
 }
 
 #read -s -p "Enter password for sudo: " sudoPW
@@ -607,23 +615,23 @@ eval set -- "$PARAMS"
 sudo true
 
 case "$1" in
-  prepare_image)
-    do_prepare_image
+  raw-disk-image-shrink-rootfs)
+    do_raw_disk_image_shrink_rootfs
     ;;
-  make_sdimg)
-    do_make_sdimg
+  raw-disk-image-create-partitions)
+    do_raw_disk_image_create_partitions
     ;;
-  install_mender)
-    do_install_mender
+  install-mender-to-mender-disk-image)
+    do_install_mender_to_mender_disk_image
     ;;
-  install_bootloader)
-    do_install_bootloader
+  install-bootloader-to-mender-disk-image)
+    do_install_bootloader_to_mender_disk_image
     ;;
-  make_artifact)
-    do_make_artifact
+  mender-disk-image-to-artifact)
+    do_mender_disk_image_to_artifact
     ;;
-  make_all)
-    do_make_all
+  from-raw-disk-image)
+    do_from_raw_disk_image
     ;;
   *)
     show_help
