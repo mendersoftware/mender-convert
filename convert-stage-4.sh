@@ -151,7 +151,7 @@ install_files() {
   sudo install -d -m 755 ${data_dir}/${dataconfdir}
   sudo install -d -m 755 ${data_dir}/${databootdir}
 
-  sudo install -m 0644 ${mender_dir}/device_type ${data_dir}/${dataconfdir}
+  sudo install -m 0444 ${mender_dir}/device_type ${data_dir}/${dataconfdir}
   sudo install -m 0644 ${mender_dir}/fw_env.config ${data_dir}/${databootdir}
 
   sudo ln -sf /data/${databootdir}/fw_env.config ${primary_dir}/etc/fw_env.config
@@ -275,6 +275,7 @@ do_install_mender() {
 
   # Get Mender client related files.
   get_mender_files_from_upstream
+
   # Create all necessary client's files.
   create_client_files
 
