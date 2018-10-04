@@ -7,22 +7,26 @@ Mender executables, service and configuration files installer.
 
 Usage: $0 [options]
 
-    Options: [-i|--image | -m|--mender | -a|--artifact | -d|--device-type |
-              -p|--demo-ip | -u| --production-url | -o| --hosted-token]
+    Options: [-m|--mender-disk-image | -g|--mender-client | -a|--artifact-name |
+              -d|--device-type | -p|--demo-host-ip | -u| --server-url |
+              -t| --tenant-token]
 
-        --image          - .sdimg generated with mender-convert tool
-        --mender         - mender client binary file
-        --artifact       - artifact info
-        --device-type    - target device type identification
-        --demo-ip        - Mender demo server IP address
-        --production-url - Mender production server url
-        --certificate    - Mender server certificate
+        --mender-disk-image - Mender raw disk image
+        --mender-client     - Mender client binary file
+        --artifact-name     - artifact info
+        --device-type       - target device type identification
+        --demo-host-ip      - Mender demo server IP address
+        --server-url        - Mender production server url
+        --server-cert       - Mender server certificate
 
     Examples:
 
-        ./mender-convert.sh install_mender --image <sdimg_file_path>
-                --device-type beaglebone --artifact release-1_1.5.0
-                --demo-ip 192.168.10.2 --mender <mender_binary_path>
+        ./mender-convert.sh install-mender-to-mender-disk-image
+                --mender-disk-image <mender_image_path>
+                --device-type <beaglebone | raspberrypi3>
+                --artifact-name release-1_1.5.0
+                --demo-host-ip 192.168.10.2
+                --mender-client <mender_binary_path>
 
 EOF
   exit 1
@@ -38,21 +42,21 @@ meta_mender_revision="sumo"
 
 mender_dir=$output_dir/mender
 device_type=
-artifact=
+artifact_name=
 # Mender demo server IP address.
-demo_ip=
-# Mender production server url.
-production_url=
-# Used server url.
-server_url="https://docker.mender.io"
+demo_host_ip=
+# Mender production server url passed as CLI option.
+server_url=
+# Actual server url.
+mender_server_url="https://docker.mender.io"
 # Mender production certificate.
-certificate=
-# Mender hosted token.
-hosted_token=
+server_cert=
+# Mender tenant token passed as CLI option.
+tenant_token=
 # Mender tenant token.
-tenant_token="dummy"
+mender_tenant_token="dummy"
 
-declare -a sdimgmappings
+declare -a mender_disk_mappings
 
 create_client_files() {
   cat <<- EOF > $mender_dir/mender.service
@@ -80,14 +84,14 @@ create_client_files() {
 	    "RootfsPartA": "/dev/mmcblk0p2",
 	    "RootfsPartB": "/dev/mmcblk0p3",
 	    "ServerCertificate": "/etc/mender/server.crt",
-	    "ServerURL": "$server_url",
-	    "TenantToken": "$tenant_token",
+	    "ServerURL": "$mender_server_url",
+	    "TenantToken": "$mender_tenant_token",
 	    "UpdatePollIntervalSeconds": 5
 	}
 	EOF
 
   cat <<- EOF > $mender_dir/artifact_info
-	artifact_name=${artifact}
+	artifact_name=${artifact_name}
 	EOF
 
   # Version file
@@ -181,7 +185,7 @@ install_files() {
 
   sudo ln -s /data/${dataconfdir} ${primary_dir}/${localstatedir}
 
-  sudo install -m 0755 ${mender} ${primary_dir}/${bindir}/mender
+  sudo install -m 0755 ${mender_client} ${primary_dir}/${bindir}/mender
 
   sudo install -t ${primary_dir}/${identitydir} -m 0755 \
       ${mender_dir}/mender-device-identity
@@ -203,22 +207,22 @@ install_files() {
 
   sudo install -m 0644 ${mender_dir}/version ${primary_dir}/${sysconfdir}/scripts
 
-  if [ -n "${demo_ip}" ]; then
-    echo "$demo_ip docker.mender.io s3.docker.mender.io" | sudo tee -a $primary_dir/etc/hosts
+  if [ -n "${demo_host_ip}" ]; then
+    echo "$demo_host_ip docker.mender.io s3.docker.mender.io" | sudo tee -a $primary_dir/etc/hosts
   fi
 
-  if [ -n "${certificate}" ]; then
-    sudo install -m 0444 ${certificate} ${primary_dir}/${sysconfdir}
+  if [ -n "${server_cert}" ]; then
+    sudo install -m 0444 ${server_cert} ${primary_dir}/${sysconfdir}
   fi
 }
 
 do_install_mender() {
-  if [ -z "${image}" ]; then
-    echo ".sdimg image file not set. Aborting."
+  if [ -z "${mender_disk_image}" ]; then
+    echo "Mender raw disk image not set. Aborting."
     show_help
   fi
 
-  if [ -z "${mender}" ]; then
+  if [ -z "${mender_client}" ]; then
     echo "Mender client binary not set. Aborting."
     show_help
   fi
@@ -228,41 +232,42 @@ do_install_mender() {
     show_help
   fi
 
-  if [ -z "${artifact}" ]; then
+  if [ -z "${artifact_name}" ]; then
     echo "Artifact info not set. Aborting."
     show_help
   fi
 
-  if [ -z "${production_url}" ] && [ -z "${demo_ip}" ] && \
-     [ -z "${hosted_token}" ]; then
+  if [ -z "${server_url}" ] && [ -z "${demo_host_ip}" ] && \
+     [ -z "${tenant_token}" ]; then
     echo "No server type specified. Aborting."
     show_help
   fi
 
-  if [ -n "${production_url}" ] && [ -n "${demo_ip}" ]; then
+  if [ -n "${server_url}" ] && [ -n "${demo_host_ip}" ]; then
     echo "Incompatible server type choice. Aborting."
     show_help
   fi
 
   # TODO: more error checking of server types
-  if [ -n "${hosted_token}" ]; then
-    tenant_token=$(echo ${hosted_token} | tr -d '\n')
-    server_url="https://hosted.mender.io"
+  if [ -n "${tenant_token}" ]; then
+    mender_tenant_token=$(echo ${tenant_token} | tr -d '\n')
+    mender_server_url="https://hosted.mender.io"
   fi
 
-  if [ -n "${production_url}" ]; then
-    server_url=${production_url}
+  if [ -n "${server_url}" ]; then
+    mender_server_url=${server_url}
   fi
 
-  [ ! -f $image ] && { echo "$image - file not found. Aborting."; exit 1; }
+  [ ! -f $mender_disk_image ] && \
+      { echo "$mender_disk_image - file not found. Aborting."; exit 1; }
 
   # Mount rootfs partition A.
-  create_device_maps $image sdimgmappings
+  create_device_maps $mender_disk_image mender_disk_mappings
 
   mkdir -p $output_dir && cd $output_dir
 
-  primary=${sdimgmappings[1]}
-  data=${sdimgmappings[3]}
+  primary=${mender_disk_mappings[1]}
+  data=${mender_disk_mappings[3]}
 
   map_primary=/dev/mapper/"$primary"
   map_data=/dev/mapper/"$data"
@@ -286,7 +291,7 @@ do_install_mender() {
   cd $tool_dir && sync
 
   # Clean stuff.
-  detach_device_maps ${sdimgmappings[@]}
+  detach_device_maps ${mender_disk_mappings[@]}
   rm -rf $output_dir/sdimg
 }
 
@@ -294,36 +299,36 @@ PARAMS=""
 
 while (( "$#" )); do
   case "$1" in
-    -i | --image)
-      image=$2
+    -m | --mender-disk-image)
+      mender_disk_image=$2
       shift 2
       ;;
-    -m | --mender)
-      mender=$2
+    -g | --mender-client)
+      mender_client=$2
       shift 2
       ;;
     -d | --device-type)
       device_type=$2
       shift 2
       ;;
-    -a | --artifact)
-      artifact=$2
+    -a | --artifact-name)
+      artifact_name=$2
       shift 2
       ;;
-    -p | --demo-ip)
-      demo_ip=$2
+    -i | --demo-host-ip)
+      demo_host_ip=$2
       shift 2
       ;;
-    -c | --certificate)
-      certificate=$2
+    -c | --server-cert)
+      server_cert=$2
       shift 2
       ;;
-    -u | --production-url)
-      production_url=$2
+    -u | --server-url)
+      server_url=$2
       shift 2
       ;;
-    -o | --hosted-token)
-      hosted_token=$2
+    -t | --tenant-token)
+      tenant_token=$2
       shift 2
       ;;
     -h | --help)
