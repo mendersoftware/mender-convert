@@ -9,8 +9,8 @@ heads=255
 # Number of required sectors in a final image.
 sectors=63
 
-declare -a sdimg_partitions=("boot" "primary" "secondary" "data")
-declare -a embedded_partitions=("boot" "rootfs")
+declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
+declare -a raw_disk_partitions=("boot" "rootfs")
 
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 files_dir=${tool_dir}/files
@@ -105,7 +105,7 @@ EOF
 
 # Takes following arguments:
 #
-#  $1 - embedded image path
+#  $1 - raw_disk image path
 #
 # Calculates following values:
 #
@@ -180,7 +180,7 @@ get_image_info() {
 #  $5 - rootfs A partition size (in sectors)
 #  $6 - rootfs B partition start offset (in sectors)
 #  $7 - rootfs B partition size (in sectors)
-get_sdimg_info() {
+get_mender_disk_info() {
   local limage=$1
   local rvar_count=$2
   local rvar_sectorsize=$3
@@ -196,7 +196,7 @@ get_sdimg_info() {
   local lcount=${#lparts[@]}
 
   if [[ $lcount -ne 4 ]]; then
-    echo "Error: invalid source .sdimg file. Aborting."
+    echo "Error: invalid Mender disk image. Aborting."
     return 1
   else
     local lsectorsize=($(echo "${lfdisk}" | grep '^Sector' | cut -d' ' -f4))
@@ -247,7 +247,7 @@ align_partition_size() {
 
 # Takes following arguments:
 #
-#  $1 - embedded image
+#  $1 - raw_disk image
 #
 # Returns:
 #
@@ -256,7 +256,7 @@ align_partition_size() {
 #  $4 - root filesystem partition size (in sectors)
 #  $5 - sector size (in bytes)
 #  $6 - image type
-analyse_embedded_image() {
+analyse_raw_disk_image() {
   local image=$1
   local count=
   local sectorsize=
@@ -276,15 +276,15 @@ analyse_embedded_image() {
           rootfsstart rootfssize bootflag
 
   [[ $? -ne 0 ]] && \
-      { echo "Error: invalid/unsupported embedded image. Aborting."; exit 1; }
+      { echo "Error: invalid/unsupported raw_disk image. Aborting."; exit 1; }
 
   if [[ $count -eq 1 ]]; then
-    echo -e "\nDetected single partition embedded image."
+    echo -e "\nDetected single partition raw_disk image."
     rootfssize=$bootsize
     # Default size of the boot partition: 16MiB.
     bootsize=$(( ($partition_alignment * 2) / $sectorsize ))
   elif [[ $count -eq 2 ]]; then
-    echo -e "\nDetected multipartition ($count) embedded image."
+    echo -e "\nDetected multipartition ($count) raw_disk image."
   fi
 
   # Boot partition storage offset is defined from the top down.
@@ -318,7 +318,7 @@ analyse_embedded_image() {
 #
 #  $6 - aligned data partition size (in sectors)
 #  $7 - final .sdimg file size (in bytes)
-calculate_sdimg_size() {
+calculate_mender_disk_size() {
   local rvar_datasize=$6
   local rvar_sdimgsize=$7
 
@@ -356,13 +356,13 @@ erase_filesystem() {
 #
 #  $1 - raw disk image path
 #  $2 - raw disk image size
-create_sdimg() {
+create_mender_disk() {
   local lfile=$1
   local lsize=$2
   local bs=$(( 1024*1024 ))
   local count=$(( ${lsize} / ${bs} ))
 
-  echo -e "\nWriting $lsize bytes to .sdimg file..."
+  echo -e "\nWriting $lsize bytes to Mender disk image..."
   dd if=/dev/zero of=${lfile} bs=${bs} count=${count}
 }
 
@@ -375,7 +375,7 @@ create_sdimg() {
 #  $5 - root filesystem partiotion size
 #  $6 - data partition size
 #  $7 - sector size
-format_sdimg() {
+format_mender_disk() {
   local lfile=$1
   local lsize=$2
 
@@ -400,7 +400,7 @@ format_sdimg() {
 
   echo $3 ${pboot_offset} $primary_start $secondary_start $data_start $data_offset
 
-  echo -e "\nFormatting .sdimg file..."
+  echo -e "\nFormatting Mender disk image..."
 
   sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | sudo fdisk ${lfile}
 	o # clear the in memory partition table
@@ -447,7 +447,7 @@ EOF
 # Returns:
 #
 #  $2 - number of detected partitions
-verify_sdimg() {
+verify_mender_disk() {
   local lfile=$1
   local rvar_no_of_parts=$2
 
@@ -513,7 +513,7 @@ detach_device_maps() {
 # Takes following arguments:
 #
 #  $1 - partition mappings holder
-make_sdimg_filesystem() {
+make_mender_disk_filesystem() {
   local mappings=($@)
   echo -e "\nCreating filesystem for ${#mappings[@]} partitions..."
 
@@ -525,9 +525,9 @@ make_sdimg_filesystem() {
     echo -e "\nFormatting partition: ${part_no}..."
 
     if [[ part_no -eq 1 ]]; then
-      sudo mkfs.vfat -n ${sdimg_partitions[${part_no} - 1]} $map_dev
+      sudo mkfs.vfat -n ${mender_disk_partitions[${part_no} - 1]} $map_dev
     else
-      sudo mkfs.ext4 -L ${sdimg_partitions[${part_no} - 1]} $map_dev
+      sudo mkfs.ext4 -L ${mender_disk_partitions[${part_no} - 1]} $map_dev
     fi
   done
 }
@@ -535,7 +535,7 @@ make_sdimg_filesystem() {
 # Takes following arguments:
 #
 #  $1 - partition mappings holder
-mount_embedded() {
+mount_raw_disk() {
   local mappings=($@)
 
   if [ ${#mappings[@]} -eq 1 ]; then
@@ -548,7 +548,7 @@ mount_embedded() {
   for mapping in ${mappings[@]}
   do
     local part_no=${mapping#*p*p}
-    local path=$embedded_base_dir/${embedded_partitions[${part_no} - 1]}
+    local path=$embedded_base_dir/${raw_disk_partitions[${part_no} - 1]}
     mkdir -p $path
     sudo mount /dev/mapper/"${mapping}" $path 2>&1 >/dev/null
   done
@@ -557,13 +557,13 @@ mount_embedded() {
 # Takes following arguments:
 #
 #  $1 - partition mappings holder
-mount_sdimg() {
+mount_mender_disk() {
   local mappings=($@)
 
   for mapping in ${mappings[@]}
   do
     local part_no=${mapping#*p*p}
-    local path=$sdimg_base_dir/${sdimg_partitions[${part_no} - 1]}
+    local path=$sdimg_base_dir/${mender_disk_partitions[${part_no} - 1]}
     mkdir -p $path
     sudo mount /dev/mapper/"${mapping}" $path 2>&1 >/dev/null
   done

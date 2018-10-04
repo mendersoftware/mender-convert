@@ -23,8 +23,8 @@ sdimg_base_dir=$output_dir/sdimg
 GCC_VERSION="6.3.1"
 
 echo "Running: $(basename $0)"
-declare -a sdimgmappings
-declare -a sdimg_partitions=("boot" "primary" "secondary" "data")
+declare -a mender_disk_mappings
+declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
 
 version() {
   echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'
@@ -55,7 +55,7 @@ build_uboot_files() {
   cd $uboot_dir
 
   make --quiet distclean
-  make rpi_3_32b_defconfig && make
+  make --quiet rpi_3_32b_defconfig && make --quiet
   make envtools
 
   cat<<-'EOF' >boot.cmd
@@ -142,43 +142,44 @@ install_files() {
 do_install_bootloader() {
   echo "Setting bootloader..."
 
-  if [ -z "${image}" ]; then
-    echo ".sdimg image file not set. Aborting."
+  if [ -z "${mender_disk_image}" ]; then
+    echo "Mender raw disk image file not set. Aborting."
     exit 1
   fi
 
-  if [ -z "${toolchain}" ]; then
-    echo "ARM toolchain not set. Aborting."
+  if [ -z "${bootloader_toolchain}" ]; then
+    echo "ARM GCC toolchain not set. Aborting."
     exit 1
   fi
 
-  if [[ $(which ${toolchain}-gcc) = 1 ]]; then
+  if [[ $(which ${bootloader_toolchain}-gcc) = 1 ]]; then
     echo "Error: ARM GCC not found in PATH. Aborting."
     exit 1
   fi
 
-  local gcc_version=$(${toolchain}-gcc -dumpversion)
+  local gcc_version=$(${bootloader_toolchain}-gcc -dumpversion)
 
   if [ $(version $gcc_version) -ne $(version $GCC_VERSION) ]; then
     echo "Error: Invalid ARM GCC version ($gcc_version). Expected $GCC_VERSION. Aborting."
     exit 1
   fi
 
-  [ ! -f $image ] && { echo "$image - file not found. Aborting."; exit 1; }
+  [ ! -f $mender_disk_image ] && \
+      { echo "$mender_disk_image - file not found. Aborting."; exit 1; }
 
   # Map & mount Mender compliant image.
-  create_device_maps $image sdimgmappings
+  create_device_maps $mender_disk_image mender_disk_mappings
 
   mkdir -p $output_dir && cd $output_dir
 
   # Build patched U-Boot files.
-  build_uboot_files $toolchain
+  build_uboot_files $bootloader_toolchain
 
-  mount_sdimg ${sdimgmappings[@]}
+  mount_mender_disk ${mender_disk_mappings[@]}
 
   install_files ${output_dir}/sdimg/boot ${output_dir}/sdimg/primary
 
-  detach_device_maps ${sdimgmappings[@]}
+  detach_device_maps ${mender_disk_mappings[@]}
 
   echo -e "\nStage done."
 }
@@ -188,12 +189,12 @@ PARAMS=""
 
 while (( "$#" )); do
   case "$1" in
-    -i | --image)
-      image=$2
+    -m | --mender-disk-image)
+      mender_disk_image=$2
       shift 2
       ;;
-    -t | --toolchain)
-      toolchain=$2
+    -b | --bootloader-toolchain)
+      bootloader_toolchain=$2
       shift 2
       ;;
     -d | --device-type)

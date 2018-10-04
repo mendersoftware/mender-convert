@@ -3,23 +3,26 @@
 show_help() {
 cat << EOF
 
-Tool adding GRUB specific files to Mender compliant .sdimg image file.
+Tool adding GRUB specific files to Mender compliant image file.
 
 Usage: $0 [options]
 
-    Options: [-i|--image | -t|--toolchain -k|--keep | -d|--device-type]
+    Options: [-m|--mender-disk-image | -b|--bootloader-toolchain |
+              -k|--keep | -d|--device-type]
 
-        --image        - .sdimg image generated with mender-convert
-        --toolchain    - ARM specific toolchain path
-        --keep         - prevent deleting GRUB workspace
-        --device-type  - target device type identification
+        --mender-disk-image    - Mender raw disk image
+        --bootloader-toolchain - GNU Arm Embedded Toolchain
+        --device-type          - target device type identification
+        --keep                 - prevent deleting GRUB workspace
 
     Note: supported device types are: beaglebone, raspberrypi3
 
     Examples:
 
-        ./mender-convert.sh install_bootloader --image <sdimg_file_path>
-                --device-type beaglebone --toolchain arm-linux-gnueabihf
+        ./mender-convert.sh install-bootloader-to-mender-disk-image
+                --mender-disk-image <mender_image_path>
+                --device-type <beaglebone | raspberrypi3>
+                --bootloader-toolchain arm-linux-gnueabihf
 
         Note: toolchain naming convention is arch-vendor-(os-)abi
 
@@ -35,14 +38,14 @@ tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 output_dir=${tool_dir}/output
 grubenv_dir=$output_dir/grubenv
 grubenv_build_dir=$output_dir/grubenv_build
-image=
-toolchain=
+mender_disk_image=
+bootloader_toolchain=
 device_type=
 keep=0
 efi_boot=EFI/BOOT
 EFI_STUB_VER="4.12.0"
 
-declare -a sdimgmappings
+declare -a mender_disk_mappings
 
 version() {
   echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'
@@ -115,11 +118,11 @@ build_grub_efi() {
   mkdir -p $grub_build
   # Build GRUB tools (grub-mkimage) and ARM modules in one step
   ./autogen.sh
-  ./configure --host=x86_64-linux-gnu TARGET_CC=${toolchain}-gcc \
-     TARGET_OBJCOPY=${toolchain}-objcopy \
-     TARGET_STRIP=${toolchain}-strip \
-     TARGET_NM=${toolchain}-nm \
-     TARGET_RANLIB=${toolchain}-ranlib \
+  ./configure --host=x86_64-linux-gnu TARGET_CC=${bootloader_toolchain}-gcc \
+     TARGET_OBJCOPY=${bootloader_toolchain}-objcopy \
+     TARGET_STRIP=${bootloader_toolchain}-strip \
+     TARGET_NM=${bootloader_toolchain}-nm \
+     TARGET_RANLIB=${bootloader_toolchain}-ranlib \
      --target=arm --with-platform=efi --exec-prefix=$grub_build \
      --prefix=$grub_build --disable-werror
 
@@ -190,13 +193,13 @@ install_files() {
 do_install_bootloader() {
   echo "Setting bootloader..."
 
-  if [ -z "${image}" ]; then
-    echo ".sdimg image file not set. Aborting."
+  if [ -z "${mender_disk_image}" ]; then
+    echo "Mender raw disk image not set. Aborting."
     exit 1
   fi
 
-  if [ -z "${toolchain}" ]; then
-    echo "ARM toolchain not set. Aborting."
+  if [ -z "${bootloader_toolchain}" ]; then
+    echo "ARM GCC toolchain not set. Aborting."
     exit 1
   fi    
 
@@ -205,20 +208,21 @@ do_install_bootloader() {
     exit 1
   fi
 
-  if [[ $(which ${toolchain}-gcc) = 1 ]]; then
+  if [[ $(which ${bootloader_toolchain}-gcc) = 1 ]]; then
     echo "Error: ARM GCC not found in PATH. Aborting."
     exit 1
   fi
 
-  [ ! -f $image ] && { echo "$image - file not found. Aborting."; exit 1; }
+  [ ! -f $mender_disk_image ] && \
+      { echo "$mender_disk_image - file not found. Aborting."; exit 1; }
 
   # Map & mount Mender compliant image.
-  create_device_maps $image sdimgmappings
+  create_device_maps $mender_disk_image mender_disk_mappings
 
   mkdir -p $output_dir && cd $output_dir
 
-  boot=${sdimgmappings[0]}
-  primary=${sdimgmappings[1]}
+  boot=${mender_disk_mappings[0]}
+  primary=${mender_disk_mappings[1]}
   map_boot=/dev/mapper/"$boot"
   map_primary=/dev/mapper/"$primary"
   path_boot=$output_dir/sdimg/boot
@@ -243,7 +247,7 @@ do_install_bootloader() {
   # Back to working directory.
   cd $tool_dir && sync
 
-  detach_device_maps ${sdimgmappings[@]}
+  detach_device_maps ${mender_disk_mappings[@]}
   # Clean files.
   rm -rf $output_dir/sdimg
 
@@ -255,12 +259,12 @@ PARAMS=""
 
 while (( "$#" )); do
   case "$1" in
-    -i | --image)
-      image=$2
+    -m | --mender-disk-image)
+      mender_disk_image=$2
       shift 2
       ;;
-    -t | --toolchain)
-      toolchain=$2
+    -b | --bootloader-toolchain)
+      bootloader_toolchain=$2
       shift 2
       ;;
     -d | --device-type)
