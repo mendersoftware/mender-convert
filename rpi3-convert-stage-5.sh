@@ -178,10 +178,11 @@ do_install_bootloader() {
   mkdir -p $output_dir && cd $output_dir
 
   # Build patched U-Boot files.
-  build_uboot_files $bootloader_toolchain || rc=$?
+  build_uboot_files $bootloader_toolchain
+  rc=$?
   cd $output_dir
 
-  if [ "$rc" -eq 0 ]; then
+  if [ $rc -eq 0 ]; then
     mount_mender_disk ${mender_disk_mappings[@]}
     install_files ${output_dir}/sdimg/boot ${output_dir}/sdimg/primary
   fi
