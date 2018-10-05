@@ -369,6 +369,11 @@ do_make_sdimg_raspberrypi3() {
   sudo install -d -m 755 ${sdimg_primary_dir}/data
 
   set_fstab $device_type
+
+  [[ $keep = "-k" ]] && { rm -f $output_dir/boot.vfat\
+     $output_dir/cmdline.txt  $output_dir/config.txt\
+     $output_dir/rootfs.img; }
+
 }
 
 do_install_mender_to_mender_disk_image() {
@@ -395,6 +400,10 @@ do_install_mender_to_mender_disk_image() {
 
   if [ -n "${tenant_token}" ]; then
     stage_4_args="${stage_4_args} -t ${tenant_token}"
+  fi
+
+  if [ -n "${keep}" ]; then
+    stage_4_args="${stage_4_args} -k"
   fi
 
   eval set -- " ${stage_4_args}"

@@ -118,23 +118,24 @@ create_client_files() {
 }
 
 get_mender_files_from_upstream() {
+
   mkdir -p $mender_dir
 
   echo -e "Downloading inventory & identity scripts..."
 
-  wget -q -O $mender_dir/mender-device-identity \
+  wget -nc -q -O $mender_dir/mender-device-identity \
     $mender_client_repo/$mender_client_revision/support/mender-device-identity
-  wget -q -O $mender_dir/mender-inventory-bootloader-integration \
+  wget -nc -q -O $mender_dir/mender-inventory-bootloader-integration \
     $mender_client_repo/$mender_client_revision/support/mender-inventory-bootloader-integration
-  wget -q -O $mender_dir/mender-inventory-hostinfo \
+  wget -nc -q -O $mender_dir/mender-inventory-hostinfo \
     $mender_client_repo/$mender_client_revision/support/mender-inventory-hostinfo
-  wget -q -O $mender_dir/mender-inventory-network \
+  wget -nc -q -O $mender_dir/mender-inventory-network \
     $mender_client_repo/$mender_client_revision/support/mender-inventory-network
-  wget -q -O $mender_dir/mender-inventory-os \
+  wget -nc -q -O $mender_dir/mender-inventory-os \
     $mender_client_repo/$mender_client_revision/support/mender-inventory-os
-  wget -q -O $mender_dir/mender-inventory-rootfs-type \
+  wget -nc -q -O $mender_dir/mender-inventory-rootfs-type \
     $mender_client_repo/$mender_client_revision/support/mender-inventory-rootfs-type
-  wget -q -O $mender_dir/server.crt \
+  wget -nc -q -O $mender_dir/server.crt \
     $meta_mender_repo/$meta_mender_revision/meta-mender-demo/recipes-mender/mender/files/server.crt
 }
 
@@ -293,6 +294,7 @@ do_install_mender() {
   # Clean stuff.
   detach_device_maps ${mender_disk_mappings[@]}
   rm -rf $output_dir/sdimg
+  [[ $keep -eq 0 ]] && { rm -rf $mender_dir; }
 }
 
 PARAMS=""
@@ -330,6 +332,10 @@ while (( "$#" )); do
     -t | --tenant-token)
       tenant_token=$2
       shift 2
+      ;;
+    -k | --keep)
+      keep="1"
+      shift 1
       ;;
     -h | --help)
       show_help
