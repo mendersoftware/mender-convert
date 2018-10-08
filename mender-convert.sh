@@ -77,6 +77,8 @@ Examples:
 
         Output:
             - Mender image: ready to use image with client and bootloader installed
+            - Mender artifact: update file based on the already built Mender image
+            - Mender root filesystem: EXT4 image used to produce the Mender artifact
 
     To create Mender artifact file from Mender image:
 
@@ -527,19 +529,8 @@ do_mender_disk_image_to_artifact() {
   create_device_maps $mender_disk_image mender_disk_mappings
   mount_mender_disk ${mender_disk_mappings[@]}
 
-  if [[ $rootfs_partition_id == "primary" ]]; then
-    prootfs_size=$rootfs_a_size
-    rootfs_path=$sdimg_primary_dir
-  elif [[ $rootfs_partition_id == "secondary" ]]; then
-    prootfs_size=$rootfs_b_size
-    rootfs_path=$sdimg_secondary_dir
-  fi
-
   # Find .sdimg file's dedicated device type.
   mender_device_type=$( cat $sdimg_data_dir/mender/device_type | sed 's/[^=].*=//' )
-
-  # Set 'artifact name' as passed in the command line.
-  sudo sed -i '/^artifact/s/=.*$/='${artifact_name}'/' "$rootfs_path/etc/mender/artifact_info"
 
   if [ "$mender_device_type" != "$device_type" ]; then
     echo "Error: device types of Mender artifact & Mender not matching. Aborting."
@@ -552,31 +543,61 @@ do_mender_disk_image_to_artifact() {
   fi
 
   if [ $ret -eq 0 ]; then
-    local rootfs_file=${output_dir}/rootfs.ext4
+    if [[ $rootfs_partition_id == "primary" ]]; then
+      prootfs_start=$rootfs_a_start
+      prootfs_size=$rootfs_a_size
+      rootfs_path=$sdimg_primary_dir
+    elif [[ $rootfs_partition_id == "secondary" ]]; then
+      prootfs_start=$rootfs_b_start
+      prootfs_size=$rootfs_b_size
+      rootfs_path=$sdimg_secondary_dir
+    fi
 
-    echo "Creating a ext4 file-system image from modified root file-system"
-    dd if=/dev/zero of=$rootfs_file seek=${prootfs_size} count=0 bs=512 status=none
+    mender_disk_basename=$(basename -- "$mender_disk_image")
+    mender_disk_filename="${mender_disk_basename%.*}"
+    mender_rootfs_basename=${mender_disk_filename}.ext4
+    mender_rootfs_image=${output_dir}/$mender_rootfs_basename
 
-    sudo mkfs.ext4 -FF $rootfs_file -d $rootfs_path
+    # Extract root filesystem ext4 image to use it to generate Mender artifact.
+    # Ext4 disk image will be also verified in acceptance tests.
+    extract_file_from_image $mender_disk_image $prootfs_start \
+                            $prootfs_size $mender_rootfs_basename
 
-    fsck.ext4 -fp $rootfs_file
+    fsck.ext4 -fp $mender_rootfs_image
 
-    mender_artifact=${output_dir}/${device_type}_${artifact_name}.mender
-    echo "Writing Mender artifact to: ${mender_artifact}"
+    # Find first available loopback device.
+    loopdevice=($(sudo losetup -f || ret=$?))
 
-    #Create Mender artifact
-    mender-artifact write rootfs-image \
-      --update ${rootfs_file} \
-      --output-path ${mender_artifact} \
-      --artifact-name ${artifact_name} \
-      --device-type ${device_type}
+    if [ $ret -ne 0 ]; then
+      echo "Error: cannot find an unused loop device. Aborting."
+    else
+      sudo losetup $loopdevice ${mender_rootfs_image}
+      rootfs_mountpoint=${output_dir}/mnt/${rootfs_partition_id}
+      mkdir -p ${rootfs_mountpoint}
+      sudo mount $loopdevice ${rootfs_mountpoint}
 
-    ret=$?
-    [[ $ret -eq 0 ]] && \
-      { echo "Writing Mender artifact to ${mender_artifact} succeeded."; } || \
-      { echo "Writing Mender artifact to ${mender_artifact} failed."; }
+      # Set 'artifact name' as passed in the command line.
+      sudo sed -i '/^artifact/s/=.*$/='${artifact_name}'/' "${rootfs_mountpoint}/etc/mender/artifact_info"
 
-    rm $rootfs_file
+      mender_artifact=${output_dir}/${mender_disk_filename}_${artifact_name}.mender
+      echo "Writing Mender artifact to: ${mender_artifact}"
+
+      #Create Mender artifact
+      mender-artifact write rootfs-image \
+        --update ${mender_rootfs_image} \
+        --output-path ${mender_artifact} \
+        --artifact-name ${artifact_name} \
+        --device-type ${device_type}
+
+      ret=$?
+      [[ $ret -eq 0 ]] && \
+        { echo "Writing Mender artifact to ${mender_artifact} succeeded."; } || \
+        { echo "Writing Mender artifact to ${mender_artifact} failed."; }
+
+      sudo umount -l ${rootfs_mountpoint}
+      sudo losetup -d $loopdevice
+      rm -rf ${output_dir}/mnt
+    fi
   fi
 
   # Clean and detach.
@@ -601,6 +622,9 @@ do_from_raw_disk_image() {
   [[ $rc -ne 0 ]] && { return 1; }
 
   do_install_bootloader_to_mender_disk_image || rc=$?
+  [[ $rc -ne 0 ]] && { return 1; }
+
+  do_mender_disk_image_to_artifact || rc=$?
   [[ $rc -ne 0 ]] && { return 1; }
 
   return 0
