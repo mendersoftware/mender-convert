@@ -34,7 +34,7 @@ Expert commands:
 
 Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb |
           -d|--device-type | -p|--rootfs-partition-id | -i|--demo-host-ip |
-          -c| --server-cert | -u| --server-url | -t|--tenant-token |
+          -c|--server-cert | -u|--server-url | -t|--tenant-token |
           -g|--mender-client -b|--bootloader-toolchain | -a|--artifact-name |
           -k|--keep]
 
@@ -45,8 +45,8 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
         data-part-size-mb    - data partition size in MB; default value 128MB
         device-type          - target device identification used to build
                                Mender image
-        rootfs-partition-id  - selects root filesystem (rootfs_a|rootfs_b) as the
-                               source filesystem for an artifact
+        rootfs-partition-id  - selects root filesystem (primary|secondary)
+                               as the source filesystem for an artifact
         demo-host-ip         - server demo ip used for testing purposes
         server-cert          - server certificate file
         server-url           - production server url
@@ -75,7 +75,8 @@ Examples:
                 --demo-host-ip 192.168.10.2
                 --keep
 
-        Output: ready to use Mender image with Mender client and bootloader installed
+        Output:
+            - Mender image: ready to use image with client and bootloader installed
 
     To create Mender artifact file from Mender image:
 
@@ -83,7 +84,7 @@ Examples:
                 --mender-disk-image <mender_image_path>
                 --device-type <beaglebone | raspberrypi3>
                 --artifact-name release-1_1.5.0
-                --rootfs-partition-id rootfs_a
+                --rootfs-partition-id <primary | secondary>
 
         Note: artifact name format is: release-<release_no>_<mender_version>
 
@@ -167,7 +168,7 @@ demo_host_ip=
 # Mender hosted token.
 tenant_token=
 
-declare -a rootfs_partition_ids=("rootfs_a" "rootfs_b")
+declare -a rootfs_partition_ids=("primary" "secondary")
 declare -a mender_disk_mappings
 declare -a raw_disk_mappings
 #Supported devices
@@ -493,8 +494,8 @@ do_mender_disk_image_to_artifact() {
   fi
 
   if [ -z "${rootfs_partition_id}" ]; then
-    echo "Rootfs partition id not set - rootfs_a will be used by default."
-    rootfs_partition_id="rootfs_a"
+    echo "Rootfs partition id not set - 'primary' will be used by default."
+    rootfs_partition_id="primary"
   fi
 
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
@@ -526,10 +527,10 @@ do_mender_disk_image_to_artifact() {
   create_device_maps $mender_disk_image mender_disk_mappings
   mount_mender_disk ${mender_disk_mappings[@]}
 
-  if [[ $rootfs_partition_id == "rootfs_a" ]]; then
+  if [[ $rootfs_partition_id == "primary" ]]; then
     prootfs_size=$rootfs_a_size
     rootfs_path=$sdimg_primary_dir
-  elif [[ $rootfs_partition_id == "rootfs_b" ]]; then
+  elif [[ $rootfs_partition_id == "secondary" ]]; then
     prootfs_size=$rootfs_b_size
     rootfs_path=$sdimg_secondary_dir
   fi
