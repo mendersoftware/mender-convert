@@ -192,6 +192,7 @@ do_raw_disk_image_shrink_rootfs() {
 
   # Find first available loopback device.
   loopdevice=($(losetup -f))
+  [ $? -ne 0 ] && { echo "Error: inaccesible loopback device"; return 1; }
 
   # Mount appropriate partition.
   if [[ $count -eq 1 ]]; then
@@ -200,10 +201,8 @@ do_raw_disk_image_shrink_rootfs() {
     sudo losetup $loopdevice $raw_disk_image -o $(($rootfsstart * $sector_size))
   else
     echo "Error: invalid/unsupported embedded raw disk image. Aborting."
-    exit 1
+    return 1
   fi
-
-  [ $? -ne 0 ] && { echo "Error: inaccesible loopback device"; exit 1; }
 
   block_size=($(sudo dumpe2fs -h $loopdevice | grep 'Block size' | tr -s ' ' | cut -d ' ' -f3))
   min_size_blocks=($(sudo resize2fs -P $loopdevice | awk '{print $NF}'))
@@ -237,6 +236,8 @@ do_raw_disk_image_shrink_rootfs() {
   echo "Image new endsector: $endsector"
   truncate -s $((($endsector+1) * $sector_size)) $raw_disk_image
   echo "Root filesystem size (sectors): $new_size_sectors"
+
+  return 0
 }
 
 do_raw_disk_image_create_partitions() {
@@ -258,7 +259,7 @@ do_raw_disk_image_create_partitions() {
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
 
   [[ $supported -eq 0 ]] && \
-      { echo "Error: incorrect device type. Aborting."; exit 1; }
+      { echo "Error: incorrect device type. Aborting."; return 1; }
 
   mkdir -p $output_dir && cd $output_dir
 
@@ -270,7 +271,7 @@ do_raw_disk_image_create_partitions() {
                          sector_size image_type
 
   [ -z "${prootfs_size}" ] && \
-    { echo "root filesystem size not set. Aborting."; exit 1; }
+    { echo "root filesystem size not set. Aborting."; return 1; }
 
   local mender_disk_image_size=
   calculate_mender_disk_size $pboot_start $pboot_size  \
@@ -315,6 +316,8 @@ do_raw_disk_image_create_partitions() {
 
   [ $rc -eq 0 ] && { echo -e "\n$mender_disk_image image created."; } \
                 || { echo -e "\n$mender_disk_image image composing failure."; }
+
+  return $rc
 }
 
 do_make_sdimg_beaglebone() {
@@ -377,16 +380,17 @@ do_make_sdimg_raspberrypi3() {
 
   set_fstab $device_type
 
-  [[ $keep = "-k" ]] && { rm -f $output_dir/boot.vfat\
+  [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
      $output_dir/cmdline.txt  $output_dir/config.txt\
      $output_dir/rootfs.img; }
 
+  return 0
 }
 
 do_install_mender_to_mender_disk_image() {
   # Mender executables, service and configuration files installer.
-  if [ -z "$mender_disk_image" ] || [ -z "$device_type" ] || [ -z "$mender_client" ] || \
-     [ -z "$artifact_name" ]; then
+  if [ -z "$mender_disk_image" ] || [ -z "$device_type" ] || \
+     [ -z "$mender_client" ] || [ -z "$artifact_name" ]; then
     show_help
     exit 1
   fi
@@ -394,7 +398,7 @@ do_install_mender_to_mender_disk_image() {
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
 
   [[ $supported -eq 0 ]] && \
-      { echo "Error: incorrect device type. Aborting."; exit 1; }
+      { echo "Error: incorrect device type. Aborting."; return 1; }
 
   # mender-image-1.5.0
   stage_4_args="-m $mender_disk_image -d $device_type -g ${mender_client} -a ${artifact_name}"
@@ -428,6 +432,8 @@ do_install_mender_to_mender_disk_image() {
 
   # Update test configuration file
   update_test_config_file $device_type artifact-name $artifact_name
+
+  return 0
 }
 
 do_install_bootloader_to_mender_disk_image() {
@@ -440,7 +446,7 @@ do_install_bootloader_to_mender_disk_image() {
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
 
   [[ $supported -eq 0 ]] && \
-      { echo "Error: incorrect device type. Aborting."; exit 1; }
+      { echo "Error: incorrect device type. Aborting."; return 1; }
 
   case "$device_type" in
     "beaglebone")
@@ -466,6 +472,8 @@ do_install_bootloader_to_mender_disk_image() {
       update_test_config_file $device_type mount-location "\/uboot"
       ;;
   esac
+
+  return 0
 }
 
 do_mender_disk_image_to_artifact() {
@@ -492,13 +500,12 @@ do_mender_disk_image_to_artifact() {
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
 
   [[ $supported -eq 0 ]] && \
-      { echo "Error: incorrect device type. Aborting."; exit 1; }
+      { echo "Error: incorrect device type. Aborting."; return 1; }
 
-
-  inarray=$(echo ${rootfs_types[@]} | grep -o $rootfs_type | wc -w)
+  inarray=$(echo ${rootfs_partition_ids[@]} | grep -o $rootfs_partition_id | wc -w)
 
   [[ $inarray -eq 0 ]] && \
-      { echo "Error: invalid rootfs type provided. Aborting."; exit 1; }
+      { echo "Error: invalid rootfs partition id provided. Aborting."; return 1; }
 
   local count=
   local bootstart=
@@ -508,14 +515,14 @@ do_mender_disk_image_to_artifact() {
   local rootfs_b_size=
   local rootfs_path=
   local sdimg_device_type=
-  local abort=0
 
   get_mender_disk_info $mender_disk_image count sector_size rootfs_a_start \
                        rootfs_a_size rootfs_b_start rootfs_b_size
   ret=$?
   [[ $ret -ne 0 ]] && \
-      { echo "Error: cannot validate Mender disk image. Aborting."; exit 1; }
+      { echo "Error: cannot validate Mender disk image. Aborting."; return 1; }
 
+  # Check if device type matches.
   create_device_maps $mender_disk_image mender_disk_mappings
   mount_mender_disk ${mender_disk_mappings[@]}
 
@@ -528,22 +535,22 @@ do_mender_disk_image_to_artifact() {
   fi
 
   # Find .sdimg file's dedicated device type.
-  sdimg_device_type=$( cat $sdimg_data_dir/mender/device_type | sed 's/[^=].*=//' )
+  mender_device_type=$( cat $sdimg_data_dir/mender/device_type | sed 's/[^=].*=//' )
 
   # Set 'artifact name' as passed in the command line.
   sudo sed -i '/^artifact/s/=.*$/='${artifact_name}'/' "$rootfs_path/etc/mender/artifact_info"
 
-  if [ "$sdimg_device_type" != "$device_type" ]; then
-    echo "Error: .mender and .sdimg device type not matching. Aborting."
-    abort=1
+  if [ "$mender_device_type" != "$device_type" ]; then
+    echo "Error: device types of Mender artifact & Mender not matching. Aborting."
+    ret=1
   fi
 
   if [[ $(which mender-artifact) = 1 ]]; then
     echo "Error: mender-artifact not found in PATH. Aborting."
-    abort=1
+    ret=1
   fi
 
-  if [ $abort -eq 0 ]; then
+  if [ $ret -eq 0 ]; then
     local rootfs_file=${output_dir}/rootfs.ext4
 
     echo "Creating a ext4 file-system image from modified root file-system"
@@ -575,18 +582,27 @@ do_mender_disk_image_to_artifact() {
   detach_device_maps ${mender_disk_mappings[@]}
 
   rm -rf $sdimg_base_dir
-  [[ $ret -ne 0 ]] && { exit 1; }
+  [[ $ret -ne 0 ]] && { return $ret; }
 }
 
 do_from_raw_disk_image() {
+  if [ -z "$mender_disk_image" ] || [ -z "$raw_disk_image" ] || \
+     [ -z "$device_type" ] || [ -z "$artifact_name" ] || \
+     [ -z "$mender_client" ] || [ -z "$bootloader_toolchain" ]; then
+    show_help
+    return 1
+  fi
+
   do_raw_disk_image_create_partitions || rc=$?
-  [[ $rc -ne 0 ]] && { exit 1; }
+  [[ $rc -ne 0 ]] && { return 1; }
 
   do_install_mender_to_mender_disk_image || rc=$?
-  [[ $rc -ne 0 ]] && { exit 1; }
+  [[ $rc -ne 0 ]] && { return 1; }
 
   do_install_bootloader_to_mender_disk_image || rc=$?
-  [[ $rc -ne 0 ]] && { exit 1; }
+  [[ $rc -ne 0 ]] && { return 1; }
+
+  return 0
 }
 
 #read -s -p "Enter password for sudo: " sudoPW
@@ -680,24 +696,32 @@ sudo true
 
 case "$1" in
   raw-disk-image-shrink-rootfs)
-    do_raw_disk_image_shrink_rootfs
+    do_raw_disk_image_shrink_rootfs || rc=$?
+  [[ $rc -ne 0 ]] && { return 1; }
     ;;
   raw-disk-image-create-partitions)
-    do_raw_disk_image_create_partitions
+    do_raw_disk_image_create_partitions || rc=$?
+    [[ $rc -ne 0 ]] && { exit 1; }
     ;;
   install-mender-to-mender-disk-image)
-    do_install_mender_to_mender_disk_image
+    do_install_mender_to_mender_disk_image || rc=$?
+    [[ $rc -ne 0 ]] && { exit 1; }
     ;;
   install-bootloader-to-mender-disk-image)
-    do_install_bootloader_to_mender_disk_image
+    do_install_bootloader_to_mender_disk_image || rc=$?
+    [[ $rc -ne 0 ]] && { exit 1; }
     ;;
   mender-disk-image-to-artifact)
-    do_mender_disk_image_to_artifact
+    do_mender_disk_image_to_artifact || rc=$?
+    [[ $rc -ne 0 ]] && { exit 1; }
     ;;
   from-raw-disk-image)
-    do_from_raw_disk_image
+    do_from_raw_disk_image || rc=$?
+    [[ $rc -ne 0 ]] && { exit 1; }
     ;;
   *)
     show_help
     ;;
 esac
+
+exit 0
