@@ -571,6 +571,7 @@ do_mender_disk_image_to_artifact() {
     if [ $ret -ne 0 ]; then
       echo "Error: cannot find an unused loop device. Aborting."
     else
+      #Mount extracted ext4 partition to verify 'artifact_info' file content.
       sudo losetup $loopdevice ${mender_rootfs_image}
       rootfs_mountpoint=${output_dir}/mnt/${rootfs_partition_id}
       mkdir -p ${rootfs_mountpoint}
@@ -578,6 +579,10 @@ do_mender_disk_image_to_artifact() {
 
       # Set 'artifact name' as passed in the command line.
       sudo sed -i '/^artifact/s/=.*$/='${artifact_name}'/' "${rootfs_mountpoint}/etc/mender/artifact_info"
+
+      sudo umount -l ${rootfs_mountpoint}
+      sudo losetup -d $loopdevice
+      rm -rf ${output_dir}/mnt
 
       mender_artifact=${output_dir}/${mender_disk_filename}_${artifact_name}.mender
       echo "Writing Mender artifact to: ${mender_artifact}"
@@ -594,9 +599,6 @@ do_mender_disk_image_to_artifact() {
         { echo "Writing Mender artifact to ${mender_artifact} succeeded."; } || \
         { echo "Writing Mender artifact to ${mender_artifact} failed."; }
 
-      sudo umount -l ${rootfs_mountpoint}
-      sudo losetup -d $loopdevice
-      rm -rf ${output_dir}/mnt
     fi
   fi
 
