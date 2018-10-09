@@ -19,7 +19,7 @@ Usage: $0 [options]
 
     Examples:
 
-        ./mender-convert.sh install-bootloader-to-mender-disk-image
+        ./mender-convert install-bootloader-to-mender-disk-image
                 --mender-disk-image <mender_image_path>
                 --device-type <beaglebone | raspberrypi3>
                 --bootloader-toolchain arm-linux-gnueabihf
@@ -120,8 +120,8 @@ build_grub_efi() {
 
   mkdir -p $grub_build
   # Build GRUB tools (grub-mkimage) and ARM modules in one step
-  ./autogen.sh
-  ./configure --host=x86_64-linux-gnu TARGET_CC=${bootloader_toolchain}-gcc \
+  ./autogen.sh > /dev/null
+  ./configure --quiet --host=x86_64-linux-gnu TARGET_CC=${bootloader_toolchain}-gcc \
      TARGET_OBJCOPY=${bootloader_toolchain}-objcopy \
      TARGET_STRIP=${bootloader_toolchain}-strip \
      TARGET_NM=${bootloader_toolchain}-nm \
@@ -135,7 +135,7 @@ build_grub_efi() {
   ${grub_build}/bin/grub-mkimage  -v -p /$efi_boot -o grub.efi --format=arm-efi \
       -d $grub_build/lib/grub/arm-efi/  boot linux ext2 fat serial part_msdos \
       part_gpt  normal efi_gop iso9660 configfile search loadenv test cat echo \
-      gcry_sha256 halt hashsum loadenv reboot
+      gcry_sha256 halt hashsum loadenv reboot &> /dev/null
 
   rc=$?
 

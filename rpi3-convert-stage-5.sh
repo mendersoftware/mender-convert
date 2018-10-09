@@ -88,7 +88,7 @@ install_files() {
   local rootfs_dir=$2
 
   # Make a copy of Linux kernel arguments and modify.
-  cp ${boot_dir}/cmdline.txt ${output_dir}/cmdline.txt
+  sudo cp ${boot_dir}/cmdline.txt ${output_dir}/cmdline.txt
 
   sed -i 's/\b[ ]root=[^ ]*/ root=\${mender_kernel_root}/' ${output_dir}/cmdline.txt
 
