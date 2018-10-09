@@ -5,8 +5,8 @@ cat << EOF
 
 Mender conversion tool
 
-A tool for taking an existing embedded image (Debian, Ubuntu, Raspbian, etc)
-and convert it to a Mender image by restructuring partition table and adding
+A tool that takes an existing embedded image (Debian, Ubuntu, Raspbian, etc)
+and converts it to a Mender image by restructuring partition table and adding
 necessary files.
 
 Usage: $0 COMMAND [options]
@@ -65,7 +65,7 @@ Examples:
 
     To create fully functional Mender image from raw disk image in a single step:
 
-        ./mender-convert.sh from-raw-disk-image
+        ./mender-convert from-raw-disk-image
                 --raw-disk-image <raw_disk_image_path>
                 --mender-disk-image <mender_image_name>
                 --device-type <beaglebone | raspberrypi3>
@@ -82,7 +82,7 @@ Examples:
 
     To create Mender artifact file from Mender image:
 
-        ./mender-convert.sh mender-disk-image-to-artifact
+        ./mender-convert mender-disk-image-to-artifact
                 --mender-disk-image <mender_image_path>
                 --device-type <beaglebone | raspberrypi3>
                 --artifact-name release-1_1.5.0
@@ -94,14 +94,14 @@ Examples for expert actions:
 
     To shrink the existing embedded raw disk image:
 
-        ./mender-convert.sh raw-disk-image-shrink-rootfs
+        ./mender-convert raw-disk-image-shrink-rootfs
                 --raw-disk-image <raw_disk_image_path>
 
         Output: Root filesystem size (sectors): 4521984
 
     To convert raw disk image's partition table to Mender layout:
 
-        ./mender-convert.sh raw-disk-image-create-partitions
+        ./mender-convert raw-disk-image-create-partitions
                 --raw-disk-image <raw_disk_image_path>
                 --mender-disk-image <mender_image_name>
                 --device-type <beaglebone | raspberrypi3>
@@ -111,7 +111,7 @@ Examples for expert actions:
 
     To install Mender client related files:
 
-        ./mender-convert.sh install-mender-to-mender-disk-image
+        ./mender-convert install-mender-to-mender-disk-image
                 --mender-disk-image <mender_image_path>
                 --device-type <beaglebone | raspberrypi3>
                 --artifact-name release-1_1.5.0
@@ -122,7 +122,7 @@ Examples for expert actions:
 
     To install bootloader (U-Boot/GRUB) related files:
 
-        ./mender-convert.sh install-bootloader-to-mender-disk-image
+        ./mender-convert install-bootloader-to-mender-disk-image
                 --mender-disk-image <mender_image_path>
                 --device-type <beaglebone | raspberrypi3>
                 --bootloader-toolchain arm-linux-gnueabihf
@@ -537,7 +537,7 @@ do_mender_disk_image_to_artifact() {
     ret=1
   fi
 
-  if [[ $(which mender-artifact) = 1 ]]; then
+  if ! [ -x "$(command -v mender-artifact)" ]; then
     echo "Error: mender-artifact not found in PATH. Aborting."
     ret=1
   fi
@@ -598,7 +598,6 @@ do_mender_disk_image_to_artifact() {
       [[ $ret -eq 0 ]] && \
         { echo "Writing Mender artifact to ${mender_artifact} succeeded."; } || \
         { echo "Writing Mender artifact to ${mender_artifact} failed."; }
-
     fi
   fi
 
@@ -606,7 +605,7 @@ do_mender_disk_image_to_artifact() {
   detach_device_maps ${mender_disk_mappings[@]}
 
   rm -rf $sdimg_base_dir
-  [[ $ret -ne 0 ]] && { return $ret; }
+  return $ret
 }
 
 do_from_raw_disk_image() {

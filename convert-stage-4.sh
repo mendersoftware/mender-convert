@@ -21,7 +21,7 @@ Usage: $0 [options]
 
     Examples:
 
-        ./mender-convert.sh install-mender-to-mender-disk-image
+        ./mender-convert install-mender-to-mender-disk-image
                 --mender-disk-image <mender_image_path>
                 --device-type <beaglebone | raspberrypi3>
                 --artifact-name release-1_1.5.0
