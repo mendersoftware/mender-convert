@@ -36,8 +36,8 @@ EOF
 
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 output_dir=${tool_dir}/output
+grub_dir=$output_dir/grub
 grubenv_dir=$output_dir/grubenv
-grubenv_build_dir=$output_dir/grubenv_build
 mender_disk_image=
 bootloader_toolchain=
 device_type=
@@ -68,14 +68,17 @@ get_kernel_version() {
 #
 #  $1 - linux kernel version
 build_env_lock_boot_files() {
-  local grubenv_git_dir=$grubenv_dir/.git
-  mkdir -p $grubenv_dir
-  mkdir -p $grubenv_build_dir
+  local grubenv_repo_vc_dir=$grubenv_dir/.git
+  local grubenv_build_dir=$grubenv_dir/build
 
-  if [ ! -d $grubenv_git_dir ]; then
+  mkdir -p $grubenv_dir
+
+  if [ ! -d $grubenv_repo_vc_dir ]; then
     git clone https://github.com/mendersoftware/grub-mender-grubenv.git $grubenv_dir
   fi
   cd $grubenv_dir
+
+  mkdir -p $grubenv_build_dir
 
   # Prepare configuration file.
   cp mender_grubenv_defines.example mender_grubenv_defines
@@ -87,8 +90,8 @@ build_env_lock_boot_files() {
   sed -i '/^kernel_imagetype/s/=.*$/='${kernel_imagetype}'/' mender_grubenv_defines
   sed -i '/^kernel_devicetree/s/=.*$/='${kernel_devicetree//\//\\/}'/' mender_grubenv_defines
 
-  make
-  make DESTDIR=$grubenv_build_dir install
+  make --quiet
+  make --quiet DESTDIR=$grubenv_build_dir install
   cd $output_dir
 }
 
@@ -96,21 +99,21 @@ build_env_lock_boot_files() {
 #
 #  $1 - linux kernel version
 build_grub_efi() {
-  local grub_dir=$output_dir/grub
-  local grub_build=$grub_dir/build
+  local grub_build_dir=$grub_dir/build
+  local grub_arm_dir=$grub_build_dir/arm
+  local host=$(uname -m)
+  local grub_host_dir=$grub_build_dir/$host
   local grub_repo_vc_dir=$grub_dir/.git
-  local repo_clean=0
 
   local version=$(echo $1 | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 
   # Build grub modules for arm platform and executables for the host.
   if [ ! -d $grub_repo_vc_dir ]; then
     git clone git://git.savannah.gnu.org/grub.git $grub_dir
-    local repo_clean=1
   fi
 
-  cd $output_dir/grub/
-  [[ repo_clean -eq 0 ]] && { make --quiet clean; make --quiet distclean; }
+  cd $grub_dir
+  make --quiet distclean
 
   if [ $(version $version) -lt $(version $EFI_STUB_VER) ]; then
     # To avoid error message: "plain image kernel not supported - rebuild
@@ -118,28 +121,38 @@ build_grub_efi() {
     git checkout 9b37229f0
   fi
 
-  mkdir -p $grub_build
-  # Build GRUB tools (grub-mkimage) and ARM modules in one step
-  ./autogen.sh > /dev/null
-  ./configure --quiet --host=x86_64-linux-gnu TARGET_CC=${bootloader_toolchain}-gcc \
-     TARGET_OBJCOPY=${bootloader_toolchain}-objcopy \
-     TARGET_STRIP=${bootloader_toolchain}-strip \
-     TARGET_NM=${bootloader_toolchain}-nm \
-     TARGET_RANLIB=${bootloader_toolchain}-ranlib \
-     --target=arm --with-platform=efi --exec-prefix=$grub_build \
-     --prefix=$grub_build --disable-werror
+  mkdir -p $grub_arm_dir
+  mkdir -p $grub_host_dir
 
   local cores=$(nproc)
+
+  # First build host tools.
+  ./autogen.sh > /dev/null
+  ./configure --quiet CC=gcc --target=${host} --with-platform=efi --prefix=$grub_host_dir
   make --quiet -j$cores
   make --quiet install
-  ${grub_build}/bin/grub-mkimage  -v -p /$efi_boot -o grub.efi --format=arm-efi \
-      -d $grub_build/lib/grub/arm-efi/  boot linux ext2 fat serial part_msdos \
+
+  # Clean workspace.
+  make --quiet clean
+  make --quiet distclean
+
+   # Now build ARM modules.
+  ./configure --quiet  --host=$bootloader_toolchain --with-platform=efi \
+      --prefix=$grub_arm_dir CFLAGS="-Os -march=armv7-a" \
+      CCASFLAGS="-march=armv7-a" --disable-werror
+  make --quiet -j$cores
+  make --quiet install
+
+  # Build GRUB EFI image.
+  ${grub_host_dir}/bin/grub-mkimage  -v -p /$efi_boot -o grub.efi --format=arm-efi \
+      -d $grub_arm_dir/lib/grub/arm-efi/  boot linux ext2 fat serial part_msdos \
       part_gpt  normal efi_gop iso9660 configfile search loadenv test cat echo \
       gcry_sha256 halt hashsum loadenv reboot &> /dev/null
 
   rc=$?
 
-  [[ $rc -ne 0 ]] && { return 1; } || { return 0; }
+  cd ${output_dir}
+  return $rc
 }
 
 # Takes following arguments:
@@ -166,22 +179,30 @@ set_uenv() {
 #  $1 - boot partition mountpoint
 #  $2 - primary partition mountpoint
 install_files() {
-  local grubenv_dir=$grubenv_build_dir/boot/efi/EFI/BOOT/
+  echo "Installing GRUB files..."
   local boot_dir=$1
   local rootfs_dir=$2
+
+  local grub_build_dir=$grub_dir/build
+  local grub_arm_dir=$grub_build_dir/arm
+
+  local grubenv_build_dir=$grubenv_dir/build
+  local grubenv_efi_boot_dir=$grubenv_build_dir/boot/efi/EFI/BOOT/
+
   local efi_boot_dir=$boot_dir/$efi_boot
 
   # Make sure env, lock, lock.sha256sum files exists in working directory.
-  [[ ! -d $grubenv_dir/mender_grubenv1 || ! -d $grubenv_dir/mender_grubenv2 ]] && \
-      { echo "Error: cannot find mender grub related files."; exit 1; }
+  [[ ! -d $grubenv_efi_boot_dir/mender_grubenv1 || \
+     ! -d $grubenv_efi_boot_dir/mender_grubenv2 ]] && \
+      { echo "Error: cannot find mender grub related files."; return 1; }
 
   sudo install -d -m 755 $efi_boot_dir
 
-  cd $grubenv_dir && find . -type f -exec sudo install -Dm 644 "{}" "$efi_boot_dir/{}" \;
+  cd $grubenv_efi_boot_dir && find . -type f -exec sudo install -Dm 644 "{}" "$efi_boot_dir/{}" \;
   cd ${output_dir}
 
-  sudo install -m 0644 ${output_dir}/grub/grub.efi $efi_boot_dir
-  sudo install -m 0755 ${output_dir}/grub/build/bin/grub-editenv $rootfs_dir/usr/bin
+  sudo install -m 0644 ${grub_dir}/grub.efi $efi_boot_dir
+  sudo install -m 0755 ${grub_arm_dir}/bin/grub-editenv $rootfs_dir/usr/bin
 
   sudo install -m 0755 $grubenv_build_dir/usr/bin/fw_printenv $rootfs_dir/sbin/fw_printenv
   sudo install -m 0755 $grubenv_build_dir/usr/bin/fw_setenv $rootfs_dir/sbin/fw_setenv
@@ -254,8 +275,9 @@ do_install_bootloader() {
   # Clean files.
   rm -rf $output_dir/sdimg
 
-  [[ $keep -eq 0 ]] && { rm -rf $grubenv_dir $grubenv_build_dir $grub_dir; }
-  [[ $rc -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } || { echo -e "\nStage done."; }
+  [[ $keep -eq 0 ]] && { rm -rf $grubenv_dir $grub_dir; }
+  [[ $rc -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } \
+                  || { echo -e "\nStage done."; }
 }
 
 PARAMS=""
