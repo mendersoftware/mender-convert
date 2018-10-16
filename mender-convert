@@ -67,7 +67,7 @@ Examples:
 
         ./mender-convert from-raw-disk-image
                 --raw-disk-image <raw_disk_image_path>
-                --mender-disk-image <mender_image_name>
+                [--mender-disk-image <mender_image_name>]
                 --device-type <beaglebone | raspberrypi3>
                 --mender-client <mender_binary_path>
                 --artifact-name release-1_1.5.0
@@ -103,9 +103,10 @@ Examples for expert actions:
 
         ./mender-convert raw-disk-image-create-partitions
                 --raw-disk-image <raw_disk_image_path>
-                --mender-disk-image <mender_image_name>
+                [--mender-disk-image <mender_image_name>]
+                --artifact-name release-1_1.5.0
                 --device-type <beaglebone | raspberrypi3>
-                --data-part-size-mb 128
+                [--data-part-size-mb 128]
 
 	Output: repartitioned (respectively to Mender layout) raw disk image
 
@@ -244,13 +245,9 @@ do_raw_disk_image_shrink_rootfs() {
 }
 
 do_raw_disk_image_create_partitions() {
-  if [ -z "${raw_disk_image}" ]; then
-    echo "Raw disk image not set. Aborting."
-    exit 1
-  fi
-
-  if [ -z "${device_type}" ]; then
-    echo "Target device type name not set. Aborting."
+  if [ -z "$raw_disk_image" ] || [ -z "$device_type" ] || \
+     [ -z "$artifact_name" ]; then
+    show_help
     exit 1
   fi
 
@@ -266,9 +263,20 @@ do_raw_disk_image_create_partitions() {
 
   mkdir -p $output_dir && cd $output_dir
 
-  # In case of missing .sdimg name use the default format.
-  [ -z $mender_disk_image ] && mender_disk_image=$output_dir/mender_${device_type}.sdimg \
-                            || mender_disk_image=$output_dir/$mender_disk_image
+  # Make sure the user's given Mender image name has a correct extension.
+  # If Mender image name is not provided, then use following syntax:
+  # mender-<device_name>-<artifact_name>.sdimg
+  if [ -n "${mender_disk_image}" ]; then
+    local mender_disk_basename=$(basename -- "$mender_disk_image")
+    if [[ $mender_disk_basename =~ \.sdimg$ ]]; then
+      mender_disk_image=$output_dir/$mender_disk_basename
+    else
+      local mender_disk_filename="${mender_disk_basename%.*}"
+      mender_disk_image=$output_dir/${mender_disk_filename}.sdimg
+    fi
+  else
+    mender_disk_image=$output_dir/mender-${device_type}-${artifact_name}.sdimg
+  fi
 
   analyse_raw_disk_image ${raw_disk_image} pboot_start pboot_size prootfs_size \
                          sector_size image_type
@@ -553,9 +561,9 @@ do_mender_disk_image_to_artifact() {
       rootfs_path=$sdimg_secondary_dir
     fi
 
-    mender_disk_basename=$(basename -- "$mender_disk_image")
-    mender_disk_filename="${mender_disk_basename%.*}"
-    mender_rootfs_basename=${mender_disk_filename}.ext4
+    local mender_disk_basename=$(basename -- "$mender_disk_image")
+    local mender_disk_filename="${mender_disk_basename%.*}"
+    local mender_rootfs_basename=${mender_disk_filename}.ext4
     mender_rootfs_image=${output_dir}/$mender_rootfs_basename
 
     # Extract root filesystem ext4 image to use it to generate Mender artifact.
@@ -584,7 +592,9 @@ do_mender_disk_image_to_artifact() {
       sudo losetup -d $loopdevice
       rm -rf ${output_dir}/mnt
 
-      mender_artifact=${output_dir}/${mender_disk_filename}_${artifact_name}.mender
+      # Note: expected Mender Artifact name follows the scheme:
+      # mender-<device_name>-<artifact_name>.mender.
+      mender_artifact=${output_dir}/${mender_disk_filename}.mender
       echo "Writing Mender artifact to: ${mender_artifact}"
 
       #Create Mender artifact
@@ -609,9 +619,9 @@ do_mender_disk_image_to_artifact() {
 }
 
 do_from_raw_disk_image() {
-  if [ -z "$mender_disk_image" ] || [ -z "$raw_disk_image" ] || \
-     [ -z "$device_type" ] || [ -z "$artifact_name" ] || \
-     [ -z "$mender_client" ] || [ -z "$bootloader_toolchain" ]; then
+  if [ -z "$raw_disk_image" ] || [ -z "$device_type" ] ||  \
+     [ -z "$artifact_name" ] || [ -z "$mender_client" ] || \
+     [ -z "$bootloader_toolchain" ]; then
     show_help
     return 1
   fi
