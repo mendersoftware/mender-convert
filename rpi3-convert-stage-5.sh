@@ -50,10 +50,11 @@ build_uboot_files() {
 
   if [ ! -d $uboot_repo_vc_dir ]; then
     git clone https://github.com/mendersoftware/uboot-mender.git -b $branch
-    git checkout $commit
   fi
 
   cd $uboot_dir
+
+  git checkout $commit
 
   make --quiet distclean
   make --quiet rpi_3_32b_defconfig && make --quiet
