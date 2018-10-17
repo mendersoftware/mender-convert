@@ -452,7 +452,7 @@ verify_mender_disk() {
   local rvar_no_of_parts=$2
 
   local limage=$(basename $lfile)
-  local partitions=($(fdisk -l -u ${limage} | grep '^mender' | cut -d' ' -f1))
+  local partitions=($(fdisk -l -u ${limage} | cut -d' ' -f1 | grep 'sdimg[1-9]\{1\}$'))
 
   local no_of_parts=${#partitions[@]}
 
