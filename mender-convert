@@ -723,27 +723,41 @@ sudo true
 case "$1" in
   raw-disk-image-shrink-rootfs)
     do_raw_disk_image_shrink_rootfs || rc=$?
-  [[ $rc -ne 0 ]] && { return 1; }
+    [[ $rc -ne 0 ]] && { exit 1; }
+    echo "The rootfs partition in the raw disk image has been shrinked successfully!"
+    echo "You can now convert the output raw disk image ($raw_disk_image) to a Mender disk image."
     ;;
   raw-disk-image-create-partitions)
     do_raw_disk_image_create_partitions || rc=$?
     [[ $rc -ne 0 ]] && { exit 1; }
+    echo "A new Mender disk image with partition layout to support Mender has been successfully created!"
+    echo "You can find the output Mender disk image at ${mender_disk_image}."
     ;;
   install-mender-to-mender-disk-image)
     do_install_mender_to_mender_disk_image || rc=$?
     [[ $rc -ne 0 ]] && { exit 1; }
+    echo "The Mender client has been successfully installed to the Mender disk image."
+    echo "You can find the output Mender disk image at ${mender_disk_image}."
     ;;
   install-bootloader-to-mender-disk-image)
     do_install_bootloader_to_mender_disk_image || rc=$?
     [[ $rc -ne 0 ]] && { exit 1; }
+    echo "A bootloader configuration supporting dual A/B rootfs updates has been installed to the Mender disk image!"
+    echo "You can find the output Mender disk image at ${mender_disk_image}."
     ;;
   mender-disk-image-to-artifact)
     do_mender_disk_image_to_artifact || rc=$?
     [[ $rc -ne 0 ]] && { exit 1; }
+    echo "A Mender Artifact has been successfully extracted from your Mender disk image!"
+    echo "You can find the Mender Artifact at $mender_artifact and use it to deploy updates."
     ;;
   from-raw-disk-image)
     do_from_raw_disk_image || rc=$?
     [[ $rc -ne 0 ]] && { exit 1; }
+    echo "Conversion complete!"
+    echo "The Mender disk image you can provision your device storage with is at ${mender_disk_image}."
+    echo "The Mender root file system partition is at ${mender_rootfs_image}."
+    echo "The Mender Artifact you can upload to your Mender server to deploy to your devices is at ${mender_artifact}."
     ;;
   *)
     show_help
