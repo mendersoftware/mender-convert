@@ -44,6 +44,7 @@ device_type=
 keep=0
 efi_boot=EFI/BOOT
 EFI_STUB_VER="4.12.0"
+build_log=$output_dir/build.log
 
 declare -a mender_disk_mappings
 
@@ -68,13 +69,14 @@ get_kernel_version() {
 #
 #  $1 - linux kernel version
 build_env_lock_boot_files() {
+  log "\tBuilding boot scripts and tools."
   local grubenv_repo_vc_dir=$grubenv_dir/.git
   local grubenv_build_dir=$grubenv_dir/build
 
   mkdir -p $grubenv_dir
 
   if [ ! -d $grubenv_repo_vc_dir ]; then
-    git clone https://github.com/mendersoftware/grub-mender-grubenv.git $grubenv_dir
+    git clone https://github.com/mendersoftware/grub-mender-grubenv.git $grubenv_dir >> "$build_log" 2>&1
   fi
   cd $grubenv_dir
 
@@ -90,8 +92,8 @@ build_env_lock_boot_files() {
   sed -i '/^kernel_imagetype/s/=.*$/='${kernel_imagetype}'/' mender_grubenv_defines
   sed -i '/^kernel_devicetree/s/=.*$/='${kernel_devicetree//\//\\/}'/' mender_grubenv_defines
 
-  make --quiet
-  make --quiet DESTDIR=$grubenv_build_dir install
+  make --quiet >> "$build_log" 2>&1
+  make --quiet DESTDIR=$grubenv_build_dir install >> "$build_log" 2>&1
   cd $output_dir
 }
 
@@ -99,6 +101,8 @@ build_env_lock_boot_files() {
 #
 #  $1 - linux kernel version
 build_grub_efi() {
+  log "\tBuilding GRUB efi file."
+
   local grub_build_dir=$grub_dir/build
   local grub_arm_dir=$grub_build_dir/arm
   local host=$(uname -m)
@@ -109,16 +113,16 @@ build_grub_efi() {
 
   # Build grub modules for arm platform and executables for the host.
   if [ ! -d $grub_repo_vc_dir ]; then
-    git clone git://git.savannah.gnu.org/grub.git $grub_dir
+    git clone git://git.savannah.gnu.org/grub.git $grub_dir >> "$build_log" 2>&1
   fi
 
   cd $grub_dir
-  make --quiet distclean
+  make --quiet distclean >> "$build_log" 2>&1
 
   if [ $(version $version) -lt $(version $EFI_STUB_VER) ]; then
     # To avoid error message: "plain image kernel not supported - rebuild
     # with CONFIG_(U)EFI_STUB enabled" - use a specific commit.
-    git checkout 9b37229f0
+    git checkout 9b37229f0 >> "$build_log" 2>&1
   fi
 
   mkdir -p $grub_arm_dir
@@ -127,27 +131,27 @@ build_grub_efi() {
   local cores=$(nproc)
 
   # First build host tools.
-  ./autogen.sh > /dev/null
-  ./configure --quiet CC=gcc --target=${host} --with-platform=efi --prefix=$grub_host_dir
-  make --quiet -j$cores
-  make --quiet install
+  ./autogen.sh >> "$build_log" 2>&1
+  ./configure --quiet CC=gcc --target=${host} --with-platform=efi --prefix=$grub_host_dir >> "$build_log" 2>&1
+  make --quiet -j$cores >> "$build_log" 2>&1
+  make --quiet install >> "$build_log" 2>&1
 
   # Clean workspace.
-  make --quiet clean
-  make --quiet distclean
+  make --quiet clean >> "$build_log" 2>&1
+  make --quiet distclean >> "$build_log" 2>&1
 
    # Now build ARM modules.
   ./configure --quiet  --host=$bootloader_toolchain --with-platform=efi \
       --prefix=$grub_arm_dir CFLAGS="-Os -march=armv7-a" \
-      CCASFLAGS="-march=armv7-a" --disable-werror
-  make --quiet -j$cores
-  make --quiet install
+      CCASFLAGS="-march=armv7-a" --disable-werror >> "$build_log" 2>&1
+  make --quiet -j$cores >> "$build_log" 2>&1
+  make --quiet install >> "$build_log" 2>&1
 
   # Build GRUB EFI image.
   ${grub_host_dir}/bin/grub-mkimage  -v -p /$efi_boot -o grub.efi --format=arm-efi \
       -d $grub_arm_dir/lib/grub/arm-efi/  boot linux ext2 fat serial part_msdos \
       part_gpt  normal efi_gop iso9660 configfile search loadenv test cat echo \
-      gcry_sha256 halt hashsum loadenv reboot &> /dev/null
+      gcry_sha256 halt hashsum loadenv reboot >> "$build_log" 2>&1
 
   rc=$?
 
@@ -179,7 +183,7 @@ set_uenv() {
 #  $1 - boot partition mountpoint
 #  $2 - primary partition mountpoint
 install_files() {
-  echo "Installing GRUB files..."
+  log "\tInstalling GRUB files."
   local boot_dir=$1
   local rootfs_dir=$2
 
@@ -194,7 +198,7 @@ install_files() {
   # Make sure env, lock, lock.sha256sum files exists in working directory.
   [[ ! -d $grubenv_efi_boot_dir/mender_grubenv1 || \
      ! -d $grubenv_efi_boot_dir/mender_grubenv2 ]] && \
-      { echo "Error: cannot find mender grub related files."; return 1; }
+      { log "Error: cannot find mender grub related files."; return 1; }
 
   sudo install -d -m 755 $efi_boot_dir
 
@@ -215,30 +219,28 @@ install_files() {
 }
 
 do_install_bootloader() {
-  echo "Setting bootloader..."
-
   if [ -z "${mender_disk_image}" ]; then
-    echo "Mender raw disk image not set. Aborting."
+    log "Mender raw disk image not set. Aborting."
     exit 1
   fi
 
   if [ -z "${bootloader_toolchain}" ]; then
-    echo "ARM GCC toolchain not set. Aborting."
+    log "ARM GCC toolchain not set. Aborting."
     exit 1
   fi
 
   if [ -z "${device_type}" ]; then
-    echo "Target device type name not set. Aborting."
+    log "Target device type name not set. Aborting."
     exit 1
   fi
 
-  if [[ $(which ${bootloader_toolchain}-gcc) = 1 ]]; then
-    echo "Error: ARM GCC not found in PATH. Aborting."
+  if ! [ -x "$(command -v ${bootloader_toolchain}-gcc)" ]; then
+    log "Error: ARM GCC not found in PATH. Aborting."
     exit 1
   fi
 
   [ ! -f $mender_disk_image ] && \
-      { echo "$mender_disk_image - file not found. Aborting."; exit 1; }
+      { log "$mender_disk_image - file not found. Aborting."; exit 1; }
 
   # Map & mount Mender compliant image.
   create_device_maps $mender_disk_image mender_disk_mappings
@@ -257,15 +259,15 @@ do_install_bootloader() {
   sudo mount ${map_primary} ${path_primary}
 
   get_kernel_version ${path_primary} kernel_version
-  echo -e "\nKernel version: $kernel_version"
+  log "\tFound kernel version: $kernel_version"
 
   build_env_lock_boot_files $kernel_version
 
   build_grub_efi $kernel_version
   rc=$?
 
-  [[ $rc -ne 0 ]] && { echo "Error: grub.efi building failure. Aborting."; } \
-                  || { echo "Successful grub.efi building."; \
+  [[ $rc -ne 0 ]] && { log "\tBuilding grub.efi failed. Aborting."; } \
+                  || { log "\tBuilding grub.efi succeeded."; \
                        install_files ${path_boot} ${path_primary}; }
 
   # Back to working directory.
@@ -276,8 +278,7 @@ do_install_bootloader() {
   rm -rf $output_dir/sdimg
 
   [[ $keep -eq 0 ]] && { rm -rf $grubenv_dir $grub_dir; }
-  [[ $rc -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } \
-                  || { echo -e "\nStage done."; }
+  [[ $rc -ne 0 ]] && { exit 1; } || { log "\tDone."; }
 }
 
 PARAMS=""
@@ -309,7 +310,7 @@ while (( "$#" )); do
       break
       ;;
     -*)
-      echo "Error: unsupported option $1" >&2
+      log "Error: unsupported option $1"
       exit 1
       ;;
     *)

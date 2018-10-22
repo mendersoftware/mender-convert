@@ -121,7 +121,7 @@ get_mender_files_from_upstream() {
 
   mkdir -p $mender_dir
 
-  echo -e "Downloading inventory & identity scripts..."
+  log "\tDownloading inventory & identity scripts."
 
   wget -nc -q -O $mender_dir/mender-device-identity \
     $mender_client_repo/$mender_client_revision/support/mender-device-identity
@@ -152,6 +152,8 @@ install_files() {
   dataconfdir="mender"
   databootdir="u-boot"
 
+  log "\tInstalling files."
+
   # Prepare 'data' partition
   sudo install -d -m 755 ${data_dir}/${dataconfdir}
   sudo install -d -m 755 ${data_dir}/${databootdir}
@@ -163,18 +165,18 @@ install_files() {
 
   # Prepare 'primary' partition
   [ ! -d "$primary_dir/data" ] && \
-      { echo "'data' mountpoint missing. Adding"; \
+      { log "\t'data' mountpoint missing. Adding"; \
         sudo install -d -m 755 ${primary_dir}/data; }
 
   case "$device_type" in
     "beaglebone")
       [ ! -d "$primary_dir/boot/efi" ] && \
-          { echo "'/boot/efi' mountpoint missing. Adding"; \
+          { log "\t'/boot/efi' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/boot/efi; }
       ;;
     "raspberrypi3")
       [ ! -d "$primary_dir/uboot" ] && \
-          { echo "'/boot/efi' mountpoint missing. Adding"; \
+          { log "\t'/boot/efi' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/uboot; }
       ;;
   esac
@@ -184,7 +186,7 @@ install_files() {
   sudo install -d ${primary_dir}/${sysconfdir}
   sudo install -d ${primary_dir}/${sysconfdir}/scripts
 
-  sudo ln -s /data/${dataconfdir} ${primary_dir}/${localstatedir}
+  sudo ln -sf /data/${dataconfdir} ${primary_dir}/${localstatedir}
 
   sudo install -m 0755 ${mender_client} ${primary_dir}/${bindir}/mender
 
@@ -197,7 +199,7 @@ install_files() {
   sudo install -m 0644 ${mender_dir}/mender.service ${primary_dir}/${systemd_unitdir}
 
   # Enable menderd service starting on boot.
-  sudo ln -s /lib/systemd/system/mender.service \
+  sudo ln -sf /lib/systemd/system/mender.service \
       ${primary_dir}/etc/systemd/system/multi-user.target.wants/mender.service
 
   sudo install -m 0644 ${mender_dir}/mender.conf ${primary_dir}/${sysconfdir}
@@ -209,7 +211,7 @@ install_files() {
   sudo install -m 0644 ${mender_dir}/version ${primary_dir}/${sysconfdir}/scripts
 
   if [ -n "${demo_host_ip}" ]; then
-    echo "$demo_host_ip docker.mender.io s3.docker.mender.io" | sudo tee -a $primary_dir/etc/hosts
+    sudo sh -c -e "echo '$demo_host_ip docker.mender.io s3.docker.mender.io' >> $primary_dir/etc/hosts";
   fi
 
   if [ -n "${server_cert}" ]; then
@@ -219,33 +221,33 @@ install_files() {
 
 do_install_mender() {
   if [ -z "${mender_disk_image}" ]; then
-    echo "Mender raw disk image not set. Aborting."
+    log "Mender raw disk image not set. Aborting."
     show_help
   fi
 
   if [ -z "${mender_client}" ]; then
-    echo "Mender client binary not set. Aborting."
+    log "Mender client binary not set. Aborting."
     show_help
   fi
 
   if [ -z "${device_type}" ]; then
-    echo "Target device type name not set. Aborting."
+    log "Target device type name not set. Aborting."
     show_help
   fi
 
   if [ -z "${artifact_name}" ]; then
-    echo "Artifact info not set. Aborting."
+    log "Artifact info not set. Aborting."
     show_help
   fi
 
   if [ -z "${server_url}" ] && [ -z "${demo_host_ip}" ] && \
      [ -z "${tenant_token}" ]; then
-    echo "No server type specified. Aborting."
+    log "No server type specified. Aborting."
     show_help
   fi
 
   if [ -n "${server_url}" ] && [ -n "${demo_host_ip}" ]; then
-    echo "Incompatible server type choice. Aborting."
+    log "Incompatible server type choice. Aborting."
     show_help
   fi
 
@@ -260,7 +262,7 @@ do_install_mender() {
   fi
 
   [ ! -f $mender_disk_image ] && \
-      { echo "$mender_disk_image - file not found. Aborting."; exit 1; }
+      { log "$mender_disk_image - file not found. Aborting."; exit 1; }
 
   # Mount rootfs partition A.
   create_device_maps $mender_disk_image mender_disk_mappings
@@ -295,6 +297,8 @@ do_install_mender() {
   detach_device_maps ${mender_disk_mappings[@]}
   rm -rf $output_dir/sdimg
   [[ $keep -eq 0 ]] && { rm -rf $mender_dir; }
+
+  log "\tDone."
 }
 
 PARAMS=""
@@ -345,7 +349,7 @@ while (( "$#" )); do
       break
       ;;
     -*)
-      echo "Error: unsupported option $1" >&2
+      log "Error: unsupported option $1"
       exit 1
       ;;
     *)
