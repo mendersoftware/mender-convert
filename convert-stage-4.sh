@@ -184,7 +184,7 @@ install_files() {
   sudo install -d ${primary_dir}/${sysconfdir}
   sudo install -d ${primary_dir}/${sysconfdir}/scripts
 
-  sudo ln -s /data/${dataconfdir} ${primary_dir}/${localstatedir}
+  sudo ln -sf /data/${dataconfdir} ${primary_dir}/${localstatedir}
 
   sudo install -m 0755 ${mender_client} ${primary_dir}/${bindir}/mender
 
@@ -197,7 +197,7 @@ install_files() {
   sudo install -m 0644 ${mender_dir}/mender.service ${primary_dir}/${systemd_unitdir}
 
   # Enable menderd service starting on boot.
-  sudo ln -s /lib/systemd/system/mender.service \
+  sudo ln -sf /lib/systemd/system/mender.service \
       ${primary_dir}/etc/systemd/system/multi-user.target.wants/mender.service
 
   sudo install -m 0644 ${mender_dir}/mender.conf ${primary_dir}/${sysconfdir}
@@ -209,7 +209,7 @@ install_files() {
   sudo install -m 0644 ${mender_dir}/version ${primary_dir}/${sysconfdir}/scripts
 
   if [ -n "${demo_host_ip}" ]; then
-    echo "$demo_host_ip docker.mender.io s3.docker.mender.io" | sudo tee -a $primary_dir/etc/hosts
+    sudo sh -c -e "echo '$demo_host_ip docker.mender.io s3.docker.mender.io' >> $primary_dir/etc/hosts";
   fi
 
   if [ -n "${server_cert}" ]; then

@@ -232,8 +232,8 @@ do_install_bootloader() {
     exit 1
   fi
 
-  if [[ $(which ${bootloader_toolchain}-gcc) = 1 ]]; then
-    echo "Error: ARM GCC not found in PATH. Aborting."
+  if ! [ -x "$(command -v ${bootloader_toolchain}-gcc)" ]; then
+    log "Error: ARM GCC not found in PATH. Aborting."
     exit 1
   fi
 

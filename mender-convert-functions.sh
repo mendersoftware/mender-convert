@@ -618,11 +618,11 @@ set_fstab() {
 #  $3 - size (in 512 blocks)
 
 extract_file_from_image() {
-    local cmd="dd if=$1 of=${output_dir}/$4 skip=$2 bs=512 count=$3 status=progress"
+  local cmd="dd if=$1 of=${output_dir}/$4 skip=$2 bs=512 count=$3"
 
-    echo "Running command:"
-    echo "    ${cmd}"
-    $(${cmd})
+  echo "Running command:"
+  echo "    ${cmd}"
+  $(${cmd})
 }
 
 # Takes following arguments

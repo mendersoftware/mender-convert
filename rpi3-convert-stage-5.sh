@@ -58,7 +58,7 @@ build_uboot_files() {
 
   make --quiet distclean
   make --quiet rpi_3_32b_defconfig && make --quiet
-  make envtools
+  make --quiet envtools
 
   cat<<-'EOF' >boot.cmd
 	fdt addr ${fdt_addr} && fdt get value bootargs /chosen bootargs
@@ -98,9 +98,9 @@ install_files() {
   #
   # But we want it to run on our image as well to resize our data part so in
   # case it is missing, add it back to cmdline.txt
-  if ! grep "init=/usr/lib/raspi-config/init_resize.sh" ${output_dir}/cmdline.txt; then
+  if ! grep -q "init=/usr/lib/raspi-config/init_resize.sh" ${output_dir}/cmdline.txt; then
     cmdline=$(cat ${output_dir}/cmdline.txt)
-    echo "${cmdline} init=/usr/lib/raspi-config/init_resize.sh" > ${output_dir}/cmdline.txt
+    sh -c -e "echo '${cmdline} init=/usr/lib/raspi-config/init_resize.sh' >> ${output_dir}/cmdline.txt";
   fi
 
   # Update Linux kernel command arguments with our custom configuration
@@ -158,8 +158,8 @@ do_install_bootloader() {
     exit 1
   fi
 
-  if [[ $(which ${bootloader_toolchain}-gcc) = 1 ]]; then
-    echo "Error: ARM GCC not found in PATH. Aborting."
+  if ! [ -x "$(command -v ${bootloader_toolchain}-gcc)" ]; then
+    log "Error: ARM GCC not found in PATH. Aborting."
     exit 1
   fi
 
@@ -189,9 +189,10 @@ do_install_bootloader() {
   fi
 
   detach_device_maps ${mender_disk_mappings[@]}
+  rm -rf $sdimg_base_dir
 
   [[ $keep -eq 0 ]] && { rm -f ${output_dir}/config.txt ${output_dir}/cmdline.txt;
-     rm -rf $uboot_dir $bin_base_dir $sdimg_base_dir; }
+     rm -rf $uboot_dir $bin_base_dir; }
 
   [[ "$rc" -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } || { echo -e "\nStage done."; }
 }

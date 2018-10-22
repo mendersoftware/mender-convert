@@ -180,7 +180,7 @@ declare -a supported_devices=("beaglebone" "raspberrypi3")
 do_raw_disk_image_shrink_rootfs() {
   if [ -z "${raw_disk_image}" ]; then
     echo "Raw disk image not set. Aborting."
-    exit 1
+    return 1
   fi
 
   local count=
@@ -248,12 +248,12 @@ do_raw_disk_image_create_partitions() {
   if [ -z "$raw_disk_image" ] || [ -z "$device_type" ] || \
      [ -z "$artifact_name" ]; then
     show_help
-    exit 1
+    return 1
   fi
 
   if [[ ! -f ${raw_disk_image} ]]; then
     echo "Raw disk image not found. Aborting."
-    exit 1
+    return 1
   fi
 
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
@@ -403,7 +403,7 @@ do_install_mender_to_mender_disk_image() {
   if [ -z "$mender_disk_image" ] || [ -z "$device_type" ] || \
      [ -z "$mender_client" ] || [ -z "$artifact_name" ]; then
     show_help
-    exit 1
+    return 1
   fi
 
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
@@ -451,7 +451,7 @@ do_install_bootloader_to_mender_disk_image() {
   if [ -z "$mender_disk_image" ] || [ -z "$device_type" ] || \
      [ -z "$bootloader_toolchain" ]; then
     show_help
-    exit 1
+    return 1
   fi
 
   local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
@@ -490,17 +490,17 @@ do_install_bootloader_to_mender_disk_image() {
 do_mender_disk_image_to_artifact() {
   if [ -z "${mender_disk_image}" ]; then
     echo "Mender disk image not set. Aborting."
-    exit 1
+    return 1
   fi
 
   if [ -z "${device_type}" ]; then
     echo "Target device_type name not set. Aborting."
-    exit 1
+    return 1
   fi
 
   if [ -z "${artifact_name}" ]; then
     echo "Artifact name not set. Aborting."
-    exit 1
+    return 1
   fi
 
   if [ -z "${rootfs_partition_id}" ]; then
