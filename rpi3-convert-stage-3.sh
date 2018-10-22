@@ -11,6 +11,6 @@ sudo dd if=${output_dir}/rootfs.img of=/dev/mapper/${rootfs_mapping} bs=8M
 # dd sets the original label, make sure label follows Mender naming convention.
 sudo e2label /dev/mapper/${rootfs_mapping} "primary"
 
-echo -e "\nStage done."
+echo -e "\tDone."
 
 exit 0

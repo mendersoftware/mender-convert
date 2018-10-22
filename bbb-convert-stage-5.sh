@@ -68,6 +68,7 @@ get_kernel_version() {
 #
 #  $1 - linux kernel version
 build_env_lock_boot_files() {
+  echo -e "\tBuilding boot scripts and tools."
   local grubenv_repo_vc_dir=$grubenv_dir/.git
   local grubenv_build_dir=$grubenv_dir/build
 
@@ -99,6 +100,8 @@ build_env_lock_boot_files() {
 #
 #  $1 - linux kernel version
 build_grub_efi() {
+  echo -e "\tBuilding GRUB efi file."
+
   local grub_build_dir=$grub_dir/build
   local grub_arm_dir=$grub_build_dir/arm
   local host=$(uname -m)
@@ -179,7 +182,7 @@ set_uenv() {
 #  $1 - boot partition mountpoint
 #  $2 - primary partition mountpoint
 install_files() {
-  echo "Installing GRUB files..."
+  echo -e "\tInstalling GRUB files."
   local boot_dir=$1
   local rootfs_dir=$2
 
@@ -215,8 +218,6 @@ install_files() {
 }
 
 do_install_bootloader() {
-  echo "Setting bootloader..."
-
   if [ -z "${mender_disk_image}" ]; then
     echo "Mender raw disk image not set. Aborting."
     exit 1
@@ -257,15 +258,15 @@ do_install_bootloader() {
   sudo mount ${map_primary} ${path_primary}
 
   get_kernel_version ${path_primary} kernel_version
-  echo -e "\nKernel version: $kernel_version"
+  echo -e "\tFound kernel version: $kernel_version"
 
   build_env_lock_boot_files $kernel_version
 
   build_grub_efi $kernel_version
   rc=$?
 
-  [[ $rc -ne 0 ]] && { echo "Error: grub.efi building failure. Aborting."; } \
-                  || { echo "Successful grub.efi building."; \
+  [[ $rc -ne 0 ]] && { echo -e "\tBuilding grub.efi failed. Aborting."; } \
+                  || { echo -e "\tBuilding grub.efi succeeded."; \
                        install_files ${path_boot} ${path_primary}; }
 
   # Back to working directory.
@@ -276,8 +277,7 @@ do_install_bootloader() {
   rm -rf $output_dir/sdimg
 
   [[ $keep -eq 0 ]] && { rm -rf $grubenv_dir $grub_dir; }
-  [[ $rc -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } \
-                  || { echo -e "\nStage done."; }
+  [[ $rc -ne 0 ]] && { exit 1; } || { echo -e "\tDone."; }
 }
 
 PARAMS=""

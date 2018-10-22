@@ -4,9 +4,6 @@ sdimg_boot_dir=$1
 embedded_rootfs_dir=$2
 uboot_backup_dir=${embedded_rootfs_dir}/opt/backup/uboot
 
-echo $sdimg_boot_dir
-echo $embedded_rootfs_dir
-
 [ ! -d "${sdimg_boot_dir}" ] && \
     { echo "Error: boot location not mounted."; exit 1; }
 [ ! -d "${embedded_rootfs_dir}" ] && \
@@ -45,6 +42,6 @@ sudo cp ${uboot_backup_dir}/u-boot.img ${sdimg_boot_dir}
 # Create U-Boot purposed uEnv.txt file.
 set_uenv
 
-echo -e "\nStage done."
+echo -e "\tDone."
 
 exit 0

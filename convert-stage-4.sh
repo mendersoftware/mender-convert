@@ -121,7 +121,7 @@ get_mender_files_from_upstream() {
 
   mkdir -p $mender_dir
 
-  echo -e "Downloading inventory & identity scripts..."
+  echo -e "\tDownloading inventory & identity scripts."
 
   wget -nc -q -O $mender_dir/mender-device-identity \
     $mender_client_repo/$mender_client_revision/support/mender-device-identity
@@ -152,6 +152,8 @@ install_files() {
   dataconfdir="mender"
   databootdir="u-boot"
 
+  echo -e "\tInstalling files."
+
   # Prepare 'data' partition
   sudo install -d -m 755 ${data_dir}/${dataconfdir}
   sudo install -d -m 755 ${data_dir}/${databootdir}
@@ -163,18 +165,18 @@ install_files() {
 
   # Prepare 'primary' partition
   [ ! -d "$primary_dir/data" ] && \
-      { echo "'data' mountpoint missing. Adding"; \
+      { echo -e "\t'data' mountpoint missing. Adding"; \
         sudo install -d -m 755 ${primary_dir}/data; }
 
   case "$device_type" in
     "beaglebone")
       [ ! -d "$primary_dir/boot/efi" ] && \
-          { echo "'/boot/efi' mountpoint missing. Adding"; \
+          { echo -e "\t'/boot/efi' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/boot/efi; }
       ;;
     "raspberrypi3")
       [ ! -d "$primary_dir/uboot" ] && \
-          { echo "'/boot/efi' mountpoint missing. Adding"; \
+          { echo -e "\t'/boot/efi' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/uboot; }
       ;;
   esac
@@ -295,6 +297,8 @@ do_install_mender() {
   detach_device_maps ${mender_disk_mappings[@]}
   rm -rf $output_dir/sdimg
   [[ $keep -eq 0 ]] && { rm -rf $mender_dir; }
+
+  echo -e "\tDone."
 }
 
 PARAMS=""

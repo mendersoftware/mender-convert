@@ -19,6 +19,6 @@ mcopy -o -i ${output_dir}/boot.vfat -s ${output_dir}/config.txt ::config.txt
 
 sudo dd if=${output_dir}/boot.vfat of=/dev/mapper/${boot_mapping} bs=1M
 
-echo -e "\nStage done."
+echo -e "\tDone."
 
 exit 0

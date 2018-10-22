@@ -15,6 +15,6 @@ sudo cp -ar ${embedded_rootfs_dir}/* ${sdimg_primary_dir}
 sudo install -d -m 755 ${sdimg_primary_dir}/boot/efi
 sudo install -d -m 755 ${sdimg_primary_dir}/data
 
-echo -e "\nStage done."
+echo -e "\tDone."
 
 exit 0

@@ -23,7 +23,6 @@ bin_dir_pi=${bin_base_dir}/raspberrypi
 sdimg_base_dir=$output_dir/sdimg
 GCC_VERSION="6.3.1"
 
-echo "Running: $(basename $0)"
 declare -a mender_disk_mappings
 declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
 
@@ -46,7 +45,7 @@ build_uboot_files() {
 
   mkdir -p $bin_dir_pi
 
-  echo -e "Building U-Boot related files..."
+  echo -e "\tBuilding U-Boot related files."
 
   if [ ! -d $uboot_repo_vc_dir ]; then
     git clone https://github.com/mendersoftware/uboot-mender.git -b $branch
@@ -87,6 +86,8 @@ build_uboot_files() {
 install_files() {
   local boot_dir=$1
   local rootfs_dir=$2
+
+  echo -e "\tInstalling U-Boot related files."
 
   # Make a copy of Linux kernel arguments and modify.
   sudo cp ${boot_dir}/cmdline.txt ${output_dir}/cmdline.txt
@@ -146,8 +147,6 @@ install_files() {
 }
 
 do_install_bootloader() {
-  echo "Setting bootloader..."
-
   if [ -z "${mender_disk_image}" ]; then
     echo "Mender raw disk image file not set. Aborting."
     exit 1
@@ -194,7 +193,7 @@ do_install_bootloader() {
   [[ $keep -eq 0 ]] && { rm -f ${output_dir}/config.txt ${output_dir}/cmdline.txt;
      rm -rf $uboot_dir $bin_base_dir; }
 
-  [[ "$rc" -ne 0 ]] && { echo -e "\nStage failure."; exit 1; } || { echo -e "\nStage done."; }
+  [[ "$rc" -ne 0 ]] && { exit 1; } || { echo -e "\tDone."; }
 }
 
 # Conditional once we support other boards
