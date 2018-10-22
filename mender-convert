@@ -771,6 +771,7 @@ case "$1" in
     ;;
   *)
     show_help
+    echo "Testing PR"
     ;;
 esac
 
