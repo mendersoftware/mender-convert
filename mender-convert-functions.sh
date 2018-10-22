@@ -15,6 +15,7 @@ declare -a raw_disk_partitions=("boot" "rootfs")
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 files_dir=${tool_dir}/files
 output_dir=${tool_dir}/output
+build_log=${output_dir}/build.log
 
 embedded_base_dir=$output_dir/embedded
 sdimg_base_dir=$output_dir/sdimg
@@ -25,6 +26,16 @@ sdimg_boot_dir=$sdimg_base_dir/boot
 sdimg_primary_dir=$sdimg_base_dir/primary
 sdimg_secondary_dir=$sdimg_base_dir/secondary
 sdimg_data_dir=$sdimg_base_dir/data
+
+logsetup() {
+  echo -n "" > $build_log
+  exec > >(tee -a $build_log)
+  exec 2>&1
+}
+
+log() {
+  echo -e "$*"
+}
 
 # Takes following arguments:
 #
@@ -51,7 +62,7 @@ get_part_number_from_device() {
       echo ${1##*[0-9]p}
       ;;
     *)
-      echo "Could not determine partition number from $1"
+      log "Could not determine partition number from $1"
       exit 1
       ;;
   esac
@@ -164,7 +175,7 @@ get_image_info() {
   eval $rvar_rootfssize="'$lsecondpartsize'"
 
   [[ $lcount -gt 2 ]] && \
-      { echo "Unsupported type of source image. Aborting."; return 1; } || \
+      { log "Unsupported type of source image. Aborting."; return 1; } || \
       { return 0; }
 }
 
@@ -196,7 +207,7 @@ get_mender_disk_info() {
   local lcount=${#lparts[@]}
 
   if [[ $lcount -ne 4 ]]; then
-    echo "Error: invalid Mender disk image. Aborting."
+    log "Error: invalid Mender disk image. Aborting."
     return 1
   else
     local lsectorsize=($(echo "${lfdisk}" | grep '^Sector' | cut -d' ' -f4))
@@ -276,7 +287,7 @@ analyse_raw_disk_image() {
           rootfsstart rootfssize bootflag
 
   [[ $? -ne 0 ]] && \
-      { echo "Error: invalid/unsupported raw disk image. Aborting."; exit 1; }
+      { log "Error: invalid/unsupported raw disk image. Aborting."; exit 1; }
 
   if [[ $count -eq 1 ]]; then
     rootfssize=$bootsize
@@ -327,7 +338,7 @@ calculate_mender_disk_size() {
 #
 #  $1 - raw disk image
 unmount_partitions() {
-  echo "Check if device is mounted..."
+  log "Check if device is mounted..."
   is_mounted=`grep ${1} /proc/self/mounts | wc -l`
   if [ ${is_mounted} -ne 0 ]; then
     sudo umount ${1}?*
@@ -338,7 +349,7 @@ unmount_partitions() {
 #
 #  $1 - raw disk image
 erase_filesystem() {
-  echo "Erase filesystem..."
+  log "Erase filesystem..."
   sudo wipefs --all --force ${1}?*
   sudo dd if=/dev/zero of=${1} bs=1M count=100
 }
@@ -353,7 +364,7 @@ create_mender_disk() {
   local bs=$(( 1024*1024 ))
   local count=$(( ${lsize} / ${bs} ))
 
-  dd if=/dev/zero of=${lfile} bs=${bs} count=${count}
+  dd if=/dev/zero of=${lfile} bs=${bs} count=${count}>> "$build_log" 2>&1
 }
 
 # Takes following arguments:
@@ -424,7 +435,7 @@ format_mender_disk() {
 	w # write the partition table
 	q # and we're done
 EOF
-  echo -e "\tChanges in partition table applied."
+  log "\tChanges in partition table applied."
 }
 
 # Takes following arguments:
@@ -444,7 +455,7 @@ verify_mender_disk() {
   local no_of_parts=${#partitions[@]}
 
   [[ $no_of_parts -eq 4 ]] || \
-      { echo "Error: incorrect number of partitions: $no_of_parts. Aborting."; return 1; }
+      { log "Error: incorrect number of partitions: $no_of_parts. Aborting."; return 1; }
 
   eval $rvar_no_of_parts=="'$no_of_parts='"
 
@@ -463,7 +474,7 @@ create_device_maps() {
     [[ ${#mappings[@]} -eq 0 ]] \
         && { log "Error: partition mappings failed. Aborting."; exit 1; }
   else
-    echo "Error: no device passed. Aborting."
+    log "Error: no device passed. Aborting."
     exit 1
   fi
 
@@ -476,7 +487,7 @@ create_device_maps() {
 detach_device_maps() {
   local mappings=($@)
 
-  [ ${#mappings[@]} -eq 0 ] && { echo -e "\tPartition mappings cleaned."; return; }
+  [ ${#mappings[@]} -eq 0 ] && { log "\tPartition mappings cleaned."; return; }
 
   local mapper=${mappings[0]%p*}
 
@@ -508,10 +519,10 @@ make_mender_disk_filesystem() {
     label=${mender_disk_partitions[${part_no} - 1]}
 
     if [[ part_no -eq 1 ]]; then
-      echo -e "\tCreating MS-DOS filesystem for '$label' partition."
+      log "\tCreating MS-DOS filesystem for '$label' partition."
       sudo mkfs.vfat -n ${label} $map_dev >> "$build_log" 2>&1
     else
-      echo -e "\tCreating ext4 filesystem for '$label' partition."
+      log "\tCreating ext4 filesystem for '$label' partition."
       sudo mkfs.ext4 -L ${label} $map_dev >> "$build_log" 2>&1
     fi
   done
@@ -562,7 +573,7 @@ set_fstab() {
   local device_type=$1
   local sysconfdir="$sdimg_primary_dir/etc"
 
-  [ ! -d "${sysconfdir}" ] && { echo "Error: cannot find rootfs config dir."; exit 1; }
+  [ ! -d "${sysconfdir}" ] && { log "Error: cannot find rootfs config dir."; exit 1; }
 
   # Erase/create the fstab file.
   sudo install -b -m 644 /dev/null ${sysconfdir}/fstab
@@ -594,7 +605,7 @@ set_fstab() {
 	/dev/mmcblk0p4   /data                auto       defaults         0  0
 	EOF"
 
-  echo -e "\tDone."
+  log "\tDone."
 }
 
 # Takes following arguments
@@ -606,9 +617,9 @@ set_fstab() {
 extract_file_from_image() {
   local cmd="dd if=$1 of=${output_dir}/$4 skip=$2 bs=512 count=$3"
 
-  [ "${4##*.}" == "ext4" ] && { echo -e "\tStoring data in $4 root file system image."; } \
-                           || { echo -e "\tStoring data in $4 disk image."; }
-  $(${cmd})
+  [ "${4##*.}" == "ext4" ] && { log "\tStoring data in $4 root file system image."; } \
+                           || { log "\tStoring data in $4 disk image."; }
+  $(${cmd}>> "$build_log" 2>&1)
 }
 
 # Takes following arguments
@@ -652,7 +663,7 @@ update_test_config_file() {
   local device_type=$1
 
   [ ! -f "${files_dir}/${device_type}_variables.cfg" ] && \
-      { echo "Error: test configuration file '${device_type}_variables.cfg' not found. Aborting."; return 1; }
+      { log "Error: test configuration file '${device_type}_variables.cfg' not found. Aborting."; return 1; }
 
   shift
 

@@ -5,11 +5,11 @@ embedded_rootfs_dir=$2
 uboot_backup_dir=${embedded_rootfs_dir}/opt/backup/uboot
 
 [ ! -d "${sdimg_boot_dir}" ] && \
-    { echo "Error: boot location not mounted."; exit 1; }
+    { log "Error: boot location not mounted."; exit 1; }
 [ ! -d "${embedded_rootfs_dir}" ] && \
-    { echo "Error: embedded content not mounted."; exit 1; }
+    { log "Error: embedded content not mounted."; exit 1; }
 [[ ! -f $uboot_backup_dir/MLO || ! -f $uboot_backup_dir/u-boot.img ]] && \
-    { echo "Error: cannot find U-Boot related files."; exit 1; }
+    { log "Error: cannot find U-Boot related files."; exit 1; }
 
 set_uenv() {
   cat <<- 'EOF' | sudo tee --append $sdimg_boot_dir/uEnv.txt 2>&1 >/dev/null
@@ -42,6 +42,6 @@ sudo cp ${uboot_backup_dir}/u-boot.img ${sdimg_boot_dir}
 # Create U-Boot purposed uEnv.txt file.
 set_uenv
 
-echo -e "\tDone."
+log "\tDone."
 
 exit 0

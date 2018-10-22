@@ -45,19 +45,20 @@ build_uboot_files() {
 
   mkdir -p $bin_dir_pi
 
-  echo -e "\tBuilding U-Boot related files."
+  log "\tBuilding U-Boot related files."
 
   if [ ! -d $uboot_repo_vc_dir ]; then
-    git clone https://github.com/mendersoftware/uboot-mender.git -b $branch
+    git clone https://github.com/mendersoftware/uboot-mender.git -b $branch >> "$build_log" 2>&1
   fi
 
   cd $uboot_dir
 
-  git checkout $commit
+  git checkout $commit >> "$build_log" 2>&1
 
-  make --quiet distclean
-  make --quiet rpi_3_32b_defconfig && make --quiet
-  make --quiet envtools
+  make --quiet distclean >> "$build_log"
+  make --quiet rpi_3_32b_defconfig >> "$build_log" 2>&1
+  make --quiet >> "$build_log" 2>&1
+  make --quiet envtools >> "$build_log" 2>&1
 
   cat<<-'EOF' >boot.cmd
 	fdt addr ${fdt_addr} && fdt get value bootargs /chosen bootargs
@@ -69,11 +70,11 @@ build_uboot_files() {
 	EOF
 
   if [ ! -e $uboot_dir/tools/mkimage ]; then
-    echo "Error: cannot build U-Boot. Aborting"
+    log "Error: cannot build U-Boot. Aborting"
     return 1
   fi
 
-  $uboot_dir/tools/mkimage -A arm -T script -C none -n "Boot script" -d "boot.cmd" boot.scr
+  $uboot_dir/tools/mkimage -A arm -T script -C none -n "Boot script" -d "boot.cmd" boot.scr >> "$build_log" 2>&1
   cp -t $bin_dir_pi $uboot_dir/boot.scr $uboot_dir/tools/env/fw_printenv $uboot_dir/u-boot.bin
 
   return 0
@@ -87,7 +88,7 @@ install_files() {
   local boot_dir=$1
   local rootfs_dir=$2
 
-  echo -e "\tInstalling U-Boot related files."
+  log "\tInstalling U-Boot related files."
 
   # Make a copy of Linux kernel arguments and modify.
   sudo cp ${boot_dir}/cmdline.txt ${output_dir}/cmdline.txt
@@ -148,12 +149,12 @@ install_files() {
 
 do_install_bootloader() {
   if [ -z "${mender_disk_image}" ]; then
-    echo "Mender raw disk image file not set. Aborting."
+    log "Mender raw disk image file not set. Aborting."
     exit 1
   fi
 
   if [ -z "${bootloader_toolchain}" ]; then
-    echo "ARM GCC toolchain not set. Aborting."
+    log "ARM GCC toolchain not set. Aborting."
     exit 1
   fi
 
@@ -165,12 +166,12 @@ do_install_bootloader() {
   local gcc_version=$(${bootloader_toolchain}-gcc -dumpversion)
 
   if [ $(version $gcc_version) -ne $(version $GCC_VERSION) ]; then
-    echo "Error: Invalid ARM GCC version ($gcc_version). Expected $GCC_VERSION. Aborting."
+    log "Error: Invalid ARM GCC version ($gcc_version). Expected $GCC_VERSION. Aborting."
     exit 1
   fi
 
   [ ! -f $mender_disk_image ] && \
-      { echo "$mender_disk_image - file not found. Aborting."; exit 1; }
+      { log "$mender_disk_image - file not found. Aborting."; exit 1; }
 
   # Map & mount Mender compliant image.
   create_device_maps $mender_disk_image mender_disk_mappings
@@ -193,7 +194,7 @@ do_install_bootloader() {
   [[ $keep -eq 0 ]] && { rm -f ${output_dir}/config.txt ${output_dir}/cmdline.txt;
      rm -rf $uboot_dir $bin_base_dir; }
 
-  [[ "$rc" -ne 0 ]] && { exit 1; } || { echo -e "\tDone."; }
+  [[ "$rc" -ne 0 ]] && { exit 1; } || { log "\tDone."; }
 }
 
 # Conditional once we support other boards
@@ -226,7 +227,7 @@ while (( "$#" )); do
       break
       ;;
     -*)
-      echo "Error: unsupported option $1" >&2
+      log "Error: unsupported option $1"
       exit 1
       ;;
     *)
