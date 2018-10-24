@@ -22,6 +22,7 @@ bin_base_dir=${output_dir}/bin
 bin_dir_pi=${bin_base_dir}/raspberrypi
 sdimg_base_dir=$output_dir/sdimg
 GCC_VERSION="6.3.1"
+build_log=${output_dir}/build.log
 
 declare -a mender_disk_mappings
 declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
@@ -176,7 +177,8 @@ do_install_bootloader() {
   # Map & mount Mender compliant image.
   create_device_maps $mender_disk_image mender_disk_mappings
 
-  mkdir -p $output_dir && cd $output_dir
+  # Change current directory to 'output' directory.
+  cd $output_dir
 
   # Build patched U-Boot files.
   build_uboot_files $bootloader_toolchain

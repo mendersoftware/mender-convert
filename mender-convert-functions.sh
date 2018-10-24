@@ -28,6 +28,7 @@ sdimg_secondary_dir=$sdimg_base_dir/secondary
 sdimg_data_dir=$sdimg_base_dir/data
 
 logsetup() {
+  [ ! -f $build_log ] && { touch $build_log; }
   echo -n "" > $build_log
   exec > >(tee -a $build_log)
   exec 2>&1
