@@ -269,7 +269,8 @@ do_raw_disk_image_create_partitions() {
   [[ $supported -eq 0 ]] && \
       { log "Error: incorrect device type. Aborting."; return 1; }
 
-  mkdir -p $output_dir && cd $output_dir
+  # Change current directory to 'output' directory.
+  cd $output_dir
 
   # Make sure the user's given Mender image name has a correct extension.
   # If Mender image name is not provided, then use following syntax:
@@ -683,6 +684,9 @@ export -f mount_mender_disk
 export -f log
 export -f logsetup
 
+# Before running any command first create output directory
+# and configure where logs should be redirected.
+mkdir -p $output_dir
 logsetup
 
 while (( "$#" )); do

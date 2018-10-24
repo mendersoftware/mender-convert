@@ -245,7 +245,8 @@ do_install_bootloader() {
   # Map & mount Mender compliant image.
   create_device_maps $mender_disk_image mender_disk_mappings
 
-  mkdir -p $output_dir && cd $output_dir
+  # Change current directory to 'output' directory.
+  cd $output_dir
 
   boot=${mender_disk_mappings[0]}
   primary=${mender_disk_mappings[1]}
