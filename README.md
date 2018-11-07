@@ -6,7 +6,7 @@ Mender is an open source over-the-air (OTA) software updater for embedded Linux 
 This repository contains the Mender Conversion Tool, which is used to convert pre-built disk images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible
 image by restructuring partition table and injecting the necessary files.
 
-![Mender logo](https://mender.io/user/pages/05.resources/06.digital-assets/logo.png)
+![Mender logo](https://mender.io/user/pages/resources/06.digital-assets/mender.io.png)
 
 ## Getting started
 
