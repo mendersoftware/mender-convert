@@ -65,9 +65,6 @@ get_kernel_version() {
   return 0
 }
 
-# Takes following arguments:
-#
-#  $1 - linux kernel version
 build_env_lock_boot_files() {
   log "\tBuilding boot scripts and tools."
   local grubenv_repo_vc_dir=$grubenv_dir/.git
@@ -85,9 +82,8 @@ build_env_lock_boot_files() {
   # Prepare configuration file.
   cp mender_grubenv_defines.example mender_grubenv_defines
 
-  local uname_r=$1
-  local kernel_imagetype=vmlinuz-${uname_r}
-  local kernel_devicetree=dtbs/${uname_r}/am335x-boneblack.dtb
+  local kernel_imagetype=kernel
+  local kernel_devicetree=dtb
 
   sed -i '/^kernel_imagetype/s/=.*$/='${kernel_imagetype}'/' mender_grubenv_defines
   sed -i '/^kernel_devicetree/s/=.*$/='${kernel_devicetree//\//\\/}'/' mender_grubenv_defines
@@ -184,10 +180,12 @@ set_uenv() {
 #
 #  $1 - boot partition mountpoint
 #  $2 - primary partition mountpoint
+#  $3 - linux kernel version
 install_files() {
   log "\tInstalling GRUB files."
   local boot_dir=$1
   local rootfs_dir=$2
+  local linux_version=$3
 
   local grub_build_dir=$grub_dir/build
   local grub_arm_dir=$grub_build_dir/arm
@@ -217,6 +215,9 @@ install_files() {
   sudo ln -fs /sbin/fw_printenv $rootfs_dir/usr/bin/fw_printenv
   sudo ln -fs /sbin/fw_setenv $rootfs_dir/usr/bin/fw_setenv
 
+  #Create links for grub
+  sudo ln -sf /boot/dtbs/$linux_version/am335x-boneblack.dtb $rootfs_dir/boot/dtb
+  sudo ln -sf /boot/vmlinuz-$linux_version  $rootfs_dir/boot/kernel
   set_uenv $boot_dir
 }
 
@@ -264,14 +265,14 @@ do_install_bootloader() {
   get_kernel_version ${path_primary} kernel_version
   log "\tFound kernel version: $kernel_version"
 
-  build_env_lock_boot_files $kernel_version
+  build_env_lock_boot_files
 
   build_grub_efi $kernel_version
   rc=$?
 
   [[ $rc -ne 0 ]] && { log "\tBuilding grub.efi failed. Aborting."; } \
                   || { log "\tBuilding grub.efi succeeded."; \
-                       install_files ${path_boot} ${path_primary}; }
+                       install_files ${path_boot} ${path_primary} ${kernel_version}; }
 
   # Back to working directory.
   cd $tool_dir && sync
