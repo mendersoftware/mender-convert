@@ -123,6 +123,8 @@ build_grub_efi() {
     # To avoid error message: "plain image kernel not supported - rebuild
     # with CONFIG_(U)EFI_STUB enabled" - use a specific commit.
     git checkout 9b37229f0 >> "$build_log" 2>&1
+  else
+    git checkout 72e80c025 >> "$build_log" 2>&1
   fi
 
   mkdir -p $grub_arm_dir
