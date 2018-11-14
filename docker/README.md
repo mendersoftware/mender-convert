@@ -76,3 +76,7 @@ Conversion will take 10-15 minutes, depending on your storage and resources avai
 You can watch `output/build.log` for progress and diagnostics information.
 
 After it finishes, you can find your images in the `output` directory on your host machine!
+
+
+## Known issues
+* BeagleBone images might not convert properly using this docker envirnoment due to permission issues: `mount: /mender-convert/output/embedded/rootfs: WARNING: device write-protected, mounted read-only.`
