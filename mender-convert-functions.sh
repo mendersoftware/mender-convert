@@ -2,8 +2,11 @@
 
 # Partition alignment value in bytes (8MB).
 partition_alignment=8388608
-# Boot partition storage offset in bytes (8MB).
-vfat_storage_offset=8388608
+# Boot partition storage offset in bytes (equal to alignment).
+vfat_storage_offset_regular=$partition_alignment
+#erase_block=12582912
+# Boot partition storage offset in bytes (alignment * 2).
+vfat_storage_offset_extended=$(($partition_alignment*2 ))
 # Number of required heads in a final image.
 heads=255
 # Number of required sectors in a final image.
@@ -294,10 +297,13 @@ analyse_raw_disk_image() {
     rootfssize=$bootsize
     # Default size of the boot partition: 16MiB.
     bootsize=$(( ($partition_alignment * 2) / $sectorsize ))
+    # Boot partition storage offset is defined from the top down.
+    bootstart=$(( $vfat_storage_offset_regular / $sectorsize ))
+  elif [[ $count -eq 2 ]]; then
+    # Boot partition storage offset is defined from the top down.
+    bootstart=$(( $vfat_storage_offset_extended / $sectorsize ))
   fi
 
-  # Boot partition storage offset is defined from the top down.
-  bootstart=$(( $vfat_storage_offset / $sectorsize ))
 
   align_partition_size bootsize $sectorsize
   align_partition_size rootfssize  $sectorsize

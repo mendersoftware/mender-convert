@@ -305,6 +305,10 @@ do_raw_disk_image_create_partitions() {
        \n\t\troot filesystem size: $((${prootfs_size} * $sector_size)) bytes\
        \n\t\tdata partition size: $(($pdata_size * $sector_size)) bytes"
 
+  local vfat_storage_offset=
+  [[ $raw_disk_counts -eq 1 ]] && { vfat_storage_offset=$vfat_storage_offset_regular; } \
+                              || { vfat_storage_offset=$vfat_storage_offset_extended; }
+
   create_test_config_file $device_type $partition_alignment $vfat_storage_offset \
                           $pboot_size $prootfs_size $pdata_size $mender_disk_image_size \
                           $sector_size
