@@ -79,6 +79,9 @@ build_env_lock_boot_files() {
 
   mkdir -p $grubenv_build_dir
 
+  # Remove old defines & settings.
+  make --quiet distclean >> "$build_log" 2>&1
+
   # Prepare configuration file.
   cp mender_grubenv_defines.example mender_grubenv_defines
 
@@ -89,8 +92,13 @@ build_env_lock_boot_files() {
   sed -i '/^kernel_devicetree/s/=.*$/='${kernel_devicetree//\//\\/}'/' mender_grubenv_defines
 
   make --quiet >> "$build_log" 2>&1
-  make --quiet DESTDIR=$grubenv_build_dir install >> "$build_log" 2>&1
-  cd $output_dir
+  rc=$?
+  [[ $rc -eq 0 ]] && { make --quiet DESTDIR=$grubenv_build_dir install >> "$build_log" 2>&1; }
+  rc=$?
+  [[ $rc -ne 0 ]] && { log "\tError: building process failed. Aborting."; }
+
+  cd ${output_dir}
+  return $rc
 }
 
 # Takes following arguments:
@@ -152,6 +160,8 @@ build_grub_efi() {
       gcry_sha256 halt hashsum loadenv reboot >> "$build_log" 2>&1
 
   rc=$?
+  [[ $rc -ne 0 ]] && { log "\tBuilding grub.efi failed. Aborting."; } \
+                  || { log "\tBuilding grub.efi succeeded."; }
 
   cd ${output_dir}
   return $rc
@@ -266,13 +276,11 @@ do_install_bootloader() {
   log "\tFound kernel version: $kernel_version"
 
   build_env_lock_boot_files
-
-  build_grub_efi $kernel_version
   rc=$?
-
-  [[ $rc -ne 0 ]] && { log "\tBuilding grub.efi failed. Aborting."; } \
-                  || { log "\tBuilding grub.efi succeeded."; \
-                       install_files ${path_boot} ${path_primary} ${kernel_version}; }
+  [[ $rc -eq 0 ]] && { build_grub_efi ${kernel_version}; }
+  rc=$?
+  [[ $rc -eq 0 ]] && { install_files ${path_boot} ${path_primary} ${kernel_version}; }
+  rc=$?
 
   # Back to working directory.
   cd $tool_dir && sync
