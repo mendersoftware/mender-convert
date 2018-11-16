@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# Partition alignment value in bytes (8MB).
-partition_alignment=8388608
-# Boot partition storage offset in bytes (equal to alignment).
-vfat_storage_offset_regular=$partition_alignment
-#erase_block=12582912
-# Boot partition storage offset in bytes (alignment * 2).
-vfat_storage_offset_extended=$(($partition_alignment*2 ))
+# Partition alignment value in bytes.
+declare -i partition_alignment
+# Boot partition storage offset in bytes.
+declare -i vfat_storage_offset
+
+PART_ALIGN_4MB=4194304
+PART_ALIGN_8MB=8388608
+
 # Number of required heads in a final image.
-heads=255
+declare -i -r heads=255
 # Number of required sectors in a final image.
-sectors=63
+declare -i -r sectors=63
 
 declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
 declare -a raw_disk_partitions=("boot" "rootfs")
@@ -183,6 +184,33 @@ get_image_info() {
       { return 0; }
 }
 
+# Takes the following argument
+#  $1 - device type
+#
+# Calculates the following arguments:
+#  $2 - partition alignment
+#  $3 - vfat storage offset
+
+set_boot_part_alignment() {
+  local rvar_partition_alignment=$2
+  local rvar_vfat_storage_offset=$3
+
+  case "$1" in
+    "beaglebone")
+      local lvar_partition_alignment=${PART_ALIGN_8MB}
+      local lvar_vfat_storage_offset=$lvar_partition_alignment
+      ;;
+    "raspberrypi3")
+      local lvar_partition_alignment=${PART_ALIGN_4MB}
+      local lvar_uboot_env_size=$(( $lvar_partition_alignment * 2 ))
+      local lvar_vfat_storage_offset=$(( $lvar_partition_alignment + $lvar_uboot_env_size ))
+      ;;
+  esac
+
+  eval $rvar_partition_alignment="'$lvar_partition_alignment'"
+  eval $rvar_vfat_storage_offset="'$lvar_vfat_storage_offset'"
+}
+
 # Takes following arguments:
 #
 #  $1 - raw disk image path
@@ -244,7 +272,7 @@ get_mender_disk_info() {
 #  $2 - size of the sector
 #
 align_partition_size() {
-  # Final size is aligned to 8MiB.
+  # Final size is aligned with reference to 'partition_alignment' variable.
   local rvar_size=$1
   local -n ref=$1
 
@@ -263,16 +291,20 @@ align_partition_size() {
 # Takes following arguments:
 #
 #  $1 - raw_disk image
+#  $2 - partition alignment
+#  $3 - vfat storage offset
 #
 # Returns:
 #
-#  $2 - boot partition start offset (in sectors)
-#  $3 - boot partition size (in sectors)
-#  $4 - root filesystem partition size (in sectors)
-#  $5 - sector size (in bytes)
-#  $6 - number of detected partitions
+#  $4 - boot partition start offset (in sectors)
+#  $5 - boot partition size (in sectors)
+#  $6 - root filesystem partition size (in sectors)
+#  $7 - sector size (in bytes)
+#  $8 - number of detected partitions
 analyse_raw_disk_image() {
   local image=$1
+  local alignment=$2
+  local offset=$3
   local count=
   local sectorsize=
   local bootstart=
@@ -281,14 +313,14 @@ analyse_raw_disk_image() {
   local rootfssize=
   local bootflag=
 
-  local rvar_bootstart=$2
-  local rvar_bootsize=$3
-  local rvar_rootfssize=$4
-  local rvar_sectorsize=$5
-  local rvar_partitions=$6
+  local rvar_bootstart=$4
+  local rvar_bootsize=$5
+  local rvar_rootfssize=$6
+  local rvar_sectorsize=$7
+  local rvar_partitions=$8
 
-  get_image_info $image count sectorsize bootstart bootsize \
-          rootfsstart rootfssize bootflag
+  get_image_info $image count sectorsize bootstart bootsize rootfsstart \
+                 rootfssize bootflag
 
   [[ $? -ne 0 ]] && \
       { log "Error: invalid/unsupported raw disk image. Aborting."; exit 1; }
@@ -296,14 +328,11 @@ analyse_raw_disk_image() {
   if [[ $count -eq 1 ]]; then
     rootfssize=$bootsize
     # Default size of the boot partition: 16MiB.
-    bootsize=$(( ($partition_alignment * 2) / $sectorsize ))
-    # Boot partition storage offset is defined from the top down.
-    bootstart=$(( $vfat_storage_offset_regular / $sectorsize ))
-  elif [[ $count -eq 2 ]]; then
-    # Boot partition storage offset is defined from the top down.
-    bootstart=$(( $vfat_storage_offset_extended / $sectorsize ))
+    bootsize=$(( (${alignment} * 2) / ${sectorsize} ))
   fi
 
+  # Boot partition storage offset is defined from the top down.
+  bootstart=$(( ${offset} / ${sectorsize} ))
 
   align_partition_size bootsize $sectorsize
   align_partition_size rootfssize  $sectorsize

@@ -196,6 +196,9 @@ do_raw_disk_image_shrink_rootfs() {
   local rootfssize=
   local bootflag=
 
+  # For root filesystem partition set 8MB alignment for shrinking purpose.
+  partition_alignment=$PART_ALIGN_8MB
+
   # Gather information about raw disk image.
   get_image_info $raw_disk_image count sector_size bootstart bootsize \
           rootfsstart rootfssize bootflag
@@ -287,8 +290,10 @@ do_raw_disk_image_create_partitions() {
     mender_disk_image=$output_dir/mender-${device_type}-${artifact_name}.sdimg
   fi
 
-  analyse_raw_disk_image ${raw_disk_image} pboot_start pboot_size prootfs_size \
-                         sector_size raw_disk_counts
+  set_boot_part_alignment $device_type partition_alignment vfat_storage_offset
+
+  analyse_raw_disk_image ${raw_disk_image} ${partition_alignment} ${vfat_storage_offset} \
+                         pboot_start pboot_size prootfs_size sector_size raw_disk_counts
 
   [ -z "${prootfs_size}" ] && \
     { log "root filesystem size not set. Aborting."; return 1; }
@@ -302,14 +307,11 @@ do_raw_disk_image_create_partitions() {
 
   log "\tCreating Mender disk image:\
        \n\t\timage size: ${mender_disk_image_size} bytes\
+       \n\t\tboot partition size: $((${pboot_size} * $sector_size)) bytes\
        \n\t\troot filesystem size: $((${prootfs_size} * $sector_size)) bytes\
        \n\t\tdata partition size: $(($pdata_size * $sector_size)) bytes"
 
-  local vfat_storage_offset=
-  [[ $raw_disk_counts -eq 1 ]] && { vfat_storage_offset=$vfat_storage_offset_regular; } \
-                              || { vfat_storage_offset=$vfat_storage_offset_extended; }
-
-  create_test_config_file $device_type $partition_alignment $vfat_storage_offset \
+  create_test_config_file $device_type $partition_alignment $pboot_start \
                           $pboot_size $prootfs_size $pdata_size $mender_disk_image_size \
                           $sector_size
 
@@ -379,11 +381,11 @@ do_make_sdimg_beaglebone() {
 do_make_sdimg_raspberrypi3() {
   log "$step/$total Setting boot partition..."
   ((step++))
-  image_boot_part=$(fdisk -l ${raw_disk_image} | grep FAT32)
+  local image_boot_part=$(fdisk -l ${raw_disk_image} | grep FAT32)
 
-  boot_part_start=$(echo ${image_boot_part} | awk '{print $2}')
-  boot_part_end=$(echo ${image_boot_part} | awk '{print $3}')
-  boot_part_size=$(echo ${image_boot_part} | awk '{print $4}')
+  local boot_part_start=$(echo ${image_boot_part} | awk '{print $2}')
+  local boot_part_end=$(echo ${image_boot_part} | awk '{print $3}')
+  local boot_part_size=$(echo ${image_boot_part} | awk '{print $4}')
 
   log "\tExtracting boot partition from raw disk image."
   extract_file_from_image ${raw_disk_image} ${boot_part_start} \
@@ -395,11 +397,11 @@ do_make_sdimg_raspberrypi3() {
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  image_rootfs_part=$(fdisk -l ${raw_disk_image} | grep Linux)
+  local image_rootfs_part=$(fdisk -l ${raw_disk_image} | grep Linux)
 
-  rootfs_part_start=$(echo ${image_rootfs_part} | awk '{print $2}')
-  rootfs_part_end=$(echo ${image_rootfs_part} | awk '{print $3}')
-  rootfs_part_size=$(echo ${image_rootfs_part} | awk '{print $4}')
+  local rootfs_part_start=$(echo ${image_rootfs_part} | awk '{print $2}')
+  local rootfs_part_end=$(echo ${image_rootfs_part} | awk '{print $3}')
+  local rootfs_part_size=$(echo ${image_rootfs_part} | awk '{print $4}')
 
   log "\tExtracting root filesystem partition from raw disk image."
   extract_file_from_image ${raw_disk_image} ${rootfs_part_start} \
@@ -508,7 +510,8 @@ do_install_bootloader_to_mender_disk_image() {
       [[ $ret -ne 0 ]] && { log "\nInstalling Bootloader failed."; return $ret; }
 
       # Update test configuration file
-      update_test_config_file $device_type mount-location "\/uboot"
+      update_test_config_file $device_type distro-feature "mender-uboot" \
+                              mount-location "\/uboot"
       ;;
   esac
 
