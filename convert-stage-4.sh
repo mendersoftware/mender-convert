@@ -80,7 +80,7 @@ create_client_files() {
   cat <<- EOF > $mender_dir/mender.conf
 	{
 	    "InventoryPollIntervalSeconds": 5,
-	    "RetryPollIntervalSeconds": 1,
+	    "RetryPollIntervalSeconds": 30,
 	    "RootfsPartA": "/dev/mmcblk0p2",
 	    "RootfsPartB": "/dev/mmcblk0p3",
 	    "ServerCertificate": "/etc/mender/server.crt",
