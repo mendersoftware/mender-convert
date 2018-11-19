@@ -678,16 +678,17 @@ create_test_config_file() {
   local data_size_mb=$(( ((($6 * $8) / 1024) / 1024) ))
   local mender_image_size_mb=$(( (($7 / 1024) / 1024) ))
 
-  cp ${files_dir}/variables.template ${files_dir}/${device_type}_variables.cfg
+  cp ${files_dir}/variables.template ${output_dir}/${device_type}_variables.cfg
 
-  sed -i '/^MENDER_BOOT_PART_SIZE_MB/s/=.*$/="'${boot_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
-  sed -i '/^MENDER_DATA_PART_SIZE_MB/s/=.*$/="'${data_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
-  sed -i '/^MENDER_DEVICE_TYPE/s/=.*$/="'${device_type}'"/' ${files_dir}/${device_type}_variables.cfg
-  sed -i '/^MENDER_PARTITION_ALIGNMENT/s/=.*$/="'${alignment}'"/' ${files_dir}/${device_type}_variables.cfg
-  sed -i '/^MENDER_STORAGE_TOTAL_SIZE_MB/s/=.*$/="'${mender_image_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
-  sed -i '/^MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET/s/=.*$/="'${boot_offset}'"/' ${files_dir}/${device_type}_variables.cfg
-  sed -i '/^MENDER_CALC_ROOTFS_SIZE/s/=.*$/="'${rootfs_size_mb}'"/' ${files_dir}/${device_type}_variables.cfg
-  sed -i '/^MENDER_MACHINE/s/=.*$/="'${device_type}'"/' ${files_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_BOOT_PART_SIZE_MB/s/=.*$/="'${boot_size_mb}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_DATA_PART_SIZE_MB/s/=.*$/="'${data_size_mb}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_DEVICE_TYPE/s/=.*$/="'${device_type}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_PARTITION_ALIGNMENT/s/=.*$/="'${alignment}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_STORAGE_TOTAL_SIZE_MB/s/=.*$/="'${mender_image_size_mb}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET/s/=.*$/="'${boot_offset}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_CALC_ROOTFS_SIZE/s/=.*$/="'${rootfs_size_mb}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^MENDER_MACHINE/s/=.*$/="'${device_type}'"/' ${output_dir}/${device_type}_variables.cfg
+  sed -i '/^DEPLOY_DIR_IMAGE/s/=.*$/="'${output_dir//\//\\/}'"/' ${output_dir}/${device_type}_variables.cfg
 }
 
 # Takes following arguments
@@ -698,7 +699,7 @@ create_test_config_file() {
 update_test_config_file() {
   local device_type=$1
 
-  [ ! -f "${files_dir}/${device_type}_variables.cfg" ] && \
+  [ ! -f "${output_dir}/${device_type}_variables.cfg" ] && \
       { log "Error: test configuration file '${device_type}_variables.cfg' not found. Aborting."; return 1; }
 
   shift
@@ -707,13 +708,13 @@ update_test_config_file() {
   do
     case "$1" in
       "artifact-name")
-        sed -i '/^MENDER_ARTIFACT_NAME/s/=.*$/="'${2}'"/' ${files_dir}/${device_type}_variables.cfg
+        sed -i '/^MENDER_ARTIFACT_NAME/s/=.*$/="'${2}'"/' ${output_dir}/${device_type}_variables.cfg
         ;;
       "distro-feature")
-        sed -i '/^DISTRO_FEATURES/s/=.*$/="'${2}'"/' ${files_dir}/${device_type}_variables.cfg
+        sed -i '/^DISTRO_FEATURES/s/=.*$/="'${2}'"/' ${output_dir}/${device_type}_variables.cfg
         ;;
       "mount-location")
-        sed -i '/^MENDER_BOOT_PART_MOUNT_LOCATION/s/=.*$/="'${2}'"/' ${files_dir}/${device_type}_variables.cfg
+        sed -i '/^MENDER_BOOT_PART_MOUNT_LOCATION/s/=.*$/="'${2}'"/' ${output_dir}/${device_type}_variables.cfg
         ;;
     esac
     shift 2
