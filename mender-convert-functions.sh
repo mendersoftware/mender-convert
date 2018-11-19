@@ -383,15 +383,6 @@ unmount_partitions() {
 
 # Takes following arguments:
 #
-#  $1 - raw disk image
-erase_filesystem() {
-  log "Erase filesystem..."
-  sudo wipefs --all --force ${1}?*
-  sudo dd if=/dev/zero of=${1} bs=1M count=100
-}
-
-# Takes following arguments:
-#
 #  $1 - raw disk image path
 #  $2 - raw disk image size
 create_mender_disk() {
