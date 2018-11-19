@@ -820,10 +820,10 @@ case "$1" in
     [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
     log "Conversion complete!"
     log "The Mender disk image you can provision your device storage with is at:\
-         \n\t${mender_disk_image}."
-    log "The Mender root file system partition is at:\n\t${mender_rootfs_image}."
+         \n\t${mender_disk_image}"
+    log "The Mender root file system partition is at:\n\t${mender_rootfs_image}"
     log "The Mender Artifact you can upload to your Mender server to deploy to your devices is at:\
-         \n\t${mender_artifact}."
+         \n\t${mender_artifact}"
     ;;
   *)
     show_help
