@@ -225,6 +225,12 @@ install_files() {
   sudo ln -fs /sbin/fw_printenv $rootfs_dir/usr/bin/fw_printenv
   sudo ln -fs /sbin/fw_setenv $rootfs_dir/usr/bin/fw_setenv
 
+  #Replace U-Boot default images for Debian 9.5
+  if grep -q '9.5' $rootfs_dir/etc/debian_version ; then
+     sudo cp ${tool_dir}/files/uboot_debian_9.4/MLO ${boot_dir}/MLO
+     sudo cp ${tool_dir}/files/uboot_debian_9.4/u-boot.img ${boot_dir}/u-boot.img
+  fi
+
   #Create links for grub
   sudo ln -sf /boot/dtbs/$linux_version/am335x-boneblack.dtb $rootfs_dir/boot/dtb
   sudo ln -sf /boot/vmlinuz-$linux_version  $rootfs_dir/boot/kernel
