@@ -176,7 +176,7 @@ install_files() {
       ;;
     "raspberrypi3")
       [ ! -d "$primary_dir/uboot" ] && \
-          { log "\t'/boot/efi' mountpoint missing. Adding"; \
+          { log "\t'/uboot' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/uboot; }
       ;;
   esac
