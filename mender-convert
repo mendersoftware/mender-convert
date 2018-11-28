@@ -148,17 +148,8 @@ tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Default sector size
 sector_size=
-# Boot partition start in sectors (512 bytes per sector).
-pboot_start=
-# Default 'boot' partition size in sectors: 16MB
-# (i.e 16777216 bytes, equals to 'partition_alignment' * 2)
-pboot_size=
 # Default 'data' partition size in MiB.
 data_part_size_mb=128
-# Data partition size in sectors.
-pdata_size=
-# Exemplary values for Beaglebone: 9.3: 4521984 9.4: 4423680
-prootfs_size=
 
 mender_disk_image=
 raw_disk_image=
@@ -296,35 +287,40 @@ do_raw_disk_image_create_partitions() {
     mender_disk_image=$output_dir/mender-${device_type}-${artifact_name}.sdimg
   fi
 
-  set_boot_part_alignment $device_type partition_alignment vfat_storage_offset
+  set_mender_disk_alignment $device_type partition_alignment vfat_storage_offset
 
-  analyse_raw_disk_image ${raw_disk_image} ${partition_alignment} ${vfat_storage_offset} \
-                         pboot_start pboot_size prootfs_size sector_size raw_disk_counts
+  get_raw_disk_sizes ${raw_disk_image} raw_disk_counts sector_size raw_disk_sizes
+  rc=$?
+  [ $rc -eq 0 ] || { return 1; }
 
-  [ -z "${prootfs_size}" ] && \
-    { log "root filesystem size not set. Aborting."; return 1; }
+  set_mender_disk_sizes ${raw_disk_counts} ${sector_size} \
+                        ${partition_alignment} ${vfat_storage_offset} \
+                        ${data_part_size_mb} raw_disk_sizes mender_disk_sizes
 
   log "\tDetected raw disk image with $raw_disk_counts partition(s)."
 
   local mender_disk_image_size=
-  calculate_mender_disk_size $pboot_start $pboot_size  \
-                             $prootfs_size $data_part_size_mb  \
-                             $sector_size pdata_size mender_disk_image_size
+  calculate_mender_disk_size $sector_size ${partition_alignment} \
+                             mender_disk_sizes mender_disk_image_size
 
   log "\tCreating Mender disk image:\
        \n\t\timage size: ${mender_disk_image_size} bytes\
-       \n\t\tboot partition size: $((${pboot_size} * $sector_size)) bytes\
-       \n\t\troot filesystem size: $((${prootfs_size} * $sector_size)) bytes\
-       \n\t\tdata partition size: $(($pdata_size * $sector_size)) bytes"
+       \n\t\tboot partition size: $((${mender_disk_sizes[pboot_size]} * $sector_size)) bytes\
+       \n\t\troot filesystem size: $((${mender_disk_sizes[prootfs_size]} * $sector_size)) bytes\
+       \n\t\tdata partition size: $((${mender_disk_sizes[pdata_size]} * $sector_size)) bytes"
 
-  create_test_config_file $device_type $partition_alignment $pboot_start \
-                          $pboot_size $prootfs_size $pdata_size $mender_disk_image_size \
-                          $sector_size
+  create_test_config_file $device_type $partition_alignment $mender_disk_image_size \
+                          $sector_size mender_disk_sizes
 
   create_mender_disk $mender_disk_image $mender_disk_image_size
-  format_mender_disk $mender_disk_image $mender_disk_image_size $pboot_start \
-                     $pboot_size $prootfs_size $pdata_size $sector_size
-  verify_mender_disk $mender_disk_image mender_disk_counts
+  format_mender_disk $mender_disk_image $mender_disk_image_size $sector_size \
+                     $partition_alignment mender_disk_sizes mender_disk_counts
+  rc=$?
+  [ $rc -eq 0 ] || { return 1; }
+
+  verify_mender_disk $mender_disk_image $mender_disk_counts
+  rc=$?
+  [ $rc -eq 0 ] || { return 1; }
 
   create_device_maps $mender_disk_image mender_disk_mappings
 
@@ -558,14 +554,15 @@ do_mender_disk_image_to_artifact() {
   [[ $inarray -eq 0 ]] && \
       { log "Error: invalid rootfs partition id provided. Aborting."; return 1; }
 
-  local count=
-  local bootstart=
-  local rootfs_a_start=
-  local rootfs_a_size=
-  local rootfs_b_start=
-  local rootfs_b_size=
+  local count=0
+  local prootfs_start=0
+  local prootfs_size=0
+  local rootfs_a_start=0
+  local rootfs_a_size=0
+  local rootfs_b_start=0
+  local rootfs_b_size=0
   local rootfs_path=
-  local sdimg_device_type=
+  local mender_device_type=
 
   get_mender_disk_info $mender_disk_image count sector_size rootfs_a_start \
                        rootfs_a_size rootfs_b_start rootfs_b_size

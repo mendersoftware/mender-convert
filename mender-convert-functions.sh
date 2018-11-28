@@ -16,6 +16,9 @@ declare -i -r sectors=63
 declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
 declare -a raw_disk_partitions=("boot" "rootfs")
 
+declare -A raw_disk_sizes
+declare -A mender_disk_sizes
+
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 files_dir=${tool_dir}/files
 output_dir=${tool_dir}/output
@@ -126,62 +129,52 @@ EOF
 # Calculates following values:
 #
 #  $2 - number of partitions
-#  $3 - size of the sector (in bytes)
-#  $4 - boot partition start offset (in sectors)
-#  $5 - boot partition size (in sectors)
-#  $6 - root filesystem partition start offset (in sectors)
-#  $7 - root filesystem partition size (in sectors)
-#  $8 - boot flag
-get_image_info() {
+#  $3 - sector size
+#  $4 - array of partitions' sizes for raw disk
+#
+get_raw_disk_sizes() {
   local limage=$1
   local rvar_count=$2
   local rvar_sectorsize=$3
-  local rvar_bootstart=$4
-  local rvar_bootsize=$5
-  local rvar_rootfsstart=$6
-  local rvar_rootfssize=$7
-  local rvar_bootflag=$8
+  shift 3
+  local rvar_array=($@)
 
-  local lbootsize=0
-  local lsubname=${limage:0:8}
+  local lsubname=${limage:0:10}
   local lfdisk="$(fdisk -u -l ${limage})"
-
   local lparts=($(echo "${lfdisk}" | grep "^${lsubname}" | cut -d' ' -f1))
   local lcount=${#lparts[@]}
 
+  if [[ $lcount -gt 2 ]]; then
+    log "\tError: invalid/unsupported raw disk image. Aborting."
+    return 1
+  fi
+
   local lsectorsize=($(echo "${lfdisk}" | grep '^Sector' | cut -d' ' -f4))
+
+  local idx_start=2
+  local idx_size=4
 
   local lfirstpartinfo="$(echo "${lfdisk}" | grep "^${lparts[0]}")"
 
-  idx_start=2
-  idx_size=4
-
   if [[ $lcount -gt 1 ]]; then
     local lsecondpartinfo="$(echo "${lfdisk}" | grep "^${lparts[1]}")"
-    local lsecondpartstart=($(echo "${lsecondpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_start}))
-    local lsecondpartsize=($(echo "${lsecondpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_size}))
+    eval $rvar_array[prootfs_start]="'$(echo "${lsecondpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_start})'"
+    eval $rvar_array[prootfs_size]="'$(echo "${lsecondpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_size})'"
   fi
 
-  eval $rvar_bootflag="0"
+  # Check is first partition is marked as bootable.
   if [[ "$lfirstpartinfo" =~ .*\*.* ]]; then
-    eval $rvar_bootflag="1"
     ((idx_start+=1))
     ((idx_size+=1))
   fi
 
-  lfirstpartsize=($(echo "${lfirstpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_size}))
-  lfirstpartstart=($(echo "${lfirstpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_start}))
+  eval $rvar_array[pboot_start]="'$(echo "${lfirstpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_start})'"
+  eval $rvar_array[pboot_size]="'$(echo "${lfirstpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_size})'"
 
   eval $rvar_count="'$lcount'"
   eval $rvar_sectorsize="'$lsectorsize'"
-  eval $rvar_bootstart="'$lfirstpartstart'"
-  eval $rvar_bootsize="'$lfirstpartsize'"
-  eval $rvar_rootfsstart="'$lsecondpartstart'"
-  eval $rvar_rootfssize="'$lsecondpartsize'"
 
-  [[ $lcount -gt 2 ]] && \
-      { log "Unsupported type of source image. Aborting."; return 1; } || \
-      { return 0; }
+  return 0
 }
 
 # Takes the following argument
@@ -191,7 +184,7 @@ get_image_info() {
 #  $2 - partition alignment
 #  $3 - vfat storage offset
 
-set_boot_part_alignment() {
+set_mender_disk_alignment() {
   local rvar_partition_alignment=$2
   local rvar_vfat_storage_offset=$3
 
@@ -290,83 +283,76 @@ align_partition_size() {
 
 # Takes following arguments:
 #
-#  $1 - raw_disk image
-#  $2 - partition alignment
-#  $3 - vfat storage offset
+#  $1 - number of partition of the raw disk image
+#  $2 - sector size of the raw disk image
+#  $3 - mender image partition alignment
+#  $4 - mender image's boot partition offset
+#  $5 - data partition size (in MB)
+#  $6 - array of partitions' sizes for raw image
 #
 # Returns:
 #
-#  $4 - boot partition start offset (in sectors)
-#  $5 - boot partition size (in sectors)
-#  $6 - root filesystem partition size (in sectors)
-#  $7 - sector size (in bytes)
-#  $8 - number of detected partitions
-analyse_raw_disk_image() {
-  local image=$1
-  local alignment=$2
-  local offset=$3
-  local count=
-  local sectorsize=
+#  $7 - array of partitions' sizes for Mender image
+#
+set_mender_disk_sizes() {
+  local count=$1
+  local sectorsize=$2
+  local alignment=$3
+  local offset=$4
+  local datasize=$(( ($5 * 1024 * 1024) / $2 ))
+  local _raw_sizes=$(declare -p $6)
+  eval "declare -A raw_sizes="${_raw_sizes#*=}
+  shift 6
+  local rvar_array=($@)
+
   local bootstart=
   local bootsize=
   local rootfsstart=
   local rootfssize=
   local bootflag=
 
-  local rvar_bootstart=$4
-  local rvar_bootsize=$5
-  local rvar_rootfssize=$6
-  local rvar_sectorsize=$7
-  local rvar_partitions=$8
-
-  get_image_info $image count sectorsize bootstart bootsize rootfsstart \
-                 rootfssize bootflag
-
-  [[ $? -ne 0 ]] && \
-      { log "Error: invalid/unsupported raw disk image. Aborting."; exit 1; }
-
   if [[ $count -eq 1 ]]; then
-    rootfssize=$bootsize
     # Default size of the boot partition: 16MiB.
     bootsize=$(( (${alignment} * 2) / ${sectorsize} ))
+    # Root filesystem size is determined by the size of the single partition.
+    rootfssize=${raw_sizes[pboot_size]}
+  else
+    bootsize=${raw_sizes[pboot_size]}
+    rootfssize=${raw_sizes[prootfs_size]}
   fi
 
   # Boot partition storage offset is defined from the top down.
   bootstart=$(( ${offset} / ${sectorsize} ))
 
   align_partition_size bootsize $sectorsize
-  align_partition_size rootfssize  $sectorsize
+  align_partition_size rootfssize $sectorsize
+  align_partition_size datasize $sectorsize
 
-  eval $rvar_bootstart="'$bootstart'"
-  eval $rvar_bootsize="'$bootsize'"
-  eval $rvar_rootfssize="'$rootfssize'"
-  eval $rvar_sectorsize="'$sectorsize'"
-  eval $rvar_partitions="'$count'"
+  eval $rvar_array[pboot_start]="'$bootstart'"
+  eval $rvar_array[pboot_size]="'$bootsize'"
+  eval $rvar_array[prootfs_size]="'$rootfssize'"
+  eval $rvar_array[pdata_size]="'$datasize'"
 }
 
 # Takes following arguments:
 #
-#  $1 - boot partition start offset (in sectors)
-#  $2 - boot partition size (in sectors)
-#  $3 - root filesystem partition size (in sectors)
-#  $4 - data partition size (in MB)
-#  $5 - sector size (in bytes)
+#  $1 - sector size (in bytes)
+#  $2 - partition alignment
+#  $3 - array of partitions' sizes for Mender image
 #
 #  Returns:
 #
-#  $6 - aligned data partition size (in sectors)
-#  $7 - final .sdimg file size (in bytes)
+#  $4 - final Mender disk image size (in bytes)
+#
 calculate_mender_disk_size() {
-  local rvar_datasize=$6
-  local rvar_sdimgsize=$7
+  local _mender_sizes=$(declare -p $3)
+  eval "declare -A mender_sizes="${_mender_sizes#*=}
+  local rvar_sdimgsize=$4
 
-  local datasize=$(( ($4 * 1024 * 1024) / $5 ))
+  local sdimgsize=$(( (${mender_sizes[pboot_start]} + ${mender_sizes[pboot_size]} + \
+                       2 * ${mender_sizes[prootfs_size]} + \
+                       ${mender_sizes[pdata_size]}) * $1 ))
 
-  align_partition_size datasize $5
-
-  local sdimgsize=$(( ($1 + $2 + 2 * ${3} +  $datasize) * $5 ))
-
-  eval $rvar_datasize="'$datasize'"
   eval $rvar_sdimgsize="'$sdimgsize'"
 }
 
@@ -396,35 +382,44 @@ create_mender_disk() {
 
 # Takes following arguments:
 #
-#  $1 - raw disk image path
-#  $2 - raw disk image size
-#  $3 - boot partition start offset
-#  $4 - boot partition size
-#  $5 - root filesystem partiotion size
-#  $6 - data partition size
-#  $7 - sector size
+#  $1 - Mender disk image path
+#  $2 - Mender disk image size
+#  $3 - sector size in bytes
+#  $4 - partition alignment
+#  $5 - array of partitions' sizes for Mender image
+#
+#  Returns:
+#
+#  $6 - number of partitions of the Mender disk image
+#
 format_mender_disk() {
   local lfile=$1
   local lsize=$2
+  local sectorsize=$3
+  local alignment=$(($4 / ${sectorsize}))
+  local rc=0
 
-#  if [ -z "$3" ]; then
-#    echo "Error: no root filesystem size provided"
-#    exit 1
-#  fi
+  local _mender_sizes=$(declare -p $5)
+  eval "declare -A mender_sizes="${_mender_sizes#*=}
+  local rvar_counts=$6
 
-#  if [ -z "$2" ]; then
-#    size=$(sudo blockdev --getsize64 ${sdimg_file})
-#  else
-#    size=$2
-#  fi
+  cylinders=$(( ${lsize} / ${heads} / ${sectors} / ${sectorsize} ))
 
-  cylinders=$(( ${lsize} / ${heads} / ${sectors} / ${7} ))
-  rootfs_size=$(( $5 - 1 ))
-  pboot_offset=$(( ${4} - 1 ))
-  primary_start=$(( ${3} + ${pboot_offset} + 1 ))
-  secondary_start=$(( ${primary_start} + ${rootfs_size} + 1 ))
-  data_start=$(( ${secondary_start} + ${rootfs_size} + 1 ))
-  data_offset=$(( ${6} - 1 ))
+  pboot_start=${mender_sizes[pboot_start]}
+  pboot_size=${mender_sizes[pboot_size]}
+  pboot_end=$((${pboot_start} + ${pboot_size} - 1))
+
+  prootfs_size=${mender_sizes[prootfs_size]}
+
+  prootfsa_start=$((${pboot_end} + 1))
+  prootfsa_end=$((${prootfsa_start} + ${prootfs_size} - 1))
+
+  prootfsb_start=$((${prootfsa_end} + 1))
+  prootfsb_end=$((${prootfsb_start} + ${prootfs_size} - 1))
+
+  pdata_start=$((${prootfsb_end} + 1))
+  pdata_size=${mender_sizes[pdata_size]}
+  pdata_end=$((${pdata_start} + ${pdata_size} - 1))
 
   sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | sudo fdisk ${lfile} &> /dev/null
 	o # clear the in memory partition table
@@ -436,55 +431,40 @@ format_mender_disk() {
 	c
 	${cylinders}
 	r
-	n # new partition
-	p # primary partition
-	1 # partition number 1
-	${3}  # default - start at beginning of disk
-	+${pboot_offset} # 16 MB boot parttion
-	t
-	c
-	a
-	n # new partition
-	p # primary partition
-	2 # partion number 2
-	${primary_start}	# start immediately after preceding partition
-	+${rootfs_size}
-	n # new partition
-	p # primary partition
-	3 # partion number 3
-	${secondary_start}	# start immediately after preceding partition
-	+${rootfs_size}
-	n # new partition
-	p # primary partition
-	${data_start}		# start immediately after preceding partition
-	+${data_offset}
-	p # print the in-memory partition table
 	w # write the partition table
 	q # and we're done
 EOF
-  log "\tChanges in partition table applied."
+
+  # Create partition table
+  sudo parted -s ${lfile} mklabel msdos || rc=$?
+  sudo parted -s ${lfile} unit s mkpart primary fat32 ${pboot_start} ${pboot_end} || rc=$?
+  sudo parted -s ${lfile} set 1 boot on || rc=$?
+  sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${prootfsa_start} ${prootfsa_end} || rc=$?
+  sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${prootfsb_start} ${prootfsb_end} || rc=$?
+  sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${pdata_start} ${pdata_end} || rc=$?
+
+  eval $rvar_counts="'4'"
+
+  [[ $rc -eq 0 ]] && { log "\tChanges in partition table applied."; }
+
+  return $rc
 }
 
 # Takes following arguments:
 #
 #  $1 - raw disk file
 #
-# Returns:
-#
-#  $2 - number of detected partitions
 verify_mender_disk() {
   local lfile=$1
-  local rvar_no_of_parts=$2
+  local lcounts=$2
 
   local limage=$(basename $lfile)
   local partitions=($(fdisk -l -u ${limage} | cut -d' ' -f1 | grep 'sdimg[1-9]\{1\}$'))
 
   local no_of_parts=${#partitions[@]}
 
-  [[ $no_of_parts -eq 4 ]] || \
+  [[ $no_of_parts -eq $lcounts ]] || \
       { log "Error: incorrect number of partitions: $no_of_parts. Aborting."; return 1; }
-
-  eval $rvar_no_of_parts=="'$no_of_parts='"
 
   return 0
 }
@@ -653,21 +633,20 @@ extract_file_from_image() {
 #
 #  $1 - device type
 #  $2 - partition alignment in bytes
-#  $3 - boot partition storage offset in bytes
-#  $4 - boot partition size in sectors
-#  $5 - rootfs partition size in sectors
-#  $6 - data partition size in sectors
-#  $7 - complete image size in bytes
-#  $8 - sector size in bytes
-
+#  $3 - total size in bytes
+#  $4 - sector size in bytes
+#  $5 - array of partitions' sizes for Mender image
+#
 create_test_config_file() {
   local device_type=$1
   local alignment=$2
-  local boot_offset=$3
-  local boot_size_mb=$(( ((($4 * $8) / 1024) / 1024) ))
-  local rootfs_size_mb=$(( ((($5 * $8) / 1024) / 1024) ))
-  local data_size_mb=$(( ((($6 * $8) / 1024) / 1024) ))
-  local mender_image_size_mb=$(( (($7 / 1024) / 1024) ))
+  local mender_image_size_mb=$(( (($3 / 1024) / 1024) ))
+  local _mender_sizes=$(declare -p $5)
+  eval "declare -A mender_sizes="${_mender_sizes#*=}
+  local boot_offset=$(( (${mender_sizes[pboot_start]} * $4) ))
+  local boot_size_mb=$(( (((${mender_sizes[pboot_size]} * $4) / 1024) / 1024) ))
+  local rootfs_size_mb=$(( (((${mender_sizes[prootfs_size]} * $4) / 1024) / 1024) ))
+  local data_size_mb=$(( (((${mender_sizes[pdata_size]} * $4) / 1024) / 1024) ))
 
   cp ${files_dir}/variables.template ${output_dir}/${device_type}_variables.cfg
 
