@@ -52,10 +52,5 @@ RUN wget https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz \
     && tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz \
     && echo export PATH=$PATH:/usr/local/go/bin >> /root/.bashrc
 
-# TODO: support selecting tag of mender-convert with MENDER_CONVERT_VERSION
-# TODO: consider lighter way to download to avoid git dependency
-RUN git clone https://github.com/mendersoftware/mender-convert.git
-
-
 COPY docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

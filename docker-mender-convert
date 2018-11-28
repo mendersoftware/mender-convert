@@ -4,13 +4,10 @@ set -e
 
 IMAGE_NAME=mender-convert
 
-INPUT_DIR="$(pwd)/input"
-OUTPUT_DIR="$(pwd)/output"
-
-mkdir -p $OUTPUT_DIR
+MENDER_CONVERT_DIR="$(pwd)"
+mkdir -p output
 
 docker run \
-       --mount type=bind,source=$INPUT_DIR,target=/mender-convert/input,readonly \
-       --mount type=bind,source=$OUTPUT_DIR,target=/mender-convert/output \
+       --mount type=bind,source=$MENDER_CONVERT_DIR,target=/mender-convert \
        --privileged=true \
        $IMAGE_NAME "$@"
