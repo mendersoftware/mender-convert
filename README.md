@@ -47,7 +47,7 @@ Create a directory `input` under the directory where you copied these files (`do
 mkdir input
 ```
 
-Then put your raw disk image into `input`, e.g.
+Then put your raw disk image into `input/`, e.g.
 
 ```bash
 mv ~/Downloads/2018-11-13-raspbian-stretch.img input/2018-11-13-raspbian-stretch.img
@@ -77,7 +77,7 @@ TENANT_TOKEN="<INSERT-TOKEN-FROM Hosted Mender>"
 
 Note that the default Mender client is the latest stable and cross-compiled for generic ARM boards,
 which should work well in most cases. If you would like to use a different Mender client,
-place it in `inputs` and adjust the `--mender-client` argument.
+place it in `input/` and adjust the `--mender-client` argument.
 
 Conversion will take 10-15 minutes, depending on your storage and resources available.
 You can watch `output/build.log` for progress and diagnostics information.
