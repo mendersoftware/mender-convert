@@ -9,8 +9,8 @@ OUTPUT_DIR="$(pwd)/output"
 
 mkdir -p $OUTPUT_DIR
 
-docker run -it \
+docker run \
        --mount type=bind,source=$INPUT_DIR,target=/mender-convert/input,readonly \
        --mount type=bind,source=$OUTPUT_DIR,target=/mender-convert/output \
        --privileged=true \
-       $IMAGE_NAME
+       $IMAGE_NAME "$@"
