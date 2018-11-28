@@ -2,6 +2,7 @@ FROM ubuntu:18.04
 
 ARG MENDER_ARTIFACT_VERSION=2.3.0
 ARG MENDER_CONVERT_VERSION=1.0.0
+ARG GOLANG_VERSION=1.11.2
 
 RUN apt-get update && apt-get install -y \
     kpartx \
@@ -46,7 +47,15 @@ RUN wget -nc -q http://releases.linaro.org/components/toolchain/binaries/6.3-201
 RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/mender-artifact \
     && chmod +x /usr/bin/mender-artifact
 
+# Golang environment, for cross-compiling the Mender client
+RUN wget https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz \
+    && echo export PATH=$PATH:/usr/local/go/bin >> /root/.bashrc
 
 # TODO: support selecting tag of mender-convert with MENDER_CONVERT_VERSION
 # TODO: consider lighter way to download to avoid git dependency
 RUN git clone https://github.com/mendersoftware/mender-convert.git
+
+
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
