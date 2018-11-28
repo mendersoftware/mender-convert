@@ -2,7 +2,7 @@
 
 set -e
 
-MENDER_CLIENT_VERSION="1.7.0b1"  # TODO: Take as argument or env variable
+MENDER_CLIENT_VERSION="1.6.0"  # TODO: Default, support input as env variable
 
 
 echo "Cross-compiling Mender client $MENDER_CLIENT_VERSION"
