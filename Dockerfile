@@ -52,9 +52,9 @@ RUN wget https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz \
     && tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz \
     && echo export PATH=$PATH:/usr/local/go/bin >> /root/.bashrc
 
-ENV MENDER_CLIENT_VERSION="1.6.0"
+ARG mender_client_version
 
-RUN echo "Cross-compiling Mender client $MENDER_CLIENT_VERSION"
+ENV MENDER_CLIENT_VERSION=$mender_client_version
 
 # NOTE: we are assuming generic ARM board here, needs to be extended later
 

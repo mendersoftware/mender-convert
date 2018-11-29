@@ -4,4 +4,6 @@ set -e
 
 IMAGE_NAME=mender-convert
 
-docker build . -t $IMAGE_NAME
+MENDER_CLIENT_VERSION="1.6.0"
+
+docker build . -t ${IMAGE_NAME} --build-arg mender_client_version=${MENDER_CLIENT_VERSION}
