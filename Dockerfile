@@ -52,5 +52,27 @@ RUN wget https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz \
     && tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz \
     && echo export PATH=$PATH:/usr/local/go/bin >> /root/.bashrc
 
+ENV MENDER_CLIENT_VERSION="1.6.0"
+
+RUN echo "Cross-compiling Mender client $MENDER_CLIENT_VERSION"
+
+# NOTE: we are assuming generic ARM board here, needs to be extended later
+
+ENV PATH "$PATH:/usr/local/go/bin:/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin"
+ENV GOPATH "/root/go"
+
+RUN go get github.com/mendersoftware/mender
+WORKDIR $GOPATH/src/github.com/mendersoftware/mender
+RUN git checkout $MENDER_CLIENT_VERSION
+
+RUN env CGO_ENABLED=1 \
+    CC=arm-linux-gnueabihf-gcc \
+    GOOS=linux \
+    GOARCH=arm make build
+
+RUN cp $GOPATH/src/github.com/mendersoftware/mender/mender /
+
+WORKDIR /
+
 COPY docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
