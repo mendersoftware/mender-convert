@@ -621,8 +621,8 @@ do_mender_disk_image_to_artifact() {
   local rootfs_path=
   local mender_device_type=
 
-  get_mender_disk_info $mender_disk_image count sector_size rootfs_a_start \
-                       rootfs_a_size rootfs_b_start rootfs_b_size
+  get_mender_disk_sizes $mender_disk_image count sector_size rootfs_a_start \
+                        rootfs_a_size rootfs_b_start rootfs_b_size
   ret=$?
   [[ $ret -ne 0 ]] && \
       { log "Error: cannot validate Mender disk image. Aborting."; return 1; }
