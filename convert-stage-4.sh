@@ -59,6 +59,14 @@ mender_tenant_token="dummy"
 declare -a mender_disk_mappings
 
 create_client_files() {
+  local rootfsparta="/dev/mmcblk0p2"
+  local rootfspartb="/dev/mmcblk0p3"
+
+  if [ "$device_type" == "qemux86_64" ]; then
+    rootfsparta="/dev/hda2"
+    rootfspartb="/dev/hda3"
+  fi
+
   cat <<- EOF > $mender_dir/mender.service
 	[Unit]
 	Description=Mender OTA update service
@@ -81,8 +89,8 @@ create_client_files() {
 	{
 	    "InventoryPollIntervalSeconds": 5,
 	    "RetryPollIntervalSeconds": 30,
-	    "RootfsPartA": "/dev/mmcblk0p2",
-	    "RootfsPartB": "/dev/mmcblk0p3",
+	    "RootfsPartA": "$rootfsparta",
+	    "RootfsPartB": "$rootfspartb",
 	    "ServerCertificate": "/etc/mender/server.crt",
 	    "ServerURL": "$mender_server_url",
 	    "TenantToken": "$mender_tenant_token",
@@ -102,7 +110,7 @@ create_client_files() {
 	EOF
 
   case "$device_type" in
-    "beaglebone")
+    "beaglebone" | "qemux86_64")
       cat <<- EOF > $mender_dir/fw_env.config
 	/dev/mmcblk0 0x800000 0x20000
 	/dev/mmcblk0 0x1000000 0x20000
@@ -178,6 +186,13 @@ install_files() {
       [ ! -d "$primary_dir/uboot" ] && \
           { log "\t'/boot/efi' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/uboot; }
+      ;;
+    "qemux86_64")
+      [ ! -d "$primary_dir/boot/efi" ] && \
+          { log "\t'/boot/efi' mountpoint missing. Adding"; \
+            sudo install -d -m 755 ${primary_dir}/boot/efi; }
+      sudo install -d ${primary_dir}/lib64
+      sudo ln -sf /lib/ld-linux-x86-64.so.2 ${primary_dir}/lib64/ld-linux-x86-64.so.2
       ;;
   esac
 
@@ -272,6 +287,10 @@ do_install_mender() {
 
   primary=${mender_disk_mappings[1]}
   data=${mender_disk_mappings[3]}
+
+  if [ "$device_type" == "qemux86_64" ]; then
+    data=${mender_disk_mappings[4]}
+  fi
 
   map_primary=/dev/mapper/"$primary"
   map_data=/dev/mapper/"$data"
