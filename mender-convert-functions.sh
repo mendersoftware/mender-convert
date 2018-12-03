@@ -13,8 +13,9 @@ declare -i -r heads=255
 # Number of required sectors in a final image.
 declare -i -r sectors=63
 
-declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
-declare -a raw_disk_partitions=("boot" "rootfs")
+declare -a mender_partitions_regular=('boot' 'primary' 'secondary' 'data')
+declare -a mender_partitions_extended=('boot' 'primary' 'secondary' 'n/a' 'data' 'swap')
+declare -a raw_disk_partitions=('boot' 'rootfs')
 
 declare -A raw_disk_sizes
 declare -A mender_disk_sizes
@@ -144,7 +145,7 @@ get_raw_disk_sizes() {
   local lparts=($(echo "${lfdisk}" | grep "^${lsubname}" | cut -d' ' -f1))
   local lcount=${#lparts[@]}
 
-  if [[ $lcount -gt 2 ]]; then
+  if [[ $lcount -gt 3 ]]; then
     log "\tError: invalid/unsupported raw disk image. Aborting."
     return 1
   fi
@@ -160,6 +161,12 @@ get_raw_disk_sizes() {
     local lsecondpartinfo="$(echo "${lfdisk}" | grep "^${lparts[1]}")"
     eval $rvar_array[prootfs_start]="'$(echo "${lsecondpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_start})'"
     eval $rvar_array[prootfs_size]="'$(echo "${lsecondpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_size})'"
+  fi
+
+  if [[ $lcount -gt 2 ]]; then
+    local lthirdpartinfo="$(echo "${lfdisk}" | grep "^${lparts[2]}")"
+    eval $rvar_array[pswap_start]="'$(echo "${lthirdpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_start})'"
+    eval $rvar_array[pswap_size]="'$(echo "${lthirdpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_size})'"
   fi
 
   # Check is first partition is marked as bootable.
@@ -332,6 +339,13 @@ set_mender_disk_sizes() {
   eval $rvar_array[pboot_size]="'$bootsize'"
   eval $rvar_array[prootfs_size]="'$rootfssize'"
   eval $rvar_array[pdata_size]="'$datasize'"
+
+  if [[ $count -eq 3 ]]; then
+    # Add space for Swap partition.
+    local swapsize=${raw_sizes[pswap_size]}
+    align_partition_size swapsize $sectorsize
+    eval $rvar_array[pswap_size]="'$swapsize'"
+  fi
 }
 
 # Takes following arguments:
@@ -352,6 +366,14 @@ calculate_mender_disk_size() {
   local sdimgsize=$(( (${mender_sizes[pboot_start]} + ${mender_sizes[pboot_size]} + \
                        2 * ${mender_sizes[prootfs_size]} + \
                        ${mender_sizes[pdata_size]}) * $1 ))
+
+  if [ -v mender_sizes[pswap_size] ]; then
+     log "\tSwap partition found."
+     # Add size of the swap partition to the total size.
+     sdimgsize=$(( $sdimgsize + (${mender_sizes[pswap_size]} * $1) ))
+     # Add alignment used as swap partition offset.
+     sdimgsize=$(( $sdimgsize + 2 * ${2} ))
+  fi
 
   eval $rvar_sdimgsize="'$sdimgsize'"
 }
@@ -421,6 +443,17 @@ format_mender_disk() {
   pdata_size=${mender_sizes[pdata_size]}
   pdata_end=$((${pdata_start} + ${pdata_size} - 1))
 
+  if [ -v mender_sizes[pswap_size] ]; then
+    local pextended_start=$((${prootfsb_end} + 1))
+
+    pdata_start=$(($pextended_start + ${alignment}))
+    pdata_end=$((${pdata_start} + ${pdata_size} - 1))
+
+    local pswap_start=$((${pdata_end} + ${alignment} + 1))
+    local pswap_size=${mender_sizes[pswap_size]}
+    local pswap_end=$((${pswap_start} + ${pswap_size} - 1))
+  fi
+
   sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | sudo fdisk ${lfile} &> /dev/null
 	o # clear the in memory partition table
 	x
@@ -441,9 +474,17 @@ EOF
   sudo parted -s ${lfile} set 1 boot on || rc=$?
   sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${prootfsa_start} ${prootfsa_end} || rc=$?
   sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${prootfsb_start} ${prootfsb_end} || rc=$?
-  sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${pdata_start} ${pdata_end} || rc=$?
 
-  eval $rvar_counts="'4'"
+  if [ -v mender_sizes[pswap_size] ]; then
+    log "\tAdding swap partition."
+    sudo parted -s ${lfile} -- unit s mkpart extended ${pextended_start} 100% || rc=$?
+    sudo parted -s ${lfile} -- unit s mkpart logical ext4 ${pdata_start} ${pdata_end} || rc=$?
+    sudo parted -s ${lfile} -- unit s mkpart logical linux-swap ${pswap_start} ${pswap_end} || rc=$?
+    eval $rvar_counts="'6'"
+  else
+    sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${pdata_start} ${pdata_end} || rc=$?
+    eval $rvar_counts="'4'"
+  fi
 
   [[ $rc -eq 0 ]] && { log "\tChanges in partition table applied."; }
 
@@ -515,23 +556,52 @@ detach_device_maps() {
 # Takes following arguments:
 #
 #  $1 - partition mappings holder
+#
 make_mender_disk_filesystem() {
   local mappings=($@)
+  local counts=${#mappings[@]}
+
+  if [ $counts -eq 4 ]; then
+    local labels=(${mender_partitions_regular[@]})
+  elif [ $counts -eq 6 ]; then
+    local labels=(${mender_partitions_extended[@]})
+  fi
 
   for mapping in ${mappings[@]}
   do
     map_dev=/dev/mapper/"$mapping"
     part_no=$(get_part_number_from_device $map_dev)
+    label=${labels[${part_no} - 1]}
 
-    label=${mender_disk_partitions[${part_no} - 1]}
-
-    if [[ part_no -eq 1 ]]; then
-      log "\tCreating MS-DOS filesystem for '$label' partition."
-      sudo mkfs.vfat -n ${label} $map_dev >> "$build_log" 2>&1
-    else
-      log "\tCreating ext4 filesystem for '$label' partition."
-      sudo mkfs.ext4 -L ${label} $map_dev >> "$build_log" 2>&1
-    fi
+    case ${part_no} in
+      1)
+        log "\tCreating MS-DOS filesystem for '$label' partition."
+        sudo mkfs.vfat -n ${label} $map_dev >> "$build_log" 2>&1
+        ;;
+      2|3)
+        log "\tCreating ext4 filesystem for '$label' partition."
+        sudo mkfs.ext4 -L ${label} $map_dev >> "$build_log" 2>&1
+        ;;
+      4)
+        if [ $counts -eq 4 ]; then
+          log "\tCreating ext4 filesystem for '$label' partition."
+          sudo mkfs.ext4 -L ${label} $map_dev >> "$build_log" 2>&1
+        else
+          continue
+        fi
+        ;;
+      5)
+        log "\tCreating ext4 filesystem for '$label' partition."
+        sudo mkfs.ext4 -L ${label} $map_dev >> "$build_log" 2>&1
+        ;;
+      6)
+        log "\tCreating swap area for '$label' partition."
+        sudo mkswap -L ${label} $map_dev >> "$build_log" 2>&1
+        ;;
+      *)
+        break
+        ;;
+    esac
   done
 }
 
@@ -562,13 +632,44 @@ mount_raw_disk() {
 #  $1 - partition mappings holder
 mount_mender_disk() {
   local mappings=($@)
+  local counts=${#mappings[@]}
+
+  if [ $counts -eq 4 ]; then
+    local labels=(${mender_partitions_regular[@]})
+  elif [ $counts -eq 6 ]; then
+    local labels=(${mender_partitions_extended[@]})
+  fi
 
   for mapping in ${mappings[@]}
   do
     local part_no=${mapping#*p*p}
-    local path=$sdimg_base_dir/${mender_disk_partitions[${part_no} - 1]}
+    local path=$sdimg_base_dir/${labels[${part_no} - 1]}
     mkdir -p $path
-    sudo mount /dev/mapper/"${mapping}" $path 2>&1 >/dev/null
+
+    case ${part_no} in
+      1|2|3)
+        sudo mount /dev/mapper/"${mapping}" $path 2>&1 >/dev/null
+        ;;
+      4)
+        if [ $counts -eq 4 ]; then
+          sudo mount /dev/mapper/"${mapping}" $path 2>&1 >/dev/null
+        else
+          # Skip extended partition.
+          continue
+        fi
+        ;;
+      5)
+        sudo mount /dev/mapper/"${mapping}" $path 2>&1 >/dev/null
+        ;;
+      6)
+        # Skip swap partition.
+        continue
+        ;;
+      *)
+        break
+        ;;
+    esac
+
   done
 }
 
@@ -577,6 +678,8 @@ mount_mender_disk() {
 #  $1 - device type
 set_fstab() {
   local mountpoint=
+  local blk_device=
+  local data_id=4
   local device_type=$1
   local sysconfdir="$sdimg_primary_dir/etc"
 
@@ -588,9 +691,11 @@ set_fstab() {
   case "$device_type" in
     "beaglebone")
       mountpoint="/boot/efi"
+      blk_device=mmcblk0p
       ;;
     "raspberrypi3")
       mountpoint="/uboot"
+      blk_device=mmcblk0p
       ;;
   esac
 
@@ -608,8 +713,8 @@ set_fstab() {
 	#/dev/mmcblk0p1       /media/card          auto       defaults,sync,noauto  0  0
 
 	# Where the U-Boot environment resides; for devices with SD card support ONLY!
-	/dev/mmcblk0p1   $mountpoint          auto       defaults,sync    0  0
-	/dev/mmcblk0p4   /data                auto       defaults         0  0
+	/dev/${blk_device}1   $mountpoint          auto       defaults,sync    0  0
+	/dev/${blk_device}${data_id}   /data          auto       defaults         0  0
 	EOF"
 
   log "\tDone."
