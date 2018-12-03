@@ -552,10 +552,10 @@ do_install_bootloader_to_mender_disk_image() {
       { log "Error: incorrect device type. Aborting."; return 1; }
 
   case "$device_type" in
-    "beaglebone")
+    "beaglebone" | "qemux86_64")
       stage_5_args="-m $mender_disk_image -d $device_type -b ${bootloader_toolchain} $keep"
       eval set -- " ${stage_5_args}"
-      ${tool_dir}/bbb-convert-stage-5.sh ${stage_5_args}|| ret=$?
+      ${tool_dir}/convert-stage-5.sh ${stage_5_args}|| ret=$?
       [[ $ret -ne 0 ]] && { log "\nInstalling Bootloader failed."; return $ret; }
 
       # Update test configuration file

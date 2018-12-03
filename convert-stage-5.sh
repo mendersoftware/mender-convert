@@ -90,6 +90,10 @@ build_env_lock_boot_files() {
 
   sed -i '/^kernel_imagetype/s/=.*$/='${kernel_imagetype}'/' mender_grubenv_defines
   sed -i '/^kernel_devicetree/s/=.*$/='${kernel_devicetree//\//\\/}'/' mender_grubenv_defines
+  if [ "$device_type" == "qemux86_64" ]; then
+    local root_base=/dev/hda
+    sed -i '/^mender_kernel_root_base/s/=.*$/='${root_base//\//\\/}'/' mender_grubenv_defines
+  fi
 
   make --quiet >> "$build_log" 2>&1
   rc=$?
@@ -142,22 +146,32 @@ build_grub_efi() {
   make --quiet -j$cores >> "$build_log" 2>&1
   make --quiet install >> "$build_log" 2>&1
 
-  # Clean workspace.
-  make --quiet clean >> "$build_log" 2>&1
-  make --quiet distclean >> "$build_log" 2>&1
+  local format=${host}-efi
+  grub_name=bootx64.efi
+  local modules_path=$grub_host_dir/lib/grub/$format/
 
-   # Now build ARM modules.
-  ./configure --quiet  --host=$bootloader_toolchain --with-platform=efi \
-      --prefix=$grub_arm_dir CFLAGS="-Os -march=armv7-a" \
-      CCASFLAGS="-march=armv7-a" --disable-werror >> "$build_log" 2>&1
-  make --quiet -j$cores >> "$build_log" 2>&1
-  make --quiet install >> "$build_log" 2>&1
+  if [ "$device_type" == "beaglebone" ]; then
+    # Clean workspace.
+    make --quiet clean >> "$build_log" 2>&1
+    make --quiet distclean >> "$build_log" 2>&1
+
+    # Now build ARM modules.
+    ./configure --quiet  --host=$bootloader_toolchain --with-platform=efi \
+        --prefix=$grub_arm_dir CFLAGS="-Os -march=armv7-a" \
+        CCASFLAGS="-march=armv7-a" --disable-werror >> "$build_log" 2>&1
+    make --quiet -j$cores >> "$build_log" 2>&1
+    make --quiet install >> "$build_log" 2>&1
+
+   format=arm-efi
+   grub_name=grub-arm.efi
+   modules_path=$grub_arm_dir/lib/grub/$format/
+  fi
 
   # Build GRUB EFI image.
-  ${grub_host_dir}/bin/grub-mkimage  -v -p /$efi_boot -o grub.efi --format=arm-efi \
-      -d $grub_arm_dir/lib/grub/arm-efi/  boot linux ext2 fat serial part_msdos \
-      part_gpt  normal efi_gop iso9660 configfile search loadenv test cat echo \
-      gcry_sha256 halt hashsum loadenv reboot >> "$build_log" 2>&1
+  ${grub_host_dir}/bin/grub-mkimage  -v -p /$efi_boot -o $grub_name --format=$format \
+      -d $modules_path  boot linux ext2 fat serial part_msdos part_gpt normal	\
+      efi_gop iso9660 configfile search loadenv test cat echo gcry_sha256 halt	\
+      hashsum loadenv reboot >> "$build_log" 2>&1
 
   rc=$?
   [[ $rc -ne 0 ]] && { log "\tBuilding grub.efi failed. Aborting."; } \
@@ -178,7 +192,7 @@ set_uenv() {
   # Fill uEnv.txt file.
   cat <<- 'EOF' | sudo tee $boot_dir/uEnv.txt 2>&1 >/dev/null
 	bootdir=
-	grubfile=EFI/BOOT/grub.efi
+	grubfile=EFI/BOOT/grub-arm.efi
 	grubaddr=0x80007fc0
 	loadgrub=fatload mmc 0:1 ${grubaddr} ${grubfile}
 	grubstart=bootefi ${grubaddr}
@@ -199,6 +213,7 @@ install_files() {
 
   local grub_build_dir=$grub_dir/build
   local grub_arm_dir=$grub_build_dir/arm
+  local grub_host_dir=$grub_build_dir/$(uname -m)
 
   local grubenv_build_dir=$grubenv_dir/build
   local grubenv_efi_boot_dir=$grubenv_build_dir/boot/efi/EFI/BOOT/
@@ -215,8 +230,13 @@ install_files() {
   cd $grubenv_efi_boot_dir && find . -type f -exec sudo install -Dm 644 "{}" "$efi_boot_dir/{}" \;
   cd ${output_dir}
 
-  sudo install -m 0644 ${grub_dir}/grub.efi $efi_boot_dir
-  sudo install -m 0755 ${grub_arm_dir}/bin/grub-editenv $rootfs_dir/usr/bin
+  if [ "$device_type" == "qemux86_64" ]; then
+    sudo install -m 0755 ${grub_host_dir}/bin/grub-editenv $rootfs_dir/usr/bin
+  else
+    sudo install -m 0755 ${grub_arm_dir}/bin/grub-editenv $rootfs_dir/usr/bin
+  fi
+
+  sudo install -m 0644 ${grub_dir}/${grub_name} $efi_boot_dir
 
   sudo install -m 0755 $grubenv_build_dir/usr/bin/fw_printenv $rootfs_dir/sbin/fw_printenv
   sudo install -m 0755 $grubenv_build_dir/usr/bin/fw_setenv $rootfs_dir/sbin/fw_setenv
@@ -225,16 +245,21 @@ install_files() {
   sudo ln -fs /sbin/fw_printenv $rootfs_dir/usr/bin/fw_printenv
   sudo ln -fs /sbin/fw_setenv $rootfs_dir/usr/bin/fw_setenv
 
-  #Replace U-Boot default images for Debian 9.5
-  if grep -q '9.5' $rootfs_dir/etc/debian_version ; then
-     sudo cp ${tool_dir}/files/uboot_debian_9.4/MLO ${boot_dir}/MLO
-     sudo cp ${tool_dir}/files/uboot_debian_9.4/u-boot.img ${boot_dir}/u-boot.img
-  fi
-
   #Create links for grub
-  sudo ln -sf /boot/dtbs/$linux_version/am335x-boneblack.dtb $rootfs_dir/boot/dtb
-  sudo ln -sf /boot/vmlinuz-$linux_version  $rootfs_dir/boot/kernel
-  set_uenv $boot_dir
+  if [ "$device_type" == "qemux86_64" ]; then
+    # Copy kernel image to fit the grubenv defines.
+    sudo cp $boot_dir/bzImage $rootfs_dir/boot/kernel
+  elif [ "$device_type" == "beaglebone" ]; then
+    #Replace U-Boot default images for Debian 9.5
+    if [ `grep -s '9.5' $rootfs_dir/etc/debian_version | wc -l` -eq 1 ]; then
+       sudo cp ${tool_dir}/files/uboot_debian_9.4/MLO ${boot_dir}/MLO
+       sudo cp ${tool_dir}/files/uboot_debian_9.4/u-boot.img ${boot_dir}/u-boot.img
+    fi
+    # Make links to kernel and device tree files.
+    sudo ln -sf /boot/dtbs/$linux_version/am335x-boneblack.dtb $rootfs_dir/boot/dtb
+    sudo ln -sf /boot/vmlinuz-$linux_version  $rootfs_dir/boot/kernel
+    set_uenv $boot_dir
+  fi
 }
 
 do_install_bootloader() {
@@ -283,7 +308,11 @@ do_install_bootloader() {
 
   build_env_lock_boot_files
   rc=$?
-  [[ $rc -eq 0 ]] && { build_grub_efi ${kernel_version}; }
+  if [ "$device_type" == "qemux86_64" ]; then
+    [[ $rc -eq 0 ]] && { build_grub_efi ${EFI_STUB_VER}; }
+  else
+    [[ $rc -eq 0 ]] && { build_grub_efi ${kernel_version}; }
+  fi
   rc=$?
   [[ $rc -eq 0 ]] && { install_files ${path_boot} ${path_primary} ${kernel_version}; }
   rc=$?
