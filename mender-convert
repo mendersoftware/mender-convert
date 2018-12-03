@@ -176,7 +176,7 @@ declare -a rootfs_partition_ids=("primary" "secondary")
 declare -a mender_disk_mappings
 declare -a raw_disk_mappings
 #Supported devices
-declare -a supported_devices=("beaglebone" "raspberrypi3")
+declare -a supported_devices=("beaglebone" "raspberrypi3" "qemux86_64")
 
 do_raw_disk_image_shrink_rootfs() {
   log "$step/$total Shrinking raw disk image root filesystem..."
@@ -309,6 +309,10 @@ do_raw_disk_image_create_partitions() {
        \n\t\troot filesystem size: $((${mender_disk_sizes[prootfs_size]} * $sector_size)) bytes\
        \n\t\tdata partition size: $((${mender_disk_sizes[pdata_size]} * $sector_size)) bytes"
 
+  if [ -v mender_disk_sizes[pswap_size] ]; then
+    log "\t\tswap partition size: $((${mender_disk_sizes[pswap_size]} * $sector_size)) bytes"
+  fi
+
   create_test_config_file $device_type $partition_alignment $mender_disk_image_size \
                           $sector_size mender_disk_sizes
 
@@ -334,6 +338,9 @@ do_raw_disk_image_create_partitions() {
       ;;
     "raspberrypi3")
       do_make_sdimg_raspberrypi3
+      ;;
+    "qemux86_64")
+      do_make_sdimg_qemux86_64
       ;;
   esac
 
@@ -383,11 +390,11 @@ do_make_sdimg_beaglebone() {
 do_make_sdimg_raspberrypi3() {
   log "$step/$total Setting boot partition..."
   ((step++))
-  local image_boot_part=$(fdisk -l ${raw_disk_image} | grep FAT32)
+  local raw_boot_part=$(fdisk -l ${raw_disk_image} | grep FAT32)
 
-  local boot_part_start=$(echo ${image_boot_part} | awk '{print $2}')
-  local boot_part_end=$(echo ${image_boot_part} | awk '{print $3}')
-  local boot_part_size=$(echo ${image_boot_part} | awk '{print $4}')
+  local boot_part_start=$(echo ${raw_boot_part} | awk '{print $2}')
+  local boot_part_end=$(echo ${raw_boot_part} | awk '{print $3}')
+  local boot_part_size=$(echo ${raw_boot_part} | awk '{print $4}')
 
   log "\tExtracting boot partition from raw disk image."
   extract_file_from_image ${raw_disk_image} ${boot_part_start} \
@@ -399,18 +406,18 @@ do_make_sdimg_raspberrypi3() {
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  local image_rootfs_part=$(fdisk -l ${raw_disk_image} | grep Linux)
+  local raw_rootfs_part=$(fdisk -l ${raw_disk_image} | grep Linux)
 
-  local rootfs_part_start=$(echo ${image_rootfs_part} | awk '{print $2}')
-  local rootfs_part_end=$(echo ${image_rootfs_part} | awk '{print $3}')
-  local rootfs_part_size=$(echo ${image_rootfs_part} | awk '{print $4}')
+  local rootfs_part_start=$(echo ${raw_rootfs_part} | awk '{print $2}')
+  local rootfs_part_end=$(echo ${raw_rootfs_part} | awk '{print $3}')
+  local rootfs_part_size=$(echo ${raw_rootfs_part} | awk '{print $4}')
 
   log "\tExtracting root filesystem partition from raw disk image."
   extract_file_from_image ${raw_disk_image} ${rootfs_part_start} \
                           ${rootfs_part_size} "rootfs.img"
 
   stage_3_args="$output_dir ${mender_disk_mappings[1]}"
-  ${tool_dir}/rpi3-convert-stage-3.sh ${stage_3_args} || ret=$?
+  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
   [[ $ret -ne 0 ]] && { return $ret; }
 
   mount_mender_disk ${mender_disk_mappings[@]}
@@ -426,6 +433,56 @@ do_make_sdimg_raspberrypi3() {
   [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
      $output_dir/cmdline.txt  $output_dir/config.txt\
      $output_dir/rootfs.img; }
+
+  return 0
+}
+
+do_make_sdimg_qemux86_64() {
+  log "$step/$total Setting boot partition..."
+  ((step++))
+
+  local raw_boot_part=$(fdisk -l ${raw_disk_image} | grep 'Microsoft' | sed s/*//)
+
+  local boot_part_start=$(echo ${raw_boot_part} | awk '{print $2}')
+  local boot_part_end=$(echo ${raw_boot_part} | awk '{print $3}')
+  local boot_part_size=$(echo ${raw_boot_part} | awk '{print $4}')
+
+  log "\tExtracting boot partition from raw disk image."
+  extract_file_from_image ${raw_disk_image} ${boot_part_start} \
+                          ${boot_part_size} "boot.vfat"
+
+  stage_2_args="$output_dir ${mender_disk_mappings[0]}"
+  ${tool_dir}/qemux86_64-convert-stage-2.sh ${stage_2_args} || ret=$?
+  [[ $ret -ne 0 ]] && { return $ret; }
+
+  log "$step/$total Setting root filesystem partition..."
+  ((step++))
+  local raw_rootfs_part=$(fdisk -l ${raw_disk_image} | grep 'Linux filesystem')
+
+  local rootfs_part_start=$(echo ${raw_rootfs_part} | awk '{print $2}')
+  local rootfs_part_end=$(echo ${raw_rootfs_part} | awk '{print $3}')
+  local rootfs_part_size=$(echo ${raw_rootfs_part} | awk '{print $4}')
+
+  log "\tExtracting root filesystem partition from raw disk image."
+  extract_file_from_image ${raw_disk_image} ${rootfs_part_start} \
+                          ${rootfs_part_size} "rootfs.img"
+
+  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
+  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
+  [[ $ret -ne 0 ]] && { return $ret; }
+
+  mount_mender_disk ${mender_disk_mappings[@]}
+
+  # Add mountpoints.
+  sudo install -d -m 755 ${sdimg_primary_dir}/boot/efi
+  sudo install -d -m 755 ${sdimg_primary_dir}/data
+
+  log "$step/$total Setting file system table..."
+  ((step++))
+  set_fstab $device_type
+
+  [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
+     $output_dir/syslinux.cfg $output_dir/rootfs.img; }
 
   return 0
 }
@@ -798,21 +855,21 @@ case "$1" in
     do_raw_disk_image_create_partitions || rc=$?
     [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
     log "A new Mender disk image with partition layout to support Mender has been successfully created!"
-    log "You can find the output Mender disk image at:\n\t${mender_disk_image}."
+    log "You can find the output Mender disk image at:\n\t${mender_disk_image}"
     ;;
   install-mender-to-mender-disk-image)
     total=1
     do_install_mender_to_mender_disk_image || rc=$?
     [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
     log "The Mender client has been successfully installed to the Mender disk image."
-    log "You can find the output Mender disk image at:\n\t${mender_disk_image}."
+    log "You can find the output Mender disk image at:\n\t${mender_disk_image}"
     ;;
   install-bootloader-to-mender-disk-image)
     total=1
     do_install_bootloader_to_mender_disk_image || rc=$?
     [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
     log "A bootloader configuration supporting dual A/B rootfs updates has been installed to the Mender disk image!"
-    log "You can find the output Mender disk image at:\n\t${mender_disk_image}."
+    log "You can find the output Mender disk image at:\n\t${mender_disk_image}"
     ;;
   mender-disk-image-to-artifact)
     total=1

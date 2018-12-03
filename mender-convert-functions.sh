@@ -196,7 +196,7 @@ set_mender_disk_alignment() {
   local rvar_vfat_storage_offset=$3
 
   case "$1" in
-    "beaglebone")
+    "beaglebone" | "qemux86_64")
       local lvar_partition_alignment=${PART_ALIGN_8MB}
       local lvar_vfat_storage_offset=$lvar_partition_alignment
       ;;
@@ -697,6 +697,11 @@ set_fstab() {
       mountpoint="/uboot"
       blk_device=mmcblk0p
       ;;
+    "qemux86_64")
+      mountpoint="/boot/efi"
+      blk_device=hda
+      data_id=5
+      ;;
   esac
 
   # Add Mender specific entries to fstab.
@@ -716,6 +721,11 @@ set_fstab() {
 	/dev/${blk_device}1   $mountpoint          auto       defaults,sync    0  0
 	/dev/${blk_device}${data_id}   /data          auto       defaults         0  0
 	EOF"
+
+  if [ "$device_type" == "qemux86_64" ]; then
+    # Add entry referring to swap partition.
+    sudo tee -a ${sysconfdir}/fstab <<< "/dev/hda6       swap    swap    defaults        0       0" 2>&1 >/dev/null
+  fi
 
   log "\tDone."
 }
