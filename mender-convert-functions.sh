@@ -213,7 +213,7 @@ set_mender_disk_alignment() {
 
 # Takes following arguments:
 #
-#  $1 - raw disk image path
+#  $1 - Mender disk image path
 #
 # Calculates following values:
 #
@@ -223,7 +223,7 @@ set_mender_disk_alignment() {
 #  $5 - rootfs A partition size (in sectors)
 #  $6 - rootfs B partition start offset (in sectors)
 #  $7 - rootfs B partition size (in sectors)
-get_mender_disk_info() {
+get_mender_disk_sizes() {
   local limage=$1
   local rvar_count=$2
   local rvar_sectorsize=$3
@@ -232,13 +232,13 @@ get_mender_disk_info() {
   local rvar_rootfs_b_start=$6
   local rvar_rootfs_b_size=$7
 
-  local lsubname=${limage:0:8}
+  local lsubname=${limage:0:10}
   local lfdisk="$(fdisk -u -l ${limage})"
 
   local lparts=($(echo "${lfdisk}" | grep "^${lsubname}" | cut -d' ' -f1))
   local lcount=${#lparts[@]}
 
-  if [[ $lcount -ne 4 ]]; then
+  if [[ $lcount -ne 4 ]] && [[ $lcount -ne 6 ]]; then
     log "Error: invalid Mender disk image. Aborting."
     return 1
   else
