@@ -133,6 +133,11 @@ Examples for expert actions:
 EOF
 }
 
+show_version() {
+  local version=$(cd "$tool_dir" && (git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD))
+  echo "mender-convert version: $version"
+}
+
 if [ $# -eq 0 ]; then
   show_help
   exit 1
@@ -691,11 +696,6 @@ export -f mount_mender_disk
 export -f log
 export -f logsetup
 
-# Before running any command first create output directory
-# and configure where logs should be redirected.
-mkdir -p $output_dir
-logsetup
-
 while (( "$#" )); do
   case "$1" in
     -p | --rootfs-partition-id)
@@ -750,6 +750,10 @@ while (( "$#" )); do
       keep="-k"
       shift 1
       ;;
+    -v | --version)
+      show_version
+      exit 0
+      ;;
     -h | --help)
       show_help
       exit 0
@@ -773,6 +777,11 @@ done
     { log "Default 'data' partition size set to 128MB"; data_part_size_mb=128; }
 
 eval set -- "$PARAMS"
+
+# Before running any command first create output directory
+# and configure where logs should be redirected.
+mkdir -p $output_dir
+logsetup
 
 # Some commands expect elevated privileges.
 sudo true
