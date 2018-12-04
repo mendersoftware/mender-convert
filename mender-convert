@@ -186,29 +186,21 @@ do_raw_disk_image_shrink_rootfs() {
     return 1
   fi
 
-  local count=
-  local bootstart=
-  local bootsize=
-  local rootfsstart=
-  local rootfssize=
-  local bootflag=
-
   # For root filesystem partition set 8MB alignment for shrinking purpose.
   partition_alignment=$PART_ALIGN_8MB
 
   # Gather information about raw disk image.
-  get_image_info $raw_disk_image count sector_size bootstart bootsize \
-          rootfsstart rootfssize bootflag
+  get_raw_disk_sizes ${raw_disk_image} raw_disk_counts sector_size raw_disk_sizes
 
   # Find first available loopback device.
   loopdevice=($(losetup -f))
   [ $? -ne 0 ] && { log "Error: inaccesible loopback device"; return 1; }
 
   # Mount appropriate partition.
-  if [[ $count -eq 1 ]]; then
-    sudo losetup $loopdevice $raw_disk_image -o $(($bootstart * $sector_size))
-  elif [[ $count -eq 2 ]]; then
-    sudo losetup $loopdevice $raw_disk_image -o $(($rootfsstart * $sector_size))
+  if [[ $raw_disk_counts -eq 1 ]]; then
+    sudo losetup $loopdevice $raw_disk_image -o $((${raw_disk_sizes[pboot_start]} * $sector_size))
+  elif [[ $raw_disk_counts -eq 2 ]]; then
+    sudo losetup $loopdevice $raw_disk_image -o $((${raw_disk_sizes[prootfs_start]} * $sector_size))
   else
     log "Error: invalid/unsupported embedded raw disk image. Aborting."
     return 1
@@ -232,14 +224,16 @@ do_raw_disk_image_shrink_rootfs() {
   sudo losetup -d $loopdevice
   sudo losetup $loopdevice $raw_disk_image
 
-  if [[ $count -eq 1 ]]; then
-    create_single_disk_partition_table $loopdevice $bootstart $new_size_sectors
-  elif [[ $count -eq 2 ]]; then
-    create_double_disk_partition_table $loopdevice $rootfsstart $new_size_sectors
+  if [[ $raw_disk_counts -eq 1 ]]; then
+    create_single_disk_partition_table $loopdevice \
+        ${raw_disk_sizes[pboot_start]} $new_size_sectors
+  elif [[ $raw_disk_counts -eq 2 ]]; then
+    create_double_disk_partition_table $loopdevice \
+        ${raw_disk_sizes[prootfs_start]} $new_size_sectors
   fi
 
   sudo partprobe
-  endsector=($(sudo parted $loopdevice -ms unit s print | grep "^$count" | cut -f3 -d: | sed 's/[^0-9]*//g'))
+  endsector=($(sudo parted $loopdevice -ms unit s print | grep "^$raw_disk_counts" | cut -f3 -d: | sed 's/[^0-9]*//g'))
 
   sudo losetup -d $loopdevice
   log "\tRaw disk image new endsector: $endsector"
