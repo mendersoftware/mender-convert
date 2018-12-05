@@ -103,7 +103,7 @@ install_files() {
   # case it is missing, add it back to cmdline.txt
   if ! grep -q "init=/usr/lib/raspi-config/init_resize.sh" ${output_dir}/cmdline.txt; then
     cmdline=$(cat ${output_dir}/cmdline.txt)
-    sh -c -e "echo '${cmdline} init=/usr/lib/raspi-config/init_resize.sh' >> ${output_dir}/cmdline.txt";
+    sh -c -e "echo '${cmdline} init=/usr/lib/raspi-config/init_resize.sh' > ${output_dir}/cmdline.txt";
   fi
 
   # Update Linux kernel command arguments with our custom configuration
