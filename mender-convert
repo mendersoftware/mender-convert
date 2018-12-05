@@ -36,7 +36,7 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
           -d|--device-type | -p|--rootfs-partition-id | -i|--demo-host-ip |
           -c|--server-cert | -u|--server-url | -t|--tenant-token |
           -g|--mender-client -b|--bootloader-toolchain | -a|--artifact-name |
-          -k|--keep]
+          -k|--keep | -v|--version]
 
         raw-disk-image       - raw disk embedded Linux (Debian, Raspbian,
                                Ubuntu, etc.) image path
@@ -55,6 +55,7 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
         bootloader-toolchain - GNU Arm Embedded Toolchain
         artifact-name        - Mender artifact name
         keep                 - keep intermediate files in output directory
+        version              - print the version
 
         Note: root filesystem size used in Mender image creation can be found as
               an output from 'raw-disk-image-shrink-rootfs' command or, in case
