@@ -737,10 +737,8 @@ set_fstab() {
 #  $3 - size (in 512 blocks)
 
 extract_file_from_image() {
+  log "\tStoring data in $4."
   local cmd="dd if=$1 of=${output_dir}/$4 skip=$2 bs=512 count=$3"
-
-  [ "${4##*.}" == "ext4" ] && { log "\tStoring data in $4 root file system image."; } \
-                           || { log "\tStoring data in $4 disk image."; }
   $(${cmd}>> "$build_log" 2>&1)
 }
 
