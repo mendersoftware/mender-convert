@@ -116,7 +116,7 @@ create_client_files() {
 	/dev/mmcblk0 0x1000000 0x20000
 	EOF
       ;;
-    "raspberrypi3")
+    "raspberrypi3"|"raspberrypi0w")
       cat <<- EOF > $mender_dir/fw_env.config
 	/dev/mmcblk0 0x400000 0x4000
 	/dev/mmcblk0 0x800000 0x4000
@@ -182,7 +182,7 @@ install_files() {
           { log "\t'/boot/efi' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/boot/efi; }
       ;;
-    "raspberrypi3")
+    "raspberrypi3"|"raspberrypi0w")
       [ ! -d "$primary_dir/uboot" ] && \
           { log "\t'/uboot' mountpoint missing. Adding"; \
             sudo install -d -m 755 ${primary_dir}/uboot; }

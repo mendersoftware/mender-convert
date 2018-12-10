@@ -200,7 +200,7 @@ set_mender_disk_alignment() {
       local lvar_partition_alignment=${PART_ALIGN_8MB}
       local lvar_vfat_storage_offset=$lvar_partition_alignment
       ;;
-    "raspberrypi3")
+    "raspberrypi3"|"raspberrypi0w")
       local lvar_partition_alignment=${PART_ALIGN_4MB}
       local lvar_uboot_env_size=$(( $lvar_partition_alignment * 2 ))
       local lvar_vfat_storage_offset=$(( $lvar_partition_alignment + $lvar_uboot_env_size ))
@@ -693,7 +693,7 @@ set_fstab() {
       mountpoint="/boot/efi"
       blk_device=mmcblk0p
       ;;
-    "raspberrypi3")
+    "raspberrypi3"|"raspberrypi0w")
       mountpoint="/uboot"
       blk_device=mmcblk0p
       ;;
