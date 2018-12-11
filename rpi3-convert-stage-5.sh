@@ -25,7 +25,7 @@ GCC_VERSION="6.3.1"
 build_log=${output_dir}/build.log
 
 declare -a mender_disk_mappings
-declare -a mender_disk_partitions=("boot" "primary" "secondary" "data")
+declare -a mender_partitions_regular=("boot" "primary" "secondary" "data")
 
 version() {
   echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'
