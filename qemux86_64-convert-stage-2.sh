@@ -14,7 +14,7 @@ sed -i 's/\b[ ]root=[^ ]*/ root=\/dev\/hda2/' ${output_dir}/grub.cfg
 # Update Linux kernel command arguments with our custom configuration
 mcopy -o -i ${output_dir}/boot.vfat -s ${output_dir}/grub.cfg ::EFI/BOOT/grub.cfg
 
-sudo dd if=${output_dir}/boot.vfat of=/dev/mapper/${boot_mapping} bs=1M >> "$build_log" 2>&1
+sudo dd if=${output_dir}/boot.vfat of=/dev/mapper/${boot_mapping} bs=1M conv=sparse >> "$build_log" 2>&1
 
 log "\tDone."
 

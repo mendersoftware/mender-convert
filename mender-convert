@@ -297,7 +297,7 @@ do_raw_disk_image_create_partitions() {
   calculate_mender_disk_size $sector_size ${partition_alignment} \
                              mender_disk_sizes mender_disk_image_size
 
-  log "\tCreating Mender disk image:\
+  log "\tCreating blank Mender disk image:\
        \n\t\timage size: ${mender_disk_image_size} bytes\
        \n\t\tboot partition size: $((${mender_disk_sizes[pboot_size]} * $sector_size)) bytes\
        \n\t\troot filesystem size: $((${mender_disk_sizes[prootfs_size]} * $sector_size)) bytes\

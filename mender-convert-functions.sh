@@ -396,10 +396,9 @@ unmount_partitions() {
 create_mender_disk() {
   local lfile=$1
   local lsize=$2
-  local bs=$(( 1024*1024 ))
-  local count=$(( ${lsize} / ${bs} ))
 
-  dd if=/dev/zero of=${lfile} bs=${bs} count=${count}>> "$build_log" 2>&1
+  # Generates a sparse image
+  dd if=/dev/zero of=${lfile} seek=${lsize} bs=1 count=0 >> "$build_log" 2>&1
 }
 
 # Takes following arguments:
@@ -738,7 +737,7 @@ set_fstab() {
 
 extract_file_from_image() {
   log "\tStoring data in $4."
-  local cmd="dd if=$1 of=${output_dir}/$4 skip=$2 bs=512 count=$3"
+  local cmd="dd if=$1 of=${output_dir}/$4 skip=$2 bs=512 count=$3 conv=sparse"
   $(${cmd}>> "$build_log" 2>&1)
 }
 
