@@ -1,10 +1,12 @@
-Mender Conversion Tool
-======================
+mender-convert
+==============
 
 Mender is an open source over-the-air (OTA) software updater for embedded Linux devices. Mender comprises a client running at the embedded device, as well as a server that manages deployments across many devices.
 
-This repository contains the Mender Conversion Tool, which is used to convert pre-built disk images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible
+This repository contains mender-convert, which is used to convert pre-built disk images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible
 image by restructuring partition table and injecting the necessary files.
+
+Currently official Raspberry Pi 3 and BeagleBone Black images are supported and this will be extended.
 
 ![Mender logo](https://mender.io/user/pages/resources/06.digital-assets/mender.io.png)
 
