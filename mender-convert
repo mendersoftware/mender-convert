@@ -376,7 +376,7 @@ do_make_sdimg_beaglebone() {
 
   log "$step/$total Setting file system table..."
   ((step++))
-  set_fstab $device_type
+  set_fstab $device_type "/boot/efi" "mmcblk0" 4
 
   return $ret
 }
@@ -422,7 +422,7 @@ do_make_sdimg_raspberrypi3() {
 
   log "$step/$total Setting file system table..."
   ((step++))
-  set_fstab $device_type
+  set_fstab $device_type "/uboot" "mmcblk0" 4
 
   [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
      $output_dir/cmdline.txt  $output_dir/config.txt\
@@ -473,7 +473,7 @@ do_make_sdimg_qemux86_64() {
 
   log "$step/$total Setting file system table..."
   ((step++))
-  set_fstab $device_type
+  set_fstab $device_type "/boot/efi" "hda" 5
 
   [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
      $output_dir/syslinux.cfg $output_dir/rootfs.img; }

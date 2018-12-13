@@ -676,11 +676,14 @@ mount_mender_disk() {
 # Takes following arguments
 #
 #  $1 - device type
+#  $2 - mountpoint
+#  $3 - block device name
+#  $4 - data partition index
 set_fstab() {
-  local mountpoint=
-  local blk_device=
-  local data_id=4
   local device_type=$1
+  local mountpoint=$2
+  local blk_device=$3
+  local data_idx=$4
   local sysconfdir="$sdimg_primary_dir/etc"
 
   [ ! -d "${sysconfdir}" ] && { log "Error: cannot find rootfs config dir."; exit 1; }
@@ -688,21 +691,11 @@ set_fstab() {
   # Erase/create the fstab file.
   sudo install -b -m 644 /dev/null ${sysconfdir}/fstab
 
-  case "$device_type" in
-    "beaglebone")
-      mountpoint="/boot/efi"
-      blk_device=mmcblk0p
-      ;;
-    "raspberrypi3")
-      mountpoint="/uboot"
-      blk_device=mmcblk0p
-      ;;
-    "qemux86_64")
-      mountpoint="/boot/efi"
-      blk_device=hda
-      data_id=5
-      ;;
-  esac
+  update_test_config_file $device_type storage-device $blk_device
+  if [ "$blk_device" == "mmcblk0" ]; then
+    blk_device=${blk_device}p
+  fi
+  update_test_config_file $device_type parts-name $blk_device data-idx $data_idx
 
   # Add Mender specific entries to fstab.
   sudo bash -c "cat <<- EOF > ${sysconfdir}/fstab
@@ -719,12 +712,12 @@ set_fstab() {
 
 	# Where the U-Boot environment resides; for devices with SD card support ONLY!
 	/dev/${blk_device}1   $mountpoint          auto       defaults,sync    0  0
-	/dev/${blk_device}${data_id}   /data          auto       defaults         0  0
+	/dev/${blk_device}${data_idx}   /data          auto       defaults         0  0
 	EOF"
 
   if [ "$device_type" == "qemux86_64" ]; then
     # Add entry referring to swap partition.
-    sudo tee -a ${sysconfdir}/fstab <<< "/dev/hda6       swap    swap    defaults        0       0" 2>&1 >/dev/null
+    sudo tee -a ${sysconfdir}/fstab <<< "/dev/hda6   swap          swap       defaults         0  0" 2>&1 >/dev/null
   fi
 
   log "\tDone."
@@ -800,6 +793,15 @@ update_test_config_file() {
         ;;
       "mount-location")
         sed -i '/^MENDER_BOOT_PART_MOUNT_LOCATION/s/=.*$/="'${2}'"/' ${output_dir}/${device_type}_variables.cfg
+        ;;
+      "storage-device")
+        sed -i '/^MENDER_STORAGE_DEVICE/s/=.*$/="\/dev\/'${2}'"/' ${output_dir}/${device_type}_variables.cfg
+        ;;
+      "parts-name")
+        sed -i 's/mmcblk0p/'${2}'/g' ${output_dir}/${device_type}_variables.cfg
+        ;;
+      "data-idx")
+        sed -i '/^MENDER_DATA_PART_DEFAULT/s/\(.*\)[0-9]/\1'${2}'/' ${output_dir}/${device_type}_variables.cfg
         ;;
     esac
     shift 2
