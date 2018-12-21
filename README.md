@@ -89,6 +89,7 @@ After it finishes, you can find your images in the `output` directory on your ho
 
 ### Known issues
 * BeagleBone images might not convert properly using this docker envirnoment due to permission issues: `mount: /mender-convert/output/embedded/rootfs: WARNING: device write-protected, mounted read-only.`
+* Raspberrypi0w doesn't work with precompiled mender client (pls use --mender-client option to specify build one)
 
 
 ## Contributing

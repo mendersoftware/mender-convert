@@ -34,12 +34,18 @@ version() {
 # Takes following arguments:
 #
 #  $1 - ARM toolchain
+#  $2 - RPI machine (raspberrypi3 or raspberrypi0w)
 build_uboot_files() {
   local CROSS_COMPILE=${1}-
   local ARCH=arm
   local branch="mender-rpi-2017.09"
-  local commit="988e0ec54"
+  local commit="9214bb597e"
   local uboot_repo_vc_dir=$uboot_dir/.git
+  local defconfig="rpi_3_32b_defconfig"
+
+  if [ "$2" == "raspberrypi0" ]; then
+    defconfig="rpi_0_w_defconfig"
+  fi
 
   export CROSS_COMPILE=$CROSS_COMPILE
   export ARCH=$ARCH
@@ -57,7 +63,7 @@ build_uboot_files() {
   git checkout $commit >> "$build_log" 2>&1
 
   make --quiet distclean >> "$build_log"
-  make --quiet rpi_3_32b_defconfig >> "$build_log" 2>&1
+  make --quiet $defconfig >> "$build_log" 2>&1
   make --quiet >> "$build_log" 2>&1
   make --quiet envtools >> "$build_log" 2>&1
 
@@ -88,6 +94,11 @@ build_uboot_files() {
 install_files() {
   local boot_dir=$1
   local rootfs_dir=$2
+  local kernel_img="kernel7.img"
+
+  if [ "${device_type}" == "raspberrypi0w" ]; then
+    kernel_img="kernel.img"
+  fi
 
   log "\tInstalling U-Boot related files."
 
@@ -118,12 +129,13 @@ install_files() {
   sudo ln -sf /dev/null ${rootfs_dir}/etc/systemd/system/udisks2.service
 
   # Extract Linux kernel and install to /boot directory on rootfs
-  sudo cp ${boot_dir}/kernel7.img ${rootfs_dir}/boot/zImage
+  sudo cp ${boot_dir}/${kernel_img} ${rootfs_dir}/boot/zImage
 
   # Replace kernel with U-boot and add boot script
   sudo mkdir -p ${rootfs_dir}/uboot
 
-  sudo cp ${bin_dir_pi}/u-boot.bin ${boot_dir}/kernel7.img
+  sudo cp ${bin_dir_pi}/u-boot.bin ${boot_dir}/${kernel_img}
+
   sudo cp ${bin_dir_pi}/boot.scr ${boot_dir}
 
   sudo cp ${boot_dir}/config.txt ${output_dir}/config.txt
@@ -181,7 +193,7 @@ do_install_bootloader() {
   cd $output_dir
 
   # Build patched U-Boot files.
-  build_uboot_files $bootloader_toolchain
+  build_uboot_files $bootloader_toolchain $device_type
   rc=$?
   cd $output_dir
 

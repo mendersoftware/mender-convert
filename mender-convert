@@ -176,7 +176,7 @@ declare -a rootfs_partition_ids=("primary" "secondary")
 declare -a mender_disk_mappings
 declare -a raw_disk_mappings
 #Supported devices
-declare -a supported_devices=("beaglebone" "raspberrypi3" "qemux86_64")
+declare -a supported_devices=("beaglebone" "raspberrypi3" "qemux86_64" "raspberrypi0w")
 
 do_raw_disk_image_shrink_rootfs() {
   log "$step/$total Shrinking raw disk image root filesystem..."
@@ -330,7 +330,7 @@ do_raw_disk_image_create_partitions() {
     "beaglebone")
       do_make_sdimg_beaglebone
       ;;
-    "raspberrypi3")
+    "raspberrypi3"|"raspberrypi0w")
       do_make_sdimg_raspberrypi3
       ;;
     "qemux86_64")
@@ -556,7 +556,7 @@ do_install_bootloader_to_mender_disk_image() {
       update_test_config_file $device_type distro-feature "mender-grub" \
                                            mount-location "\/boot\/efi"
       ;;
-    "raspberrypi3")
+    "raspberrypi3"|"raspberrypi0w")
       stage_5_args="-m $mender_disk_image -d $device_type -b ${bootloader_toolchain} $keep"
       eval set -- " ${stage_5_args}"
       ${tool_dir}/rpi3-convert-stage-5.sh ${stage_5_args}|| ret=$?
