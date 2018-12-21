@@ -395,7 +395,7 @@ do_make_sdimg_raspberrypi3() {
                           ${boot_part_size} "boot.vfat"
 
   stage_2_args="$output_dir ${mender_disk_mappings[0]}"
-  ${tool_dir}/rpi3-convert-stage-2.sh ${stage_2_args} || ret=$?
+  ${tool_dir}/rpi-convert-stage-2.sh ${stage_2_args} || ret=$?
   [[ $ret -ne 0 ]] && { return $ret; }
 
   log "$step/$total Setting root filesystem partition..."
@@ -559,7 +559,7 @@ do_install_bootloader_to_mender_disk_image() {
     "raspberrypi3"|"raspberrypi0w")
       stage_5_args="-m $mender_disk_image -d $device_type -b ${bootloader_toolchain} $keep"
       eval set -- " ${stage_5_args}"
-      ${tool_dir}/rpi3-convert-stage-5.sh ${stage_5_args}|| ret=$?
+      ${tool_dir}/rpi-convert-stage-5.sh ${stage_5_args}|| ret=$?
       [[ $ret -ne 0 ]] && { log "\nInstalling Bootloader failed."; return $ret; }
 
       # Update test configuration file
