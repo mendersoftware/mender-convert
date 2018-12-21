@@ -1,0 +1,13 @@
+[Unit]
+Description=Expand data partition file system
+After=mender.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/bin/sh -c 'sleep 1 ; /usr/sbin/resizefs.sh start'
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
