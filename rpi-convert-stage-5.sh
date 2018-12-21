@@ -107,11 +107,11 @@ install_files() {
 
   sed -i 's/\b[ ]root=[^ ]*/ root=\${mender_kernel_root}/' ${output_dir}/cmdline.txt
 
-  # If the the image that we are trying to convert has been booted once on a
-  # device, it will have removed the init_resize.sh init argument from cmdline.
+  # Original Raspberry Pi image run once will have init_resize.sh script removed
+  # from the init argument from the cmdline.
   #
-  # But we want it to run on our image as well to resize our data part so in
-  # case it is missing, add it back to cmdline.txt
+  # On the other hand in Mender image we want to retain a mechanism of last
+  # partition resizing. Check the cmdline.txt file and add it back if necessary.
   if ! grep -q "init=/usr/lib/raspi-config/init_resize.sh" ${output_dir}/cmdline.txt; then
     cmdline=$(cat ${output_dir}/cmdline.txt)
     sh -c -e "echo '${cmdline} init=/usr/lib/raspi-config/init_resize.sh' > ${output_dir}/cmdline.txt";
@@ -124,7 +124,7 @@ install_files() {
   # might write an update while it is mounted which often result in
   # corruptions.
   #
-  # TODO: Find a way to only blacklist mmcblk0pX devices instea of masking
+  # TODO: Find a way to only blacklist mmcblk0pX devices instead of masking
   # the service.
   sudo ln -sf /dev/null ${rootfs_dir}/etc/systemd/system/udisks2.service
 
@@ -154,10 +154,24 @@ install_files() {
   sudo install -m 755 ${bin_dir_pi}/fw_printenv ${rootfs_dir}/sbin/fw_printenv
   sudo ln -fs /sbin/fw_printenv ${rootfs_dir}/sbin/fw_setenv
 
-  # Override init script to expand the data part instead of rootfs, which it
+  # Override init script to expand the data partition instead of rootfs, which it
   # normally expands in standard Raspberry Pi distributions.
   sudo install -m 755 ${files_dir}/init_resize.sh \
       ${rootfs_dir}/usr/lib/raspi-config/init_resize.sh
+
+  # As the whole process must be conducted in two steps, i.e. resize partition
+  # during first boot and resize the partition's file system on system's first
+  # start-up add systemd service file and script.
+  sudo install -m 644 ${files_dir}/resizefs.service \
+      ${rootfs_dir}/lib/systemd/system/resizefs.service
+  sudo ln -sf /lib/systemd/system/resizefs.service \
+      ${rootfs_dir}/etc/systemd/system/multi-user.target.wants/resizefs.service
+  sudo install -m 755 ${files_dir}/resizefs.sh \
+      ${rootfs_dir}/usr/sbin/resizefs.sh
+
+  # Remove original 'resize2fs_once' script and its symbolic link.
+  sudo unlink ${rootfs_dir}/etc/rc3.d/S01resize2fs_once
+  sudo rm ${rootfs_dir}/etc/init.d/resize2fs_once
 }
 
 do_install_bootloader() {

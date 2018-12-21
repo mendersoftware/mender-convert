@@ -75,7 +75,7 @@ main () {
     reboot_pi
   fi
 
-if ! parted -m $ROOT_DEV u s resizepart $ROOT_PART_NUM $TARGET_END; then
+  if ! parted -m $ROOT_DEV u s resizepart $ROOT_PART_NUM $TARGET_END; then
     FAIL_REASON="Data partition resize failed"
     return 1
   fi
