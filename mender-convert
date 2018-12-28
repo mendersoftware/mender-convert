@@ -409,10 +409,6 @@ do_make_sdimg_raspberrypi3() {
   ((step++))
   set_fstab $device_type
 
-  [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
-     $output_dir/cmdline.txt  $output_dir/config.txt\
-     $output_dir/rootfs.img; }
-
   return 0
 }
 
@@ -459,9 +455,6 @@ do_make_sdimg_qemux86_64() {
   log "$step/$total Setting file system table..."
   ((step++))
   set_fstab $device_type
-
-  [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
-     $output_dir/syslinux.cfg $output_dir/rootfs.img; }
 
   return 0
 }
@@ -884,5 +877,9 @@ case "$1" in
     show_help
     ;;
 esac
+
+[[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat \
+      $output_dir/cmdline.txt $output_dir/config.txt \
+      $output_dir/syslinux.cfg $output_dir/rootfs.img; }
 
 exit 0
