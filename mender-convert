@@ -401,10 +401,6 @@ do_make_sdimg_raspberrypi3() {
 
   mount_mender_disk ${mender_disk_mappings[@]}
 
-  # Add mountpoints.
-  sudo install -d -m 755 ${sdimg_primary_dir}/uboot
-  sudo install -d -m 755 ${sdimg_primary_dir}/data
-
   log "$step/$total Setting file system table..."
   ((step++))
   set_fstab $device_type
@@ -447,10 +443,6 @@ do_make_sdimg_qemux86_64() {
   [[ $ret -ne 0 ]] && { return $ret; }
 
   mount_mender_disk ${mender_disk_mappings[@]}
-
-  # Add mountpoints.
-  sudo install -d -m 755 ${sdimg_primary_dir}/boot/efi
-  sudo install -d -m 755 ${sdimg_primary_dir}/data
 
   log "$step/$total Setting file system table..."
   ((step++))
