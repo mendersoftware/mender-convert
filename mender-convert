@@ -278,6 +278,26 @@ do_raw_disk_image_create_partitions() {
 
   log "\tDetected raw disk image with $raw_disk_counts partition(s)."
 
+  if [[ ${raw_disk_counts} -gt 1 ]]; then
+    log "\tExtracting boot partition from raw disk image."
+
+    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[pboot_start]} \
+                          ${raw_disk_sizes[pboot_size]} "boot.vfat"
+
+    log "\tExtracting root filesystem partition from raw disk image."
+    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[prootfs_start]} \
+                          ${raw_disk_sizes[prootfs_size]} "rootfs.img"
+  else
+    log "\tGenerating boot partition (required, does not exist in original image)"
+
+    dd if=/dev/zero of=${output_dir}/boot.vfat count=${mender_disk_sizes[pboot_size]} bs=512 >> "$build_log" 2>&1
+    mkfs.vfat ${output_dir}/boot.vfat >> "$build_log" 2>&1
+
+    log "\tExtracting root filesystem partition from raw disk image."
+    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[pboot_start]} \
+                          ${raw_disk_sizes[pboot_size]} "rootfs.img"
+  fi
+
   local mender_disk_image_size=
   calculate_mender_disk_size $sector_size ${partition_alignment} \
                              mender_disk_sizes mender_disk_image_size
@@ -343,21 +363,23 @@ do_make_sdimg_beaglebone() {
   local ret=0
 
   create_device_maps $raw_disk_image raw_disk_mappings
-
-  mount_mender_disk ${mender_disk_mappings[@]}
   mount_raw_disk ${raw_disk_mappings[@]}
 
   log "$step/$total Setting boot partition..."
   ((step++))
-  stage_2_args="$sdimg_boot_dir $embedded_rootfs_dir"
+
+  stage_2_args="$output_dir ${mender_disk_mappings[0]} ${embedded_rootfs_dir}"
   ${tool_dir}/bbb-convert-stage-2.sh ${stage_2_args} || ret=$?
   [[ $ret -ne 0 ]] && { log "Aborting."; return $ret; }
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  stage_3_args="$sdimg_primary_dir $embedded_rootfs_dir"
-  ${tool_dir}/bbb-convert-stage-3.sh ${stage_3_args} || ret=$?
-  [[ $ret -ne 0 ]] && { log "Aborting."; return $ret; }
+
+  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
+  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
+  [[ $ret -ne 0 ]] && { return $ret; }
+
+  mount_mender_disk ${mender_disk_mappings[@]}
 
   log "$step/$total Setting file system table..."
   ((step++))
@@ -369,15 +391,6 @@ do_make_sdimg_beaglebone() {
 do_make_sdimg_raspberrypi3() {
   log "$step/$total Setting boot partition..."
   ((step++))
-  local raw_boot_part=$(fdisk -l ${raw_disk_image} | grep FAT32)
-
-  local boot_part_start=$(echo ${raw_boot_part} | awk '{print $2}')
-  local boot_part_end=$(echo ${raw_boot_part} | awk '{print $3}')
-  local boot_part_size=$(echo ${raw_boot_part} | awk '{print $4}')
-
-  log "\tExtracting boot partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${boot_part_start} \
-                          ${boot_part_size} "boot.vfat"
 
   stage_2_args="$output_dir ${mender_disk_mappings[0]}"
   ${tool_dir}/rpi-convert-stage-2.sh ${stage_2_args} || ret=$?
@@ -385,15 +398,6 @@ do_make_sdimg_raspberrypi3() {
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  local raw_rootfs_part=$(fdisk -l ${raw_disk_image} | grep Linux)
-
-  local rootfs_part_start=$(echo ${raw_rootfs_part} | awk '{print $2}')
-  local rootfs_part_end=$(echo ${raw_rootfs_part} | awk '{print $3}')
-  local rootfs_part_size=$(echo ${raw_rootfs_part} | awk '{print $4}')
-
-  log "\tExtracting root filesystem partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${rootfs_part_start} \
-                          ${rootfs_part_size} "rootfs.img"
 
   stage_3_args="$output_dir ${mender_disk_mappings[1]}"
   ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
@@ -412,31 +416,12 @@ do_make_sdimg_qemux86_64() {
   log "$step/$total Setting boot partition..."
   ((step++))
 
-  local raw_boot_part=$(fdisk -l ${raw_disk_image} | grep 'Microsoft' | sed s/*//)
-
-  local boot_part_start=$(echo ${raw_boot_part} | awk '{print $2}')
-  local boot_part_end=$(echo ${raw_boot_part} | awk '{print $3}')
-  local boot_part_size=$(echo ${raw_boot_part} | awk '{print $4}')
-
-  log "\tExtracting boot partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${boot_part_start} \
-                          ${boot_part_size} "boot.vfat"
-
   stage_2_args="$output_dir ${mender_disk_mappings[0]}"
   ${tool_dir}/qemux86_64-convert-stage-2.sh ${stage_2_args} || ret=$?
   [[ $ret -ne 0 ]] && { return $ret; }
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  local raw_rootfs_part=$(fdisk -l ${raw_disk_image} | grep 'Linux filesystem')
-
-  local rootfs_part_start=$(echo ${raw_rootfs_part} | awk '{print $2}')
-  local rootfs_part_end=$(echo ${raw_rootfs_part} | awk '{print $3}')
-  local rootfs_part_size=$(echo ${raw_rootfs_part} | awk '{print $4}')
-
-  log "\tExtracting root filesystem partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${rootfs_part_start} \
-                          ${rootfs_part_size} "rootfs.img"
 
   stage_3_args="$output_dir ${mender_disk_mappings[1]}"
   ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
