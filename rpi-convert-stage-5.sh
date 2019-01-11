@@ -43,7 +43,7 @@ build_uboot_files() {
   local uboot_repo_vc_dir=$uboot_dir/.git
   local defconfig="rpi_3_32b_defconfig"
 
-  if [ "$2" == "raspberrypi0" ]; then
+  if [ "$2" == "raspberrypi0w" ]; then
     defconfig="rpi_0_w_defconfig"
   fi
 
