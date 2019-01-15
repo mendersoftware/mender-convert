@@ -171,26 +171,18 @@ install_files() {
 
   sudo ln -sf /data/${databootdir}/fw_env.config ${primary_dir}/etc/fw_env.config
 
-  # Prepare 'primary' partition
-  [ ! -d "$primary_dir/data" ] && \
-      { log "\t'data' mountpoint missing. Adding"; \
-        sudo install -d -m 755 ${primary_dir}/data; }
+  # Create mount-points
+  #
+  # Note that only one of /boot/efi or /uboot will be used depending on what
+  # type of Mender integration is used (GRUB or U-boot). I do not see any
+  # problems with keeping an empty directory to reduce complexity of creating
+  # this directory structure.
+  sudo install -d -m 755 ${primary_dir}/data
+  sudo install -d -m 755 ${primary_dir}/boot/efi
+  sudo install -d -m 755 ${primary_dir}/uboot
 
   case "$device_type" in
-    "beaglebone")
-      [ ! -d "$primary_dir/boot/efi" ] && \
-          { log "\t'/boot/efi' mountpoint missing. Adding"; \
-            sudo install -d -m 755 ${primary_dir}/boot/efi; }
-      ;;
-    "raspberrypi3"|"raspberrypi0w")
-      [ ! -d "$primary_dir/uboot" ] && \
-          { log "\t'/uboot' mountpoint missing. Adding"; \
-            sudo install -d -m 755 ${primary_dir}/uboot; }
-      ;;
     "qemux86_64")
-      [ ! -d "$primary_dir/boot/efi" ] && \
-          { log "\t'/boot/efi' mountpoint missing. Adding"; \
-            sudo install -d -m 755 ${primary_dir}/boot/efi; }
       sudo install -d ${primary_dir}/lib64
       sudo ln -sf /lib/ld-linux-x86-64.so.2 ${primary_dir}/lib64/ld-linux-x86-64.so.2
       ;;

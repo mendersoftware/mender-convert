@@ -266,21 +266,6 @@ do_raw_disk_image_create_partitions() {
   # Change current directory to 'output' directory.
   cd $output_dir
 
-  # Make sure the user's given Mender image name has a correct extension.
-  # If Mender image name is not provided, then use following syntax:
-  # mender-<device_name>-<artifact_name>.sdimg
-  if [ -n "${mender_disk_image}" ]; then
-    local mender_disk_basename=$(basename -- "$mender_disk_image")
-    if [[ $mender_disk_basename =~ \.sdimg$ ]]; then
-      mender_disk_image=$output_dir/$mender_disk_basename
-    else
-      local mender_disk_filename="${mender_disk_basename%.*}"
-      mender_disk_image=$output_dir/${mender_disk_filename}.sdimg
-    fi
-  else
-    mender_disk_image=$output_dir/mender-${device_type}-${artifact_name}.sdimg
-  fi
-
   set_mender_disk_alignment $device_type partition_alignment vfat_storage_offset
 
   get_raw_disk_sizes ${raw_disk_image} raw_disk_counts sector_size raw_disk_sizes
@@ -293,11 +278,31 @@ do_raw_disk_image_create_partitions() {
 
   log "\tDetected raw disk image with $raw_disk_counts partition(s)."
 
+  if [[ ${raw_disk_counts} -gt 1 ]]; then
+    log "\tExtracting boot partition from raw disk image."
+
+    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[pboot_start]} \
+                          ${raw_disk_sizes[pboot_size]} "boot.vfat"
+
+    log "\tExtracting root filesystem partition from raw disk image."
+    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[prootfs_start]} \
+                          ${raw_disk_sizes[prootfs_size]} "rootfs.img"
+  else
+    log "\tGenerating boot partition (required, does not exist in original image)"
+
+    dd if=/dev/zero of=${output_dir}/boot.vfat count=${mender_disk_sizes[pboot_size]} bs=512 >> "$build_log" 2>&1
+    mkfs.vfat ${output_dir}/boot.vfat >> "$build_log" 2>&1
+
+    log "\tExtracting root filesystem partition from raw disk image."
+    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[pboot_start]} \
+                          ${raw_disk_sizes[pboot_size]} "rootfs.img"
+  fi
+
   local mender_disk_image_size=
   calculate_mender_disk_size $sector_size ${partition_alignment} \
                              mender_disk_sizes mender_disk_image_size
 
-  log "\tCreating Mender disk image:\
+  log "\tCreating blank Mender disk image:\
        \n\t\timage size: ${mender_disk_image_size} bytes\
        \n\t\tboot partition size: $((${mender_disk_sizes[pboot_size]} * $sector_size)) bytes\
        \n\t\troot filesystem size: $((${mender_disk_sizes[prootfs_size]} * $sector_size)) bytes\
@@ -358,21 +363,23 @@ do_make_sdimg_beaglebone() {
   local ret=0
 
   create_device_maps $raw_disk_image raw_disk_mappings
-
-  mount_mender_disk ${mender_disk_mappings[@]}
   mount_raw_disk ${raw_disk_mappings[@]}
 
   log "$step/$total Setting boot partition..."
   ((step++))
-  stage_2_args="$sdimg_boot_dir $embedded_rootfs_dir"
+
+  stage_2_args="$output_dir ${mender_disk_mappings[0]} ${embedded_rootfs_dir}"
   ${tool_dir}/bbb-convert-stage-2.sh ${stage_2_args} || ret=$?
   [[ $ret -ne 0 ]] && { log "Aborting."; return $ret; }
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  stage_3_args="$sdimg_primary_dir $embedded_rootfs_dir"
-  ${tool_dir}/bbb-convert-stage-3.sh ${stage_3_args} || ret=$?
-  [[ $ret -ne 0 ]] && { log "Aborting."; return $ret; }
+
+  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
+  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
+  [[ $ret -ne 0 ]] && { return $ret; }
+
+  mount_mender_disk ${mender_disk_mappings[@]}
 
   log "$step/$total Setting file system table..."
   ((step++))
@@ -384,15 +391,6 @@ do_make_sdimg_beaglebone() {
 do_make_sdimg_raspberrypi3() {
   log "$step/$total Setting boot partition..."
   ((step++))
-  local raw_boot_part=$(fdisk -l ${raw_disk_image} | grep FAT32)
-
-  local boot_part_start=$(echo ${raw_boot_part} | awk '{print $2}')
-  local boot_part_end=$(echo ${raw_boot_part} | awk '{print $3}')
-  local boot_part_size=$(echo ${raw_boot_part} | awk '{print $4}')
-
-  log "\tExtracting boot partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${boot_part_start} \
-                          ${boot_part_size} "boot.vfat"
 
   stage_2_args="$output_dir ${mender_disk_mappings[0]}"
   ${tool_dir}/rpi-convert-stage-2.sh ${stage_2_args} || ret=$?
@@ -400,15 +398,6 @@ do_make_sdimg_raspberrypi3() {
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  local raw_rootfs_part=$(fdisk -l ${raw_disk_image} | grep Linux)
-
-  local rootfs_part_start=$(echo ${raw_rootfs_part} | awk '{print $2}')
-  local rootfs_part_end=$(echo ${raw_rootfs_part} | awk '{print $3}')
-  local rootfs_part_size=$(echo ${raw_rootfs_part} | awk '{print $4}')
-
-  log "\tExtracting root filesystem partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${rootfs_part_start} \
-                          ${rootfs_part_size} "rootfs.img"
 
   stage_3_args="$output_dir ${mender_disk_mappings[1]}"
   ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
@@ -416,17 +405,9 @@ do_make_sdimg_raspberrypi3() {
 
   mount_mender_disk ${mender_disk_mappings[@]}
 
-  # Add mountpoints.
-  sudo install -d -m 755 ${sdimg_primary_dir}/uboot
-  sudo install -d -m 755 ${sdimg_primary_dir}/data
-
   log "$step/$total Setting file system table..."
   ((step++))
   set_fstab $device_type
-
-  [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
-     $output_dir/cmdline.txt  $output_dir/config.txt\
-     $output_dir/rootfs.img; }
 
   return 0
 }
@@ -435,31 +416,12 @@ do_make_sdimg_qemux86_64() {
   log "$step/$total Setting boot partition..."
   ((step++))
 
-  local raw_boot_part=$(fdisk -l ${raw_disk_image} | grep 'Microsoft' | sed s/*//)
-
-  local boot_part_start=$(echo ${raw_boot_part} | awk '{print $2}')
-  local boot_part_end=$(echo ${raw_boot_part} | awk '{print $3}')
-  local boot_part_size=$(echo ${raw_boot_part} | awk '{print $4}')
-
-  log "\tExtracting boot partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${boot_part_start} \
-                          ${boot_part_size} "boot.vfat"
-
   stage_2_args="$output_dir ${mender_disk_mappings[0]}"
   ${tool_dir}/qemux86_64-convert-stage-2.sh ${stage_2_args} || ret=$?
   [[ $ret -ne 0 ]] && { return $ret; }
 
   log "$step/$total Setting root filesystem partition..."
   ((step++))
-  local raw_rootfs_part=$(fdisk -l ${raw_disk_image} | grep 'Linux filesystem')
-
-  local rootfs_part_start=$(echo ${raw_rootfs_part} | awk '{print $2}')
-  local rootfs_part_end=$(echo ${raw_rootfs_part} | awk '{print $3}')
-  local rootfs_part_size=$(echo ${raw_rootfs_part} | awk '{print $4}')
-
-  log "\tExtracting root filesystem partition from raw disk image."
-  extract_file_from_image ${raw_disk_image} ${rootfs_part_start} \
-                          ${rootfs_part_size} "rootfs.img"
 
   stage_3_args="$output_dir ${mender_disk_mappings[1]}"
   ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
@@ -467,16 +429,9 @@ do_make_sdimg_qemux86_64() {
 
   mount_mender_disk ${mender_disk_mappings[@]}
 
-  # Add mountpoints.
-  sudo install -d -m 755 ${sdimg_primary_dir}/boot/efi
-  sudo install -d -m 755 ${sdimg_primary_dir}/data
-
   log "$step/$total Setting file system table..."
   ((step++))
   set_fstab $device_type
-
-  [[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat\
-     $output_dir/syslinux.cfg $output_dir/rootfs.img; }
 
   return 0
 }
@@ -649,11 +604,6 @@ do_mender_disk_image_to_artifact() {
       rootfs_path=$sdimg_secondary_dir
     fi
 
-    local mender_disk_basename=$(basename -- "$mender_disk_image")
-    local mender_disk_filename="${mender_disk_basename%.*}"
-    local mender_rootfs_basename=${mender_disk_filename}.ext4
-    mender_rootfs_image=${output_dir}/$mender_rootfs_basename
-
     # Extract root filesystem ext4 image to use it to generate Mender artifact.
     # Ext4 disk image will be also verified in acceptance tests.
     extract_file_from_image $mender_disk_image $prootfs_start \
@@ -682,9 +632,6 @@ do_mender_disk_image_to_artifact() {
       sudo losetup -d $loopdevice
       rm -rf ${output_dir}/mnt
 
-      # Note: expected Mender Artifact name follows the scheme:
-      # mender-<device_name>-<artifact_name>.mender.
-      mender_artifact=${output_dir}/${mender_disk_filename}.mender
       log "\tWriting Mender artifact to: ${mender_artifact}"
 
       #Create Mender artifact
@@ -835,6 +782,26 @@ logsetup
 # Some commands expect elevated privileges.
 sudo true
 
+# Make sure the user's given Mender image name has a correct extension.
+# If Mender image name is not provided, then use following syntax:
+# mender-<device_name>-<artifact_name>.sdimg
+if [ -n "${mender_disk_image}" ]; then
+  mender_disk_filename=$(basename -- "$mender_disk_image")
+  if [[ $mender_disk_filename =~ \.sdimg$ ]]; then
+    mender_disk_image=$output_dir/${mender_disk_filename}
+  else
+    mender_disk_image=$output_dir/${mender_disk_filename}.sdimg
+  fi
+else
+  mender_disk_filename="mender-${device_type}-${artifact_name}"
+  mender_disk_image=$output_dir/${mender_disk_filename}.sdimg
+fi
+
+mender_disk_basename="${mender_disk_filename%.*}"
+mender_rootfs_basename=${mender_disk_basename}.ext4
+mender_rootfs_image=${output_dir}/${mender_rootfs_basename}
+mender_artifact=${output_dir}/${mender_disk_basename}.mender
+
 case "$1" in
   raw-disk-image-shrink-rootfs)
     total=1
@@ -887,5 +854,9 @@ case "$1" in
     show_help
     ;;
 esac
+
+[[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat \
+      $output_dir/cmdline.txt $output_dir/config.txt \
+      $output_dir/syslinux.cfg $output_dir/rootfs.img; }
 
 exit 0

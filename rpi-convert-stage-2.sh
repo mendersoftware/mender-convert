@@ -18,7 +18,7 @@ mcopy -on -i ${output_dir}/boot.vfat -s ::config.txt ${output_dir}/config.txt
 echo -e '\nenable_uart=1\n' >> ${output_dir}/config.txt
 mcopy -o -i ${output_dir}/boot.vfat -s ${output_dir}/config.txt ::config.txt
 
-sudo dd if=${output_dir}/boot.vfat of=/dev/mapper/${boot_mapping} bs=1M >> "$build_log" 2>&1
+sudo dd if=${output_dir}/boot.vfat of=/dev/mapper/${boot_mapping} bs=1M conv=sparse >> "$build_log" 2>&1
 
 log "\tDone."
 
