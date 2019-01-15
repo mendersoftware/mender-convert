@@ -130,14 +130,12 @@ EOF
 # Calculates following values:
 #
 #  $2 - number of partitions
-#  $3 - sector size
-#  $4 - array of partitions' sizes for raw disk
+#  $3 - array of partitions' sizes for raw disk
 #
 get_raw_disk_sizes() {
   local limage=$1
   local rvar_count=$2
-  local rvar_sectorsize=$3
-  shift 3
+  shift 2
   local rvar_array=($@)
 
   local lsubname=${limage:0:10}
@@ -177,9 +175,9 @@ get_raw_disk_sizes() {
 
   eval $rvar_array[pboot_start]="'$(echo "${lfirstpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_start})'"
   eval $rvar_array[pboot_size]="'$(echo "${lfirstpartinfo}" | tr -s ' ' | cut -d' ' -f${idx_size})'"
+  eval $rvar_array[sector_size]="'$lsectorsize'"
 
   eval $rvar_count="'$lcount'"
-  eval $rvar_sectorsize="'$lsectorsize'"
 
   return 0
 }
@@ -200,7 +198,7 @@ set_mender_disk_alignment() {
       local lvar_partition_alignment=${PART_ALIGN_8MB}
       local lvar_vfat_storage_offset=$lvar_partition_alignment
       ;;
-    "raspberrypi3"|"raspberrypi0w")
+    "raspberrypi3" | "raspberrypi0w")
       local lvar_partition_alignment=${PART_ALIGN_4MB}
       local lvar_uboot_env_size=$(( $lvar_partition_alignment * 2 ))
       local lvar_vfat_storage_offset=$(( $lvar_partition_alignment + $lvar_uboot_env_size ))
@@ -291,26 +289,27 @@ align_partition_size() {
 # Takes following arguments:
 #
 #  $1 - number of partition of the raw disk image
-#  $2 - sector size of the raw disk image
-#  $3 - mender image partition alignment
-#  $4 - mender image's boot partition offset
-#  $5 - data partition size (in MB)
-#  $6 - array of partitions' sizes for raw image
+#  $2 - mender image partition alignment
+#  $3 - mender image's boot partition offset
+#  $4 - data partition size (in MB)
+#  $5 - array of partitions' sizes for raw image
 #
 # Returns:
 #
-#  $7 - array of partitions' sizes for Mender image
+#  $6 - array of partitions' sizes for Mender image
 #
 set_mender_disk_sizes() {
   local count=$1
-  local sectorsize=$2
-  local alignment=$3
-  local offset=$4
-  local datasize=$(( ($5 * 1024 * 1024) / $2 ))
-  local _raw_sizes=$(declare -p $6)
+  local alignment=$2
+  local offset=$3
+  local datasize_mb=$4
+  local _raw_sizes=$(declare -p $5)
   eval "declare -A raw_sizes="${_raw_sizes#*=}
-  shift 6
+  shift 5
   local rvar_array=($@)
+
+  local sector_size=${raw_sizes[sector_size]}
+  local datasize=$(( ($datasize_mb * 1024 * 1024) / $sector_size ))
 
   local bootstart=
   local bootsize=
@@ -320,7 +319,7 @@ set_mender_disk_sizes() {
 
   if [[ $count -eq 1 ]]; then
     # Default size of the boot partition: 16MiB.
-    bootsize=$(( (${alignment} * 2) / ${sectorsize} ))
+    bootsize=$(( (${alignment} * 2) / ${sector_size} ))
     # Root filesystem size is determined by the size of the single partition.
     rootfssize=${raw_sizes[pboot_size]}
   else
@@ -329,11 +328,11 @@ set_mender_disk_sizes() {
   fi
 
   # Boot partition storage offset is defined from the top down.
-  bootstart=$(( ${offset} / ${sectorsize} ))
+  bootstart=$(( ${offset} / ${sector_size} ))
 
-  align_partition_size bootsize $sectorsize
-  align_partition_size rootfssize $sectorsize
-  align_partition_size datasize $sectorsize
+  align_partition_size bootsize $sector_size
+  align_partition_size rootfssize $sector_size
+  align_partition_size datasize $sector_size
 
   eval $rvar_array[pboot_start]="'$bootstart'"
   eval $rvar_array[pboot_size]="'$bootsize'"
@@ -343,36 +342,43 @@ set_mender_disk_sizes() {
   if [[ $count -eq 3 ]]; then
     # Add space for Swap partition.
     local swapsize=${raw_sizes[pswap_size]}
-    align_partition_size swapsize $sectorsize
+    align_partition_size swapsize $sector_size
     eval $rvar_array[pswap_size]="'$swapsize'"
   fi
+
+  eval $rvar_array[sector_size]="'$sector_size'"
 }
 
 # Takes following arguments:
 #
-#  $1 - sector size (in bytes)
-#  $2 - partition alignment
-#  $3 - array of partitions' sizes for Mender image
+#  $1 - partition alignment
+#  $2 - array of partitions' sizes for Mender image
 #
 #  Returns:
 #
+#  #3 - number of partitions of the Mender disk image
 #  $4 - final Mender disk image size (in bytes)
 #
 calculate_mender_disk_size() {
-  local _mender_sizes=$(declare -p $3)
+  local _mender_sizes=$(declare -p $2)
   eval "declare -A mender_sizes="${_mender_sizes#*=}
+  local sector_size=${mender_sizes[sector_size]}
+  local rvar_counts=$3
   local rvar_sdimgsize=$4
 
   local sdimgsize=$(( (${mender_sizes[pboot_start]} + ${mender_sizes[pboot_size]} + \
                        2 * ${mender_sizes[prootfs_size]} + \
-                       ${mender_sizes[pdata_size]}) * $1 ))
+                       ${mender_sizes[pdata_size]}) * $sector_size ))
+
+  eval $rvar_counts="'4'"
 
   if [ -v mender_sizes[pswap_size] ]; then
      log "\tSwap partition found."
      # Add size of the swap partition to the total size.
-     sdimgsize=$(( $sdimgsize + (${mender_sizes[pswap_size]} * $1) ))
+     sdimgsize=$(( $sdimgsize + (${mender_sizes[pswap_size]} * $sector_size) ))
      # Add alignment used as swap partition offset.
-     sdimgsize=$(( $sdimgsize + 2 * ${2} ))
+     sdimgsize=$(( $sdimgsize + 2 * ${1} ))
+     eval $rvar_counts="'6'"
   fi
 
   eval $rvar_sdimgsize="'$sdimgsize'"
@@ -405,26 +411,21 @@ create_mender_disk() {
 #
 #  $1 - Mender disk image path
 #  $2 - Mender disk image size
-#  $3 - sector size in bytes
-#  $4 - partition alignment
-#  $5 - array of partitions' sizes for Mender image
-#
-#  Returns:
-#
-#  $6 - number of partitions of the Mender disk image
+#  $3 - partition alignment
+#  $4 - array of partitions' sizes for Mender image
 #
 format_mender_disk() {
   local lfile=$1
   local lsize=$2
-  local sectorsize=$3
-  local alignment=$(($4 / ${sectorsize}))
   local rc=0
 
-  local _mender_sizes=$(declare -p $5)
+  local _mender_sizes=$(declare -p $4)
   eval "declare -A mender_sizes="${_mender_sizes#*=}
-  local rvar_counts=$6
 
-  cylinders=$(( ${lsize} / ${heads} / ${sectors} / ${sectorsize} ))
+  local sector_size=${mender_sizes[sector_size]}
+  local alignment=$(($3 / ${sector_size}))
+
+  cylinders=$(( ${lsize} / ${heads} / ${sectors} / ${sector_size} ))
 
   pboot_start=${mender_sizes[pboot_start]}
   pboot_size=${mender_sizes[pboot_size]}
@@ -479,10 +480,8 @@ EOF
     sudo parted -s ${lfile} -- unit s mkpart extended ${pextended_start} 100% || rc=$?
     sudo parted -s ${lfile} -- unit s mkpart logical ext4 ${pdata_start} ${pdata_end} || rc=$?
     sudo parted -s ${lfile} -- unit s mkpart logical linux-swap ${pswap_start} ${pswap_end} || rc=$?
-    eval $rvar_counts="'6'"
   else
     sudo parted -s ${lfile} -- unit s mkpart primary ext4 ${pdata_start} ${pdata_end} || rc=$?
-    eval $rvar_counts="'4'"
   fi
 
   [[ $rc -eq 0 ]] && { log "\tChanges in partition table applied."; }
@@ -746,19 +745,20 @@ extract_file_from_image() {
 #  $1 - device type
 #  $2 - partition alignment in bytes
 #  $3 - total size in bytes
-#  $4 - sector size in bytes
-#  $5 - array of partitions' sizes for Mender image
+#  $4 - array of partitions' sizes for Mender image
 #
 create_test_config_file() {
   local device_type=$1
   local alignment=$2
   local mender_image_size_mb=$(( (($3 / 1024) / 1024) ))
-  local _mender_sizes=$(declare -p $5)
+  local _mender_sizes=$(declare -p $4)
   eval "declare -A mender_sizes="${_mender_sizes#*=}
-  local boot_offset=$(( (${mender_sizes[pboot_start]} * $4) ))
-  local boot_size_mb=$(( (((${mender_sizes[pboot_size]} * $4) / 1024) / 1024) ))
-  local rootfs_size_mb=$(( (((${mender_sizes[prootfs_size]} * $4) / 1024) / 1024) ))
-  local data_size_mb=$(( (((${mender_sizes[pdata_size]} * $4) / 1024) / 1024) ))
+  local sector_size=${mender_sizes[sector_size]}
+
+  local boot_offset=$(( (${mender_sizes[pboot_start]} * $sector_size) ))
+  local boot_size_mb=$(( (((${mender_sizes[pboot_size]} * $sector_size) / 1024) / 1024) ))
+  local rootfs_size_mb=$(( (((${mender_sizes[prootfs_size]} * $sector_size) / 1024) / 1024) ))
+  local data_size_mb=$(( (((${mender_sizes[pdata_size]} * $sector_size) / 1024) / 1024) ))
 
   cp ${files_dir}/variables.template ${output_dir}/${device_type}_variables.cfg
 
