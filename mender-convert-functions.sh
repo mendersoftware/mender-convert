@@ -8,6 +8,14 @@ declare -i vfat_storage_offset
 PART_ALIGN_4MB=4194304
 PART_ALIGN_8MB=8388608
 
+# Default 'data' partition size in MiB.
+declare -i data_part_size_mb
+# Default total storage size in MiB.
+declare -i storage_total_size_mb
+
+DATA_PART_SIZE_MB=128
+STORAGE_TOTAL_SIZE_MB=8000
+
 # Number of required heads in a final image.
 declare -i -r heads=255
 # Number of required sectors in a final image.
@@ -382,6 +390,77 @@ calculate_mender_disk_size() {
   fi
 
   eval $rvar_sdimgsize="'$sdimgsize'"
+}
+
+# Takes following arguments:
+#
+#  $1 - number of partition of the Mender image
+#  $2 - calculated total size of the Mender image in bytes
+#  $3 - expected total size of the Mender image in mb
+#  $4 - array of partitions' sizes for Mender image
+#
+#  Returns:
+#
+#  Size of the rootfs partition updated and adjusted to total storage size
+#
+mender_image_size_to_total_storage_size() {
+  local count=$1
+  local rvar_image_size=$2
+  local -n image_size_bytes=$2
+  local storage_size_mb=$3
+
+  local _mender_sizes=$(declare -p $4)
+  eval "declare -A mender_sizes="${_mender_sizes#*=}
+
+  shift 3
+  local rvar_array=($@)
+
+  local image_size_mb=$(( (($image_size_bytes / 1024) / 1024) ))
+
+  log "\tAdjust Mender disk image size to the total storage size (${storage_size_mb}MB)."
+
+  if [ $image_size_mb -gt $storage_size_mb ]; then
+    log "\tDefined total storage size of ${3}MB is too small."
+    log "\tMinimal required storage is ${image_size_mb}MB. Aborting."
+    return 1
+  elif [ $image_size_mb -eq $storage_size_mb ]; then
+    # Simply continue.
+    log "\tCalculated Mender image size exactly fits the defined total storage."
+    return 0
+  fi
+
+  # Get spare space for rootfs a/b partitions (in sectors).
+  local sector_size=${mender_sizes[sector_size]}
+  local image_size_s=$(( $image_size_bytes / $sector_size ))
+  local storage_size_bytes=$(( ($storage_size_mb * 1024 * 1024) ))
+  local storage_size_s=$(( $storage_size_bytes / $sector_size ))
+  local rootfs_overplus_bytes=0
+
+  local spare_storage_bytes=$(( $storage_size_bytes - $image_size_bytes ))
+
+  if [ $(($spare_storage_bytes % 2)) -ne 0 ]; then
+    log "\tAdditional space for rootfs partitions not divisible by 2.\
+         \n\tFinal image will be smaller than ${storage_size_mb}MB"
+  fi
+  rootfs_overplus_bytes=$(( $spare_storage_bytes / 2 ))
+
+  local reminder=$(( ${rootfs_overplus_bytes} % ${partition_alignment} ))
+  if [ $reminder -ne 0 ]; then
+    log "\tAdditional space for rootfs partitions not aligned.\
+         \n\tFinal image will be smaller than ${storage_size_mb}MB"
+  fi
+  rootfs_overplus_bytes=$(($rootfs_overplus_bytes - $reminder))
+  rootfs_overplus_s=$(( $rootfs_overplus_bytes / $sector_size ))
+
+  local prootfs_size=${mender_sizes[prootfs_size]}
+  prootfs_size=$(( $prootfs_size + $rootfs_overplus_s ))
+
+  image_size_bytes=$(( $image_size_bytes + 2 * $rootfs_overplus_bytes ))
+
+  eval $rvar_array[prootfs_size]="'$prootfs_size'"
+  eval $rvar_image_size="'$image_size_bytes'"
+
+  return 0
 }
 
 # Takes following arguments:

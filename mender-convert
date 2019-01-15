@@ -35,27 +35,29 @@ Expert commands:
 Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb |
           -d|--device-type | -p|--rootfs-partition-id | -i|--demo-host-ip |
           -c|--server-cert | -u|--server-url | -t|--tenant-token |
-          -g|--mender-client -b|--bootloader-toolchain | -a|--artifact-name |
-          -k|--keep | -v|--version]
+          -g|--mender-client | -b|--bootloader-toolchain | -a|--artifact-name |
+          -e|--storage-total-size-mb | -k|--keep | -v|--version]
 
-        raw-disk-image       - raw disk embedded Linux (Debian, Raspbian,
-                               Ubuntu, etc.) image path
-        mender-disk-image    - Mender disk image name where the script writes to
-                               should have "sdimg" suffix
-        data-part-size-mb    - data partition size in MB; default value 128MB
-        device-type          - target device identification used to build
-                               Mender image
-        rootfs-partition-id  - selects root filesystem (primary|secondary)
-                               as the source filesystem for an artifact
-        demo-host-ip         - server demo ip used for testing purposes
-        server-cert          - server certificate file
-        server-url           - production server url
-        tenant-token         - Mender tenant token
-        mender-client        - Mender client binary
-        bootloader-toolchain - GNU Arm Embedded Toolchain
-        artifact-name        - Mender artifact name
-        keep                 - keep intermediate files in output directory
-        version              - print the version
+        raw-disk-image        - raw disk embedded Linux (Debian, Raspbian,
+                                Ubuntu, etc.) image path
+        mender-disk-image     - Mender disk image name where the script writes to
+                                should have "sdimg" suffix
+        data-part-size-mb     - data partition size in MB; default value 128MB
+        device-type           - target device identification used to build
+                                Mender image
+        rootfs-partition-id   - selects root filesystem (primary|secondary)
+                                as the source filesystem for an artifact
+        demo-host-ip          - server demo ip used for testing purposes
+        server-cert           - server certificate file
+        server-url            - production server url
+        tenant-token          - Mender tenant token
+        mender-client         - Mender client binary
+        bootloader-toolchain  - GNU Arm Embedded Toolchain
+        artifact-name         - Mender artifact name
+        storage-total-size-mb - total storage size in MB; default value 8000MB;
+                                it is used to calculate the rootfs final size
+        keep                  - keep intermediate files in output directory
+        version               - print the version
 
         Note: root filesystem size used in Mender image creation can be found as
               an output from 'raw-disk-image-shrink-rootfs' command or, in case
@@ -145,9 +147,6 @@ if [ $# -eq 0 ]; then
 fi
 
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-# Default 'data' partition size in MiB.
-data_part_size_mb=128
 
 mender_disk_image=
 raw_disk_image=
@@ -281,6 +280,12 @@ do_raw_disk_image_create_partitions() {
   local mender_disk_image_size=
   calculate_mender_disk_size ${partition_alignment} mender_disk_sizes \
                              mender_disk_counts mender_disk_image_size
+
+  mender_image_size_to_total_storage_size ${mender_disk_counts} \
+          mender_disk_image_size ${storage_total_size_mb} \
+          mender_disk_sizes
+  rc=$?
+  [ $rc -eq 0 ] || { return 1; }
 
   if [[ ${raw_disk_counts} -gt 1 ]]; then
     log "\tExtracting boot partition from raw disk image."
@@ -744,6 +749,10 @@ while (( "$#" )); do
       tenant_token=$2
       shift 2
       ;;
+    -e | --storage-total-size-mb)
+      storage_total_size_mb=$2
+      shift 2
+      ;;
     -k | --keep)
       keep="-k"
       shift 1
@@ -772,7 +781,11 @@ while (( "$#" )); do
 done
 
 [ -z "${data_part_size_mb}" ] && \
-    { log "Default 'data' partition size set to 128MB"; data_part_size_mb=128; }
+    { log "*** Data partition size set to default value: 128MB ***"; \
+      data_part_size_mb=$DATA_PART_SIZE_MB; }
+[ -z "${storage_total_size_mb}" ] && \
+    { log "*** Total storage size set to default value: 8GB ***"; \
+      storage_total_size_mb=$STORAGE_TOTAL_SIZE_MB; }
 
 eval set -- "$PARAMS"
 
