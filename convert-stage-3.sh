@@ -9,6 +9,7 @@ build_log=$output_dir/build.log
 
 sudo dd if=${output_dir}/rootfs.img of=/dev/mapper/${rootfs_mapping} bs=8M conv=sparse >> "$build_log" 2>&1
 sync
+sudo resize2fs /dev/mapper/${rootfs_mapping} >> "$build_log" 2>&1
 # Check Linux ext4 file system just in case.
 sudo fsck.ext4 -fp /dev/mapper/${rootfs_mapping} >> "$build_log" 2>&1
 # Make sure the rootfs partition's label follows Mender naming convention.
