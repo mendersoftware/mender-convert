@@ -9,7 +9,7 @@ Usage: $0 [options]
 
     Options: [-m|--mender-disk-image | -g|--mender-client | -a|--artifact-name |
               -d|--device-type | -p|--demo-host-ip | -u| --server-url |
-              -t| --tenant-token]
+              -c|--server-cert -t| --tenant-token -k|--keep -h|--help]
 
         --mender-disk-image - Mender raw disk image
         --mender-client     - Mender client binary file
@@ -18,6 +18,9 @@ Usage: $0 [options]
         --demo-host-ip      - Mender demo server IP address
         --server-url        - Mender production server url
         --server-cert       - Mender server certificate
+        --tenant-token      - Mender tenant token
+        --keep              - Keep intermediate files in output directory
+        --help              - Show help and exit
 
     Examples:
 
