@@ -33,10 +33,10 @@ Expert commands:
                                                   related files
 
 Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb |
-          -d|--device-type | -p|--rootfs-partition-id | -i|--demo-host-ip |
+          -d|--device-type | -p|--rootfs-partition-id | -n|--demo | -i|--demo-host-ip |
           -c|--server-cert | -u|--server-url | -t|--tenant-token |
           -g|--mender-client | -b|--bootloader-toolchain | -a|--artifact-name |
-          -e|--storage-total-size-mb | -k|--keep | -v|--version]
+          -e|--storage-total-size-mb | -k|--keep | -v|--version -h|--help]
 
         raw-disk-image        - raw disk embedded Linux (Debian, Raspbian,
                                 Ubuntu, etc.) image path
@@ -47,6 +47,7 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
                                 Mender image
         rootfs-partition-id   - selects root filesystem (primary|secondary)
                                 as the source filesystem for an artifact
+        demo                  - Configure image using demo parameters
         demo-host-ip          - server demo ip used for testing purposes
         server-cert           - server certificate file
         server-url            - production server url
@@ -58,6 +59,7 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
                                 it is used to calculate the rootfs final size
         keep                  - keep intermediate files in output directory
         version               - print the version
+        help                  - show help and exit
 
         Note: root filesystem size used in Mender image creation can be found as
               an output from 'raw-disk-image-shrink-rootfs' command or, in case
@@ -460,6 +462,10 @@ do_install_mender_to_mender_disk_image() {
   # mender-image-1.5.0
   stage_4_args="-m $mender_disk_image -d $device_type -g ${mender_client} -a ${artifact_name}"
 
+  if [ -n "$demo" ] && [ ${demo} -eq 1 ]; then
+    stage_4_args="${stage_4_args} --demo"
+  fi
+
   if [ -n "$demo_host_ip" ]; then
     stage_4_args="${stage_4_args} -i ${demo_host_ip}"
   fi
@@ -732,6 +738,10 @@ while (( "$#" )); do
     -b | --bootloader-toolchain)
       bootloader_toolchain=$2
       shift 2
+      ;;
+    -n | --demo)
+      demo="1"
+      shift 1
       ;;
     -i | --demo-host-ip)
       demo_host_ip=$2

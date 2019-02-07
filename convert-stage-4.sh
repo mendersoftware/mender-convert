@@ -8,16 +8,20 @@ Mender executables, service and configuration files installer.
 Usage: $0 [options]
 
     Options: [-m|--mender-disk-image | -g|--mender-client | -a|--artifact-name |
-              -d|--device-type | -p|--demo-host-ip | -u| --server-url |
-              -t| --tenant-token]
+              -d|--device-type | -n|--demo | -p|--demo-host-ip | -u| --server-url |
+              -c|--server-cert -t| --tenant-token -k|--keep -h|--help]
 
         --mender-disk-image - Mender raw disk image
         --mender-client     - Mender client binary file
         --artifact-name     - artifact info
         --device-type       - target device type identification
+        --demo              - Configure image using demo parameters
         --demo-host-ip      - Mender demo server IP address
         --server-url        - Mender production server url
         --server-cert       - Mender server certificate
+        --tenant-token      - Mender tenant token
+        --keep              - Keep intermediate files in output directory
+        --help              - Show help and exit
 
     Examples:
 
@@ -67,6 +71,16 @@ create_client_files() {
     rootfspartb="/dev/hda3"
   fi
 
+  # Default polling intervals for Production
+  local updatePollInterval="1800"
+  local inventPollInterval="28800"
+  local retryPollInterval="300"
+  if [ -n "${demo}" ] && [ ${demo} -eq 1 ]; then
+    updatePollInterval="5"
+    inventPollInterval="5"
+    retryPollInterval="30"
+  fi
+
   cat <<- EOF > $mender_dir/mender.service
 	[Unit]
 	Description=Mender OTA update service
@@ -87,14 +101,14 @@ create_client_files() {
 
   cat <<- EOF > $mender_dir/mender.conf
 	{
-	    "InventoryPollIntervalSeconds": 5,
-	    "RetryPollIntervalSeconds": 30,
+	    "InventoryPollIntervalSeconds": "$inventPollInterval",
+	    "RetryPollIntervalSeconds": "$retryPollInterval",
 	    "RootfsPartA": "$rootfsparta",
 	    "RootfsPartB": "$rootfspartb",
 	    "ServerCertificate": "/etc/mender/server.crt",
 	    "ServerURL": "$mender_server_url",
 	    "TenantToken": "$mender_tenant_token",
-	    "UpdatePollIntervalSeconds": 5
+	    "UpdatePollIntervalSeconds": "$updatePollInterval"
 	}
 	EOF
 
@@ -258,6 +272,11 @@ do_install_mender() {
     show_help
   fi
 
+  if [ -n "${demo}" ] && [ ${demo} -eq 1 ] && [ -z "${demo_host_ip}" ]; then
+    log "Demo configuration requires demo_host_ip. Aborting."
+    show_help
+  fi
+
   # TODO: more error checking of server types
   if [ -n "${tenant_token}" ]; then
     mender_tenant_token=$(echo ${tenant_token} | tr -d '\n')
@@ -332,6 +351,10 @@ while (( "$#" )); do
     -a | --artifact-name)
       artifact_name=$2
       shift 2
+      ;;
+    -n | --demo)
+      demo="1"
+      shift 1
       ;;
     -i | --demo-host-ip)
       demo_host_ip=$2
