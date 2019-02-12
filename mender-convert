@@ -237,7 +237,7 @@ do_raw_disk_image_shrink_rootfs() {
 
   sudo losetup -d $loopdevice
   log "\tRaw disk image new endsector: $endsector"
-  truncate -s $((($endsector+1) * $sector_size)) $raw_disk_image
+  sudo truncate -s $((($endsector+1) * $sector_size)) $raw_disk_image
   log "\tNew root filesystem size (sectors): $new_size_sectors"
 
   return 0
