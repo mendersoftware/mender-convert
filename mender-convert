@@ -190,7 +190,7 @@ do_raw_disk_image_shrink_rootfs() {
 
   # Gather information about raw disk image.
   get_raw_disk_sizes ${raw_disk_image} raw_disk_counts raw_disk_sizes
-  local sector_size = ${raw_disk_sizes[sector_size]}
+  local sector_size=${raw_disk_sizes[sector_size]}
 
   # Find first available loopback device.
   loopdevice=($(losetup -f))
@@ -237,7 +237,7 @@ do_raw_disk_image_shrink_rootfs() {
 
   sudo losetup -d $loopdevice
   log "\tRaw disk image new endsector: $endsector"
-  truncate -s $((($endsector+1) * $sector_size)) $raw_disk_image
+  sudo truncate -s $((($endsector+1) * $sector_size)) $raw_disk_image
   log "\tNew root filesystem size (sectors): $new_size_sectors"
 
   return 0
