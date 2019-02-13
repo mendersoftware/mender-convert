@@ -101,14 +101,14 @@ create_client_files() {
 
   cat <<- EOF > $mender_dir/mender.conf
 	{
-	    "InventoryPollIntervalSeconds": "$inventPollInterval",
-	    "RetryPollIntervalSeconds": "$retryPollInterval",
+	    "InventoryPollIntervalSeconds": $inventPollInterval,
+	    "RetryPollIntervalSeconds": $retryPollInterval,
 	    "RootfsPartA": "$rootfsparta",
 	    "RootfsPartB": "$rootfspartb",
 	    "ServerCertificate": "/etc/mender/server.crt",
 	    "ServerURL": "$mender_server_url",
 	    "TenantToken": "$mender_tenant_token",
-	    "UpdatePollIntervalSeconds": "$updatePollInterval"
+	    "UpdatePollIntervalSeconds": $updatePollInterval
 	}
 	EOF
 
