@@ -8,3 +8,5 @@ before_script:
 script:
     # Check commit compliance.
     - mendertesting/check_commits.sh
+    # Check licenses
+    - mendertesting/check_license.sh
