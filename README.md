@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/mendersoftware/mender-convert.svg?branch=master)](https://travis-ci.com/mendersoftware/mender-convert)
+
 mender-convert
 ==============
 
