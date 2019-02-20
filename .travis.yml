@@ -1,0 +1,12 @@
+language: minimal
+
+dist: trusty
+
+before_script:
+    - git clone git://github.com/mendersoftware/mendertesting
+
+script:
+    # Check commit compliance.
+    - mendertesting/check_commits.sh
+    # Check licenses
+    - mendertesting/check_license.sh
