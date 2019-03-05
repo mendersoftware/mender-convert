@@ -90,7 +90,6 @@ After it finishes, you can find your images in the `output` directory on your ho
 
 
 ### Known issues
-* BeagleBone images might not convert properly using this docker envirnoment due to permission issues: `mount: /mender-convert/output/embedded/rootfs: WARNING: device write-protected, mounted read-only.`
 * Raspberrypi0w cpu isn't armv7+ architecture (it's armv6) and because of this mender client + u-boot fw_set/getenv tools are crashing when compiled with armv7 toolchain added in docker image. Pls use this forked [repo](https://github.com/nandra/mender-conversion-tools/commits/rpi0w-toolchain) to have it properly build with other armv6 toolchain.
 * If building U-boot fails with:
 ```
