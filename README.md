@@ -91,7 +91,18 @@ After it finishes, you can find your images in the `output` directory on your ho
 
 ### Known issues
 * BeagleBone images might not convert properly using this docker envirnoment due to permission issues: `mount: /mender-convert/output/embedded/rootfs: WARNING: device write-protected, mounted read-only.`
-* Raspberrypi0w doesn't work with precompiled mender client (pls use --mender-client option to specify build one)
+* Raspberrypi0w cpu isn't armv7+ architecture (it's armv6) and because of this mender client + u-boot fw_set/getenv tools are crashing when compiled with armv7 toolchain added in docker image. Pls use this forked [repo](https://github.com/nandra/mender-conversion-tools/commits/rpi0w-toolchain) to have it properly build with other armv6 toolchain.
+* If building U-boot fails with:
+```
+     D	scripts/Kconfig
+     input in flex scanner failed
+     ....
+     include/linux/kconfig.h:4:32: fatal error: generated/autoconf.h: No such file or directory
+     #include <generated/autoconf.h>
+```
+you might be using a case-sensitive filesystem which is not supported. Case-sensitive filesystems are typically used on OSX (Mac) and Windows but you can also run in to this on Linux if running on a NTFS formatted partition. 
+
+For details see this [discussion](https://hub.mender.io/t/raspberry-pi-3-model-b-b-raspbian/140/10)
 
 
 ## Contributing
