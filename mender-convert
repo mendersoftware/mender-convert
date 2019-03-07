@@ -19,18 +19,8 @@ General commands:
                                                   necessary files installed
         mender-disk-image-to-artifact           - creates Mender artifact file
                                                   from Mender image
-
-Expert commands:
-
         raw-disk-image-shrink-rootfs            - shrinks existing embedded raw
                                                   disk image
-        raw-disk-image-create-partitions        - converts raw disk image's
-                                                  partition table to be compliant
-                                                  with Mender partition layout
-        install-mender-to-mender-disk-image     - installs Mender client related
-                                                  files
-        install-bootloader-to-mender-disk-image - installs bootloader (U-Boot/GRUB)
-                                                  related files
 
 Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb |
           -d|--device-type | -p|--rootfs-partition-id | -n|--demo | -i|--demo-host-ip |
@@ -95,45 +85,12 @@ Examples:
 
         Note: artifact name format is: release-<release_no>_<mender_version>
 
-Examples for expert actions:
-
     To shrink the existing embedded raw disk image:
 
         ./mender-convert raw-disk-image-shrink-rootfs
                 --raw-disk-image <raw_disk_image_path>
 
         Output: Root filesystem size (sectors): 4521984
-
-    To convert raw disk image's partition table to Mender layout:
-
-        ./mender-convert raw-disk-image-create-partitions
-                --raw-disk-image <raw_disk_image_path>
-                [--mender-disk-image <mender_image_name>]
-                --artifact-name release-1_1.5.0
-                --device-type <beaglebone | raspberrypi3>
-                [--data-part-size-mb 128]
-
-	Output: repartitioned (respectively to Mender layout) raw disk image
-
-    To install Mender client related files:
-
-        ./mender-convert install-mender-to-mender-disk-image
-                --mender-disk-image <mender_image_path>
-                --device-type <beaglebone | raspberrypi3>
-                --artifact-name release-1_1.5.0
-                --demo-host-ip 192.168.10.2
-                --mender-client <mender_binary_path>
-
-        Output: Mender image with Mender client related files installed
-
-    To install bootloader (U-Boot/GRUB) related files:
-
-        ./mender-convert install-bootloader-to-mender-disk-image
-                --mender-disk-image <mender_image_path>
-                --device-type <beaglebone | raspberrypi3>
-                --bootloader-toolchain arm-linux-gnueabihf
-
-        Output: Mender image with appropriate bootloader (U-Boot/GRUB) installed
 
 EOF
 }
@@ -835,27 +792,6 @@ case "$1" in
     log "The rootfs partition in the raw disk image has been shrinked successfully!"
     log "You can now convert the output raw disk image\n\t$raw_disk_image\
          \nto a Mender disk image."
-    ;;
-  raw-disk-image-create-partitions)
-    total=6
-    do_raw_disk_image_create_partitions || rc=$?
-    [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
-    log "A new Mender disk image with partition layout to support Mender has been successfully created!"
-    log "You can find the output Mender disk image at:\n\t${mender_disk_image}"
-    ;;
-  install-mender-to-mender-disk-image)
-    total=1
-    do_install_mender_to_mender_disk_image || rc=$?
-    [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
-    log "The Mender client has been successfully installed to the Mender disk image."
-    log "You can find the output Mender disk image at:\n\t${mender_disk_image}"
-    ;;
-  install-bootloader-to-mender-disk-image)
-    total=1
-    do_install_bootloader_to_mender_disk_image || rc=$?
-    [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
-    log "A bootloader configuration supporting dual A/B rootfs updates has been installed to the Mender disk image!"
-    log "You can find the output Mender disk image at:\n\t${mender_disk_image}"
     ;;
   mender-disk-image-to-artifact)
     total=1
