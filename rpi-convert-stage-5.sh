@@ -21,15 +21,10 @@ uboot_dir=${output_dir}/uboot-mender
 bin_base_dir=${output_dir}/bin
 bin_dir_pi=${bin_base_dir}/raspberrypi
 sdimg_base_dir=$output_dir/sdimg
-GCC_VERSION="6.3.1"
 build_log=${output_dir}/build.log
 
 declare -a mender_disk_mappings
 declare -a mender_partitions_regular=("boot" "primary" "secondary" "data")
-
-version() {
-  echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'
-}
 
 # Takes following arguments:
 #
@@ -38,8 +33,8 @@ version() {
 build_uboot_files() {
   local CROSS_COMPILE=${1}-
   local ARCH=arm
-  local branch="mender-rpi-2017.09"
-  local commit="9214bb597e"
+  local branch="mender-rpi-2018.07"
+  local commit="981cc831e3"
   local uboot_repo_vc_dir=$uboot_dir/.git
   local defconfig="rpi_3_32b_defconfig"
 
@@ -187,13 +182,6 @@ do_install_bootloader() {
 
   if ! [ -x "$(command -v ${bootloader_toolchain}-gcc)" ]; then
     log "Error: ARM GCC not found in PATH. Aborting."
-    exit 1
-  fi
-
-  local gcc_version=$(${bootloader_toolchain}-gcc -dumpversion)
-
-  if [ $(version $gcc_version) -ne $(version $GCC_VERSION) ]; then
-    log "Error: Invalid ARM GCC version ($gcc_version). Expected $GCC_VERSION. Aborting."
     exit 1
   fi
 
