@@ -465,17 +465,6 @@ mender_image_size_to_total_storage_size() {
 
 # Takes following arguments:
 #
-#  $1 - raw disk image
-unmount_partitions() {
-  log "Check if device is mounted..."
-  is_mounted=`grep ${1} /proc/self/mounts | wc -l`
-  if [ ${is_mounted} -ne 0 ]; then
-    sudo umount ${1}?*
-  fi
-}
-
-# Takes following arguments:
-#
 #  $1 - raw disk image path
 #  $2 - raw disk image size
 create_mender_disk() {
