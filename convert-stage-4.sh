@@ -272,11 +272,6 @@ do_install_mender() {
     show_help
   fi
 
-  if [ -n "${demo}" ] && [ ${demo} -eq 1 ] && [ -z "${demo_host_ip}" ]; then
-    log "Demo configuration requires demo_host_ip. Aborting."
-    show_help
-  fi
-
   # TODO: more error checking of server types
   if [ -n "${tenant_token}" ]; then
     mender_tenant_token=$(echo ${tenant_token} | tr -d '\n')
