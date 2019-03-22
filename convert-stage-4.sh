@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 show_help() {
   cat << EOF
 
@@ -23,26 +25,23 @@ Usage: $0 [options]
         --keep              - Keep intermediate files in output directory
         --help              - Show help and exit
 
-    Examples:
-
-        ./mender-convert install-mender-to-mender-disk-image
-                --mender-disk-image <mender_image_path>
-                --device-type <beaglebone | raspberrypi3>
-                --artifact-name release-1_1.5.0
-                --demo-host-ip 192.168.10.2
-                --mender-client <mender_binary_path>
+    For examples, see: ./mender-convert --help
 
 EOF
   exit 1
 }
 
+jq_inplace() {
+  jq_args="$1"
+  dest_file="$2"
+  sudo sh -c -e "jq \"${jq_args}\" ${dest_file} > ${dest_file}.tmp && mv ${dest_file}.tmp ${dest_file}"
+}
+
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 output_dir=${tool_dir}/output
 
-mender_client_repo="https://raw.githubusercontent.com/mendersoftware/mender"
-mender_client_revision="1.6.x"
 meta_mender_repo="https://raw.githubusercontent.com/mendersoftware/meta-mender"
-meta_mender_revision="sumo"
+meta_mender_revision="thud"
 
 mender_dir=$output_dir/mender
 device_type=
@@ -51,8 +50,6 @@ artifact_name=
 demo_host_ip=
 # Mender production server url passed as CLI option.
 server_url=
-# Actual server url.
-mender_server_url="https://docker.mender.io"
 # Mender production certificate.
 server_cert=
 # Mender tenant token passed as CLI option.
@@ -62,7 +59,9 @@ mender_tenant_token="dummy"
 
 declare -a mender_disk_mappings
 
-create_client_files() {
+append_rootfs_configuration() {
+  local conffile=$1
+
   local rootfsparta="/dev/mmcblk0p2"
   local rootfspartb="/dev/mmcblk0p3"
 
@@ -71,54 +70,10 @@ create_client_files() {
     rootfspartb="/dev/hda3"
   fi
 
-  # Default polling intervals for Production
-  local updatePollInterval="1800"
-  local inventPollInterval="28800"
-  local retryPollInterval="300"
-  if [ -n "${demo}" ] && [ ${demo} -eq 1 ]; then
-    updatePollInterval="5"
-    inventPollInterval="5"
-    retryPollInterval="30"
-  fi
+  jq_inplace '.RootfsPartA = \"'$rootfsparta'\" | .RootfsPartB = \"'$rootfspartb'\"' ${conffile}
+}
 
-  cat <<- EOF > $mender_dir/mender.service
-	[Unit]
-	Description=Mender OTA update service
-	After=systemd-resolved.service
-
-	[Service]
-	Type=idle
-	User=root
-	Group=root
-	ExecStartPre=/bin/mkdir -p -m 0700 /data/mender
-	ExecStartPre=/bin/ln -sf /etc/mender/tenant.conf /var/lib/mender/authtentoken
-	ExecStart=/usr/bin/mender -daemon
-	Restart=on-abort
-
-	[Install]
-	WantedBy=multi-user.target
-	EOF
-
-  cat <<- EOF > $mender_dir/mender.conf
-	{
-	    "InventoryPollIntervalSeconds": $inventPollInterval,
-	    "RetryPollIntervalSeconds": $retryPollInterval,
-	    "RootfsPartA": "$rootfsparta",
-	    "RootfsPartB": "$rootfspartb",
-	    "ServerCertificate": "/etc/mender/server.crt",
-	    "ServerURL": "$mender_server_url",
-	    "TenantToken": "$mender_tenant_token",
-	    "UpdatePollIntervalSeconds": $updatePollInterval
-	}
-	EOF
-
-  cat <<- EOF > $mender_dir/artifact_info
-	artifact_name=${artifact_name}
-	EOF
-
-  # Version file
-  echo -n "2" > $mender_dir/version
-
+create_client_files() {
   cat <<- EOF > $mender_dir/device_type
 	device_type=${device_type}
 	EOF
@@ -143,21 +98,9 @@ get_mender_files_from_upstream() {
 
   mkdir -p $mender_dir
 
-  log "\tDownloading inventory & identity scripts."
+  log "\tDownloading demo server certificate."
 
-  wget -nc -q -O $mender_dir/mender-device-identity \
-    $mender_client_repo/$mender_client_revision/support/mender-device-identity
-  wget -nc -q -O $mender_dir/mender-inventory-bootloader-integration \
-    $mender_client_repo/$mender_client_revision/support/mender-inventory-bootloader-integration
-  wget -nc -q -O $mender_dir/mender-inventory-hostinfo \
-    $mender_client_repo/$mender_client_revision/support/mender-inventory-hostinfo
-  wget -nc -q -O $mender_dir/mender-inventory-network \
-    $mender_client_repo/$mender_client_revision/support/mender-inventory-network
-  wget -nc -q -O $mender_dir/mender-inventory-os \
-    $mender_client_repo/$mender_client_revision/support/mender-inventory-os
-  wget -nc -q -O $mender_dir/mender-inventory-rootfs-type \
-    $mender_client_repo/$mender_client_revision/support/mender-inventory-rootfs-type
-  wget -nc -q -O $mender_dir/server.crt \
+  wget -q -O $mender_dir/server.demo.crt \
     $meta_mender_repo/$meta_mender_revision/meta-mender-demo/recipes-mender/mender/files/server.crt
 }
 
@@ -165,11 +108,8 @@ install_files() {
   local primary_dir=$1
   local data_dir=$2
 
-  identitydir="usr/share/mender/identity"
-  inventorydir="usr/share/mender/inventory"
   sysconfdir="etc/mender"
   bindir="usr/bin"
-  systemd_unitdir="lib/systemd/system"
   localstatedir="var/lib/mender"
   dataconfdir="mender"
   databootdir="u-boot"
@@ -202,52 +142,61 @@ install_files() {
       ;;
   esac
 
-  sudo install -d ${primary_dir}/${identitydir}
-  sudo install -d ${primary_dir}/${inventorydir}
-  sudo install -d ${primary_dir}/${sysconfdir}
-  sudo install -d ${primary_dir}/${sysconfdir}/scripts
-
   sudo ln -sf /data/${dataconfdir} ${primary_dir}/${localstatedir}
 
-  sudo install -m 0755 ${mender_client} ${primary_dir}/${bindir}/mender
+  # Call mender make install target
+  ( cd $GOPATH/src/github.com/mendersoftware/mender && \
+  sudo make install prefix=$primary_dir )
 
-  sudo install -t ${primary_dir}/${identitydir} -m 0755 \
-      ${mender_dir}/mender-device-identity
-
-  sudo install -t ${primary_dir}/${inventorydir} -m 0755 \
-      ${mender_dir}/mender-inventory-*
-
-  sudo install -m 0644 ${mender_dir}/mender.service ${primary_dir}/${systemd_unitdir}
+  # If specified, replace Mender client binary
+  if [ -n "${mender_client}" ]; then
+    sudo install -m 0755 ${mender_client} ${primary_dir}/${bindir}/mender
+  fi
 
   # Enable menderd service starting on boot.
   sudo ln -sf /lib/systemd/system/mender.service \
       ${primary_dir}/etc/systemd/system/multi-user.target.wants/mender.service
 
-  sudo install -m 0644 ${mender_dir}/mender.conf ${primary_dir}/${sysconfdir}
-
-  sudo install -m 0444 ${mender_dir}/server.crt ${primary_dir}/${sysconfdir}
-
-  sudo install -m 0644 ${mender_dir}/artifact_info ${primary_dir}/${sysconfdir}
-
-  sudo install -m 0644 ${mender_dir}/version ${primary_dir}/${sysconfdir}/scripts
-
-  if [ -n "${demo_host_ip}" ]; then
-    sudo sh -c -e "echo '$demo_host_ip docker.mender.io s3.docker.mender.io' >> $primary_dir/etc/hosts";
+  # By default production settings configuration is installed
+  if [ -n "${demo}" ] && [ ${demo} -eq 1 ]; then
+    sudo install -m 0644 ${primary_dir}/${sysconfdir}/mender.conf.demo ${primary_dir}/${sysconfdir}/mender.conf
   fi
 
+  # If specified, replace server URL
+  if [ -n "${server_url}" ]; then
+    jq_inplace '.ServerURL = \"'${server_url}'\"' ${primary_dir}/${sysconfdir}/mender.conf
+  fi
+
+  # Set tenant token
+  if [ -n "${tenant_token}" ]; then
+    jq_inplace '.TenantToken = \"'${tenant_token}'\"' ${primary_dir}/${sysconfdir}/mender.conf
+  fi
+
+  # Append RootfsPartA/B to mender.conf
+  append_rootfs_configuration ${primary_dir}/${sysconfdir}/mender.conf
+
+  # Set artifact name
+  if [ -n "${artifact_name}" ]; then
+    sudo sh -c -e "echo artifact_name=${artifact_name} > ${primary_dir}/${sysconfdir}/artifact_info";
+  fi
+
+  # Set demo server
+  if [ -n "${demo_host_ip}" ]; then
+    sudo sh -c -e "echo '$demo_host_ip docker.mender.io s3.docker.mender.io' >> $primary_dir/etc/hosts";
+    jq_inplace '.ServerURL = \"https://docker.mender.io\"' ${primary_dir}/${sysconfdir}/mender.conf
+  fi
+
+  # Install provided or demo certificate
   if [ -n "${server_cert}" ]; then
-    sudo install -m 0444 ${server_cert} ${primary_dir}/${sysconfdir}
+    sudo install -m 0444 ${server_cert} ${primary_dir}/${sysconfdir}/server.crt
+  else
+    sudo install -m 0444 ${mender_dir}/server.demo.crt ${primary_dir}/${sysconfdir}/server.crt
   fi
 }
 
 do_install_mender() {
   if [ -z "${mender_disk_image}" ]; then
     log "Mender raw disk image not set. Aborting."
-    show_help
-  fi
-
-  if [ -z "${mender_client}" ]; then
-    log "Mender client binary not set. Aborting."
     show_help
   fi
 
@@ -272,18 +221,17 @@ do_install_mender() {
     show_help
   fi
 
-  # TODO: more error checking of server types
-  if [ -n "${tenant_token}" ]; then
-    mender_tenant_token=$(echo ${tenant_token} | tr -d '\n')
-    mender_server_url="https://hosted.mender.io"
-  fi
-
-  if [ -n "${server_url}" ]; then
-    mender_server_url=${server_url}
-  fi
-
   [ ! -f $mender_disk_image ] && \
       { log "$mender_disk_image - file not found. Aborting."; exit 1; }
+
+  test -n "$(go version)" || \
+      { log "go binary not found in PATH. Aborting."; exit 1; }
+
+  test -n "$GOPATH" || \
+      { log "GOPATH not set. Aborting."; exit 1; }
+
+  test -d $GOPATH/src/github.com/mendersoftware/mender || \
+      { log "mender source not found in \$GOPATH/src/github.com/mendersoftware/mender. Aborting."; exit 1; }
 
   # Mount rootfs partition A.
   create_device_maps $mender_disk_image mender_disk_mappings

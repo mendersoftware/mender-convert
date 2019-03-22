@@ -72,7 +72,6 @@ TENANT_TOKEN="<INSERT-TOKEN-FROM Hosted Mender>"
             --raw-disk-image $RAW_DISK_IMAGE                \
             --mender-disk-image $MENDER_DISK_IMAGE          \
             --device-type $DEVICE_TYPE                      \
-            --mender-client /mender                         \
             --artifact-name $ARTIFACT_NAME                  \
             --bootloader-toolchain arm-linux-gnueabihf      \
             --server-url "https://hosted.mender.io"         \
