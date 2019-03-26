@@ -64,7 +64,7 @@ Examples:
                 --raw-disk-image <raw_disk_image_path>
                 [--mender-disk-image <mender_image_name>]
                 --device-type <beaglebone | raspberrypi3>
-                --mender-client <mender_binary_path>
+                [--mender-client <mender_binary_path>]
                 --artifact-name release-1_1.5.0
                 --bootloader-toolchain arm-linux-gnueabihf
                 --demo-host-ip 192.168.10.2
@@ -306,6 +306,10 @@ do_raw_disk_image_create_partitions() {
     "qemux86_64")
       do_make_sdimg_qemux86_64
       ;;
+    *)
+      log "Error: unsupported device type $device_type"
+      exit 1
+      ;;
   esac
 
   rc=$?
@@ -406,7 +410,7 @@ do_install_mender_to_mender_disk_image() {
   ((step++))
 
   if [ -z "$mender_disk_image" ] || [ -z "$device_type" ] || \
-     [ -z "$mender_client" ] || [ -z "$artifact_name" ]; then
+     [ -z "$artifact_name" ]; then
     show_help
     return 1
   fi
@@ -417,7 +421,11 @@ do_install_mender_to_mender_disk_image() {
       { log "Error: incorrect device type. Aborting."; return 1; }
 
   # mender-image-1.5.0
-  stage_4_args="-m $mender_disk_image -d $device_type -g ${mender_client} -a ${artifact_name}"
+  stage_4_args="-m $mender_disk_image -d $device_type -a ${artifact_name}"
+
+  if [ -n "$mender_client" ]; then
+    stage_4_args="${stage_4_args} --mender-client ${mender_client}"
+  fi
 
   if [ -n "$demo" ] && [ ${demo} -eq 1 ]; then
     stage_4_args="${stage_4_args} --demo"
@@ -489,6 +497,10 @@ do_install_bootloader_to_mender_disk_image() {
       # Update test configuration file
       update_test_config_file $device_type distro-feature "mender-uboot" \
                               mount-location "\/uboot"
+      ;;
+    *)
+      log "Error: unsupported device type $device_type"
+      exit 1
       ;;
   esac
 
@@ -627,7 +639,7 @@ do_mender_disk_image_to_artifact() {
 
 do_from_raw_disk_image() {
   if [ -z "$raw_disk_image" ] || [ -z "$device_type" ] ||  \
-     [ -z "$artifact_name" ] || [ -z "$mender_client" ] || \
+     [ -z "$artifact_name" ] || \
      [ -z "$bootloader_toolchain" ]; then
     show_help
     return 1
@@ -702,7 +714,7 @@ while (( "$#" )); do
       shift 2
       ;;
     -c | --server-cert)
-      server_cert=$2
+      server_cert=$(get_path $2)
       shift 2
       ;;
     -u | --server-url)

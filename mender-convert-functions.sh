@@ -211,6 +211,10 @@ set_mender_disk_alignment() {
       local lvar_uboot_env_size=$(( $lvar_partition_alignment * 2 ))
       local lvar_vfat_storage_offset=$(( $lvar_partition_alignment + $lvar_uboot_env_size ))
       ;;
+    *)
+      log "Error: unsupported device type $1"
+      exit 1
+      ;;
   esac
 
   eval $rvar_partition_alignment="'$lvar_partition_alignment'"
@@ -767,6 +771,10 @@ set_fstab() {
       mountpoint="/boot/efi"
       blk_device=hda
       data_id=5
+      ;;
+    *)
+      log "Error: unsupported device type $device_type"
+      exit 1
       ;;
   esac
 

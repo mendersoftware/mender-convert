@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libtool \
     pkg-config \
     python \
+    jq \
 # for mender-convert to run (mkfs.vfat is required for boot partition)
     sudo \
     dosfstools \
@@ -38,6 +39,16 @@ RUN echo "mtools_skip_check=1" >> $HOME/.mtoolsrc
 RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/mender-artifact \
     && chmod +x /usr/bin/mender-artifact
 
+# Build liblzma from source
+RUN wget -q https://tukaani.org/xz/xz-5.2.4.tar.gz \
+    && tar -C /root -xzf xz-5.2.4.tar.gz \
+    && cd /root/xz-5.2.4 \
+    && ./configure --host=arm-linux-gnueabihf --prefix=/root/xz-5.2.4/install \
+    && make \
+    && make install
+
+ENV LIBLZMA_INSTALL_PATH "/root/xz-5.2.4/install"
+
 # Golang environment, for cross-compiling the Mender client
 RUN wget https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz \
     && tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz \
@@ -52,16 +63,16 @@ ENV MENDER_CLIENT_VERSION=$mender_client_version
 ENV PATH "$PATH:/usr/local/go/bin"
 ENV GOPATH "/root/go"
 
-RUN go get github.com/mendersoftware/mender
+RUN go get -d github.com/mendersoftware/mender
 WORKDIR $GOPATH/src/github.com/mendersoftware/mender
 RUN git checkout $MENDER_CLIENT_VERSION
 
 RUN env CGO_ENABLED=1 \
+    CGO_CFLAGS="-I${LIBLZMA_INSTALL_PATH}/include" \
+    CGO_LDFLAGS="-L${LIBLZMA_INSTALL_PATH}/lib" \
     CC=arm-linux-gnueabihf-gcc \
     GOOS=linux \
     GOARCH=arm make build
-
-RUN cp $GOPATH/src/github.com/mendersoftware/mender/mender /
 
 WORKDIR /
 
