@@ -45,10 +45,11 @@ This will create a container image you can use to run mender-convert.
 
 ### Use the mender-convert container image
 
-Create a directory `input` under the directory where you copied these files (`docker-build`, `docker-mender-convert`, etc.):
+Create the directories `input` and `output` under the directory where you copied these files (`docker-build`, `docker-mender-convert`, etc.):
 
 ```bash
 mkdir input
+mkdir output
 ```
 
 Then put your raw disk image into `input/`, e.g.
@@ -90,18 +91,6 @@ After it finishes, you can find your images in the `output` directory on your ho
 
 ### Known issues
 * Raspberrypi0w cpu isn't armv7+ architecture (it's armv6) and because of this mender client + u-boot fw_set/getenv tools are crashing when compiled with armv7 toolchain added in docker image. Pls use this forked [repo](https://github.com/nandra/mender-conversion-tools/commits/rpi0w-toolchain) to have it properly build with other armv6 toolchain.
-* If building U-boot fails with:
-```
-     D	scripts/Kconfig
-     input in flex scanner failed
-     ....
-     include/linux/kconfig.h:4:32: fatal error: generated/autoconf.h: No such file or directory
-     #include <generated/autoconf.h>
-```
-you might be using a case-sensitive filesystem which is not supported. Case-sensitive filesystems are typically used on OSX (Mac) and Windows but you can also run in to this on Linux if running on a NTFS formatted partition. 
-
-For details see this [discussion](https://hub.mender.io/t/raspberry-pi-3-model-b-b-raspbian/140/10)
-
 
 ## Contributing
 

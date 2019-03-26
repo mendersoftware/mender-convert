@@ -8,7 +8,8 @@ MENDER_CONVERT_DIR="$(pwd)"
 mkdir -p output
 
 docker run \
-       --mount type=bind,source="$MENDER_CONVERT_DIR,target=/mender-convert" \
+       -v $MENDER_CONVERT_DIR/input:/mender-convert/input \
+       -v $MENDER_CONVERT_DIR/output:/mender-convert/output \
        --privileged=true \
        --cap-add=SYS_MODULE \
        -v /dev:/dev \

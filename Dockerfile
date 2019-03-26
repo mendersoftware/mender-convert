@@ -76,5 +76,7 @@ RUN env CGO_ENABLED=1 \
 
 WORKDIR /
 
+COPY . /mender-convert/
+
 COPY docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
