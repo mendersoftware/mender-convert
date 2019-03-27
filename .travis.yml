@@ -10,3 +10,4 @@ script:
     - mendertesting/check_commits.sh
     # Check licenses
     - mendertesting/check_license.sh
+    - ./docker-build

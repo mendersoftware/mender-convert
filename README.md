@@ -68,15 +68,21 @@ ARTIFACT_NAME="2018-11-13-raspbian-stretch"
 MENDER_DISK_IMAGE="2018-11-13-raspbian-stretch.sdimg"
 TENANT_TOKEN="<INSERT-TOKEN-FROM Hosted Mender>"
 
-./docker-mender-convert from-raw-disk-image                 \
-            --raw-disk-image $RAW_DISK_IMAGE                \
-            --mender-disk-image $MENDER_DISK_IMAGE          \
-            --device-type $DEVICE_TYPE                      \
-            --artifact-name $ARTIFACT_NAME                  \
-            --bootloader-toolchain arm-linux-gnueabihf      \
-            --server-url "https://hosted.mender.io"         \
+./docker-mender-convert from-raw-disk-image                      \
+            --raw-disk-image $RAW_DISK_IMAGE                     \
+            --mender-disk-image $MENDER_DISK_IMAGE               \
+            --device-type $DEVICE_TYPE                           \
+            --artifact-name $ARTIFACT_NAME                       \
+            --bootloader-toolchain arm-buildroot-linux-gnueabihf \
+            --server-url "https://hosted.mender.io"              \
             --tenant-token $TENANT_TOKEN
 ```
+
+By default conversion in containter uses GCC 7.3.0 bootlin toolchain tuned for
+ARMv6 architecture (especially for ARM1176(F)-S single-core processor).
+The aim of that is to provide a support for the Raspberry Pi Zero W development board.
+
+ARMv7 is backward compatible with ARMv6, so binaries compiled for ARMv6 should also work on ARMv7.
 
 Note that the default Mender client is the latest stable and cross-compiled for generic ARM boards,
 which should work well in most cases. If you would like to use a different Mender client,
@@ -89,7 +95,10 @@ After it finishes, you can find your images in the `output` directory on your ho
 
 
 ### Known issues
-* Raspberrypi0w cpu isn't armv7+ architecture (it's armv6) and because of this mender client + u-boot fw_set/getenv tools are crashing when compiled with armv7 toolchain added in docker image. Pls use this forked [repo](https://github.com/nandra/mender-conversion-tools/commits/rpi0w-toolchain) to have it properly build with other armv6 toolchain.
+* An issue for `Raspberry Pi Zero W` has been spotted with the `mender-convert` tool version 1.1.0.
+  After an initial boot, having last partition resized to the end of the SD card, the correct device
+  tree cannot be found. As a result the boot cannot succeed.
+  For more information and current status, see [issue tracker](https://tracker.mender.io/browse/MEN-2436).
 * If building U-boot fails with:
 ```
      D	scripts/Kconfig
@@ -98,7 +107,7 @@ After it finishes, you can find your images in the `output` directory on your ho
      include/linux/kconfig.h:4:32: fatal error: generated/autoconf.h: No such file or directory
      #include <generated/autoconf.h>
 ```
-you might be using a case-sensitive filesystem which is not supported. Case-sensitive filesystems are typically used on OSX (Mac) and Windows but you can also run in to this on Linux if running on a NTFS formatted partition. 
+you might be using a case-sensitive filesystem which is not supported. Case-sensitive filesystems are typically used on OSX (Mac) and Windows but you can also run in to this on Linux if running on a NTFS formatted partition.
 
 For details see this [discussion](https://hub.mender.io/t/raspberry-pi-3-model-b-b-raspbian/140/10)
 
