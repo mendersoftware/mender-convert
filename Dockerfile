@@ -55,6 +55,7 @@ ENV GOPATH "/root/go"
 
 # Download Mender client
 ARG mender_client_version
+RUN test -n "$mender_client_version" || (echo "Argument 'mender_client_version' is mandatory." && exit 1)
 ENV MENDER_CLIENT_VERSION=$mender_client_version
 
 RUN go get -d github.com/mendersoftware/mender
