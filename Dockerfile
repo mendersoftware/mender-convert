@@ -81,6 +81,10 @@ RUN env CGO_ENABLED=1 \
     GOOS=linux \
     GOARM=6 GOARCH=arm make build
 
+# allow us to keep original PATH variables when sudoing
+RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
+RUN chmod 0440 /etc/sudoers.d/secure_path_override
+
 WORKDIR /
 
 COPY docker-entrypoint.sh /usr/local/bin/
