@@ -618,7 +618,7 @@ do_mender_disk_image_to_artifact() {
 
       #Create Mender artifact
       mender-artifact write rootfs-image \
-        --update ${mender_rootfs_image} \
+        --file ${mender_rootfs_image} \
         --output-path ${mender_artifact} \
         --artifact-name ${artifact_name} \
         --device-type ${device_type}
