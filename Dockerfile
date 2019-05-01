@@ -1,7 +1,6 @@
 FROM ubuntu:18.04
 
-ARG MENDER_ARTIFACT_VERSION=2.3.0
-ARG MENDER_CONVERT_VERSION=1.0.0
+ARG MENDER_ARTIFACT_VERSION=2.4.0
 ARG GOLANG_VERSION=1.11.2
 
 RUN apt-get update && apt-get install -y \
@@ -40,7 +39,7 @@ RUN echo "mtools_skip_check=1" >> $HOME/.mtoolsrc
 RUN wget -nc -q https://toolchains.bootlin.com/downloads/releases/toolchains/armv6-eabihf/tarballs/armv6-eabihf--glibc--stable-2018.11-1.tar.bz2 \
     && tar -xjf armv6-eabihf--glibc--stable-2018.11-1.tar.bz2 \
     && rm armv6-eabihf--glibc--stable-2018.11-1.tar.bz2 \
-    && echo export PATH=$PATH:/armv6-eabihf--glibc--stable-2018.11-1/bin >> /root/.bashrc
+    && echo 'export PATH=$PATH:/armv6-eabihf--glibc--stable-2018.11-1/bin' >> /root/.bashrc
 
 RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/mender-artifact \
     && chmod +x /usr/bin/mender-artifact
@@ -48,13 +47,14 @@ RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/me
 # Golang environment, for cross-compiling the Mender client
 RUN wget https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz \
     && tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz \
-    && echo export PATH=$PATH:/usr/local/go/bin >> /root/.bashrc
+    && echo 'export PATH=$PATH:/usr/local/go/bin' >> /root/.bashrc
 
 ENV PATH "$PATH:/usr/local/go/bin:/armv6-eabihf--glibc--stable-2018.11-1/bin"
 ENV GOPATH "/root/go"
 
 # Download Mender client
 ARG mender_client_version
+RUN test -n "$mender_client_version" || (echo "Argument 'mender_client_version' is mandatory." && exit 1)
 ENV MENDER_CLIENT_VERSION=$mender_client_version
 
 RUN go get -d github.com/mendersoftware/mender
@@ -80,6 +80,10 @@ RUN env CGO_ENABLED=1 \
     CC=$CC \
     GOOS=linux \
     GOARM=6 GOARCH=arm make build
+
+# allow us to keep original PATH variables when sudoing
+RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
+RUN chmod 0440 /etc/sudoers.d/secure_path_override
 
 WORKDIR /
 
