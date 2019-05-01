@@ -33,6 +33,6 @@ fi
 
 umount /root_system
 
-echo "Creating Mender Artifact. This may take a few minutes..."
-mender-artifact write rootfs-image -t $DEVICE_TYPE -n $ARTIFACT_NAME -f /root_images/$ROOTFS_OUTPUT_FILE_NAME -o /root_images/$ARTIFACT_NAME.mender
+echo "Creating Mender Artifact. This may take 10-20 minutes (using LZMA)..."
+mender-artifact --compression lzma write rootfs-image -t $DEVICE_TYPE -n $ARTIFACT_NAME -f /root_images/$ROOTFS_OUTPUT_FILE_NAME -o /root_images/$ARTIFACT_NAME.mender
 sync
