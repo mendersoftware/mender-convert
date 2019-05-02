@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-ARG MENDER_ARTIFACT_VERSION=2.3.0
+ARG MENDER_ARTIFACT_VERSION=3.0.0b1
 
 RUN apt-get update && apt-get install -y \
     wget \
