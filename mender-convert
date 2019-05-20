@@ -150,8 +150,8 @@ do_raw_disk_image_shrink_rootfs() {
   elif [[ $raw_disk_counts -eq 2 ]]; then
     sudo losetup $loopdevice $raw_disk_image -o $((${raw_disk_sizes[prootfs_start]} * $sector_size))
   else
-    log "Error: invalid/unsupported embedded raw disk image. Aborting."
-    return 1
+    log "Warning: invalid/unsupported embedded raw disk image. Skipping resize..."
+    return 0
   fi
 
   block_size=($(sudo dumpe2fs -h $loopdevice | grep 'Block size' | tr -s ' ' | cut -d ' ' -f3))
