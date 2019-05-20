@@ -34,7 +34,7 @@ build_uboot_files() {
   local CROSS_COMPILE=${1}-
   local ARCH=arm
   local branch="mender-rpi-2018.07"
-  local commit="981cc831e3"
+  local commit="884893e54a"
   local uboot_repo_vc_dir=$uboot_dir/.git
   local defconfig="rpi_3_32b_defconfig"
 
