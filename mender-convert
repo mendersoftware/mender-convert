@@ -20,6 +20,9 @@ General commands:
         mender-disk-image-to-artifact           - creates Mender artifact file
                                                   from Mender image
 
+        raw-disk-image-shrink-rootfs            - shrinks existing embedded raw
+                                                  disk image
+
 Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb |
           -d|--device-type | -p|--rootfs-partition-id | -n|--demo | -i|--demo-host-ip |
           -c|--server-cert | -u|--server-url | -t|--tenant-token |
@@ -82,6 +85,12 @@ Examples:
                 --rootfs-partition-id <primary | secondary>
 
         Note: artifact name format is: release-<release_no>_<mender_version>
+
+    To shrink the existing embedded raw disk image:
+        ./mender-convert raw-disk-image-shrink-rootfs
+                --raw-disk-image <raw_disk_image_path>
+
+    Output: Root filesystem size (sectors): 4521984
 
 EOF
 }
@@ -791,6 +800,14 @@ mender_rootfs_image=${output_dir}/${mender_rootfs_basename}
 mender_artifact=${output_dir}/${mender_disk_basename}.mender
 
 case "$1" in
+  raw-disk-image-shrink-rootfs)
+    total=1
+    do_raw_disk_image_shrink_rootfs || rc=$?
+    [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
+    log "The rootfs partition in the raw disk image has been shrinked successfully!"
+    log "You can now convert the output raw disk image\n\t$raw_disk_image\
+         \nto a Mender disk image."
+    ;;
   mender-disk-image-to-artifact)
     total=1
     do_mender_disk_image_to_artifact || rc=$?
