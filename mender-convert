@@ -46,6 +46,7 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
         storage-total-size-mb - total storage size in MB; default value 8000MB;
                                 it is used to calculate the rootfs final size
         keep                  - keep intermediate files in output directory
+        no_service            - Don't install mender service
         version               - print the version
         help                  - show help and exit
 
@@ -441,6 +442,10 @@ do_install_mender_to_mender_disk_image() {
   if [ -n "${keep}" ]; then
     stage_4_args="${stage_4_args} -k"
   fi
+  
+  if [ -n "${no_service}" ]; then
+    stage_4_args="${stage_4_args} --no_service"
+  fi
 
   eval set -- " ${stage_4_args}"
 
@@ -728,6 +733,10 @@ while (( "$#" )); do
       ;;
     -k | --keep)
       keep="-k"
+      shift 1
+      ;;
+	--no_service)
+      no_service="true"
       shift 1
       ;;
     -v | --version)

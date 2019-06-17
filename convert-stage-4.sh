@@ -23,6 +23,7 @@ Usage: $0 [options]
         --server-cert       - Mender server certificate
         --tenant-token      - Mender tenant token
         --keep              - Keep intermediate files in output directory
+        --no_service        - Don't install mender as Service
         --help              - Show help and exit
 
     For examples, see: ./mender-convert --help
@@ -153,9 +154,11 @@ install_files() {
     sudo install -m 0755 ${mender_client} ${primary_dir}/${bindir}/mender
   fi
 
-  # Enable menderd service starting on boot.
-  sudo ln -sf /lib/systemd/system/mender.service \
-      ${primary_dir}/etc/systemd/system/multi-user.target.wants/mender.service
+  if ! [ -z "${no_service}" ]; then
+    # Enable menderd service starting on boot.
+    sudo ln -sf /lib/systemd/system/mender.service \
+        ${primary_dir}/etc/systemd/system/multi-user.target.wants/mender.service
+  fi
 
   # By default production settings configuration is installed
   if [ -n "${demo}" ] && [ ${demo} -eq 1 ]; then
@@ -210,15 +213,17 @@ do_install_mender() {
     show_help
   fi
 
-  if [ -z "${server_url}" ] && [ -z "${demo_host_ip}" ] && \
-     [ -z "${tenant_token}" ]; then
-    log "No server type specified. Aborting."
-    show_help
-  fi
+  if [ -z "${no_service}" ]; then
+    if [ -z "${server_url}" ] && [ -z "${demo_host_ip}" ] && \
+       [ -z "${tenant_token}" ]; then
+      log "No server type specified. Aborting."
+      show_help
+    fi
 
-  if [ -n "${server_url}" ] && [ -n "${demo_host_ip}" ]; then
-    log "Incompatible server type choice. Aborting."
-    show_help
+    if [ -n "${server_url}" ] && [ -n "${demo_host_ip}" ]; then
+      log "Incompatible server type choice. Aborting."
+      show_help
+    fi
   fi
 
   [ ! -f $mender_disk_image ] && \
@@ -317,6 +322,10 @@ while (( "$#" )); do
       ;;
     -k | --keep)
       keep="1"
+      shift 1
+      ;;
+	--no_service)
+      no_service="true"
       shift 1
       ;;
     -h | --help)
