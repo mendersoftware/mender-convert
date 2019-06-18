@@ -123,7 +123,7 @@ declare -a rootfs_partition_ids=("primary" "secondary")
 declare -a mender_disk_mappings
 declare -a raw_disk_mappings
 #Supported devices
-declare -a supported_devices=("beaglebone" "raspberrypi3" "qemux86_64" "raspberrypi0w")
+declare -a supported_devices=("beaglebone" "raspberrypi3" "qemux86_64" "raspberrypi0w" "rockpro64")
 
 do_raw_disk_image_shrink_rootfs() {
   log "$step/$total Shrinking raw disk image root filesystem..."
@@ -297,6 +297,9 @@ do_raw_disk_image_create_partitions() {
     "qemux86_64")
       do_make_sdimg_qemux86_64
       ;;
+    "rockpro64")
+      do_make_sdimg_rockpro64
+      ;;
     *)
       log "Error: unsupported device type $device_type"
       exit 1
@@ -317,6 +320,39 @@ do_raw_disk_image_create_partitions() {
   [ $rc -eq 0 ] || { log "\nRepartitioning of $raw_disk_image image failed."; }
 
   return $rc
+}
+
+do_make_sdimg_rockpro64() {
+  local ret=0
+
+  create_device_maps $raw_disk_image raw_disk_mappings
+  mount_raw_disk ${raw_disk_mappings[@]}
+
+  log "$step/$total Setting boot partition..."
+  ((step++))
+
+  stage_2_args="$output_dir ${mender_disk_mappings[0]} ${embedded_rootfs_dir}"
+  ${tool_dir}/rockpro64-convert-stage-2.sh ${stage_2_args} || ret=$?
+  [[ $ret -ne 0 ]] && { log "Aborting."; return $ret; }
+
+  log "$step/$total Setting root filesystem partition..."
+  ((step++))
+
+  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
+  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
+  [[ $ret -ne 0 ]] && { return $ret; }
+
+  mount_mender_disk ${mender_disk_mappings[@]}
+
+  log "$step/$total Setting file system table..."
+  ((step++))
+  set_fstab $device_type
+
+  log "Write bootloader"
+  dd if=$integration_dir/rockpro64/rksd_loader.img of=$mender_disk_image \
+     seek=64 conv=notrunc status=none
+
+  return $ret
 }
 
 do_make_sdimg_beaglebone() {
@@ -469,7 +505,7 @@ do_install_bootloader_to_mender_disk_image() {
       { log "Error: incorrect device type. Aborting."; return 1; }
 
   case "$device_type" in
-    "beaglebone" | "qemux86_64")
+    "beaglebone" | "qemux86_64" | "rockpro64")
       stage_5_args="-m $mender_disk_image -d $device_type -b ${bootloader_toolchain} $keep"
       eval set -- " ${stage_5_args}"
       ${tool_dir}/convert-stage-5.sh ${stage_5_args}|| ret=$?
@@ -766,6 +802,21 @@ eval set -- "$PARAMS"
 # and configure where logs should be redirected.
 mkdir -p $output_dir
 logsetup
+
+# Fetch integration binaries
+
+MENDER_INTEGRATION_URL="https://d1b0l86ne08fsf.cloudfront.net/mender-convert"
+if [ "$device_type" == "rockpro64" ]; then
+  if [ ! -f $integration_dir/rockpro64/emmc-boot-integration.tar.gz ]; then
+    rockpro64_integration_dir=$integration_dir/rockpro64
+
+    mkdir -p $rockpro64_integration_dir
+    wget -P $rockpro64_integration_dir \
+           ${MENDER_INTEGRATION_URL}/armbian/rockpro64/emmc-boot-integration.tar.gz
+
+    tar xvf $rockpro64_integration_dir/emmc-boot-integration.tar.gz -C $rockpro64_integration_dir
+  fi
+fi
 
 # Some commands expect elevated privileges.
 sudo true
