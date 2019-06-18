@@ -154,8 +154,11 @@ install_files() {
   fi
 
   # Enable menderd service starting on boot.
-  sudo ln -sf /lib/systemd/system/mender.service \
-      ${primary_dir}/etc/systemd/system/multi-user.target.wants/mender.service
+  if [ -z "${standalone_operation}" ]; then
+    # Enable menderd service starting on boot.
+    sudo ln -sf /lib/systemd/system/mender.service \
+        ${primary_dir}/etc/systemd/system/multi-user.target.wants/mender.service
+  fi
 
   # By default production settings configuration is installed
   if [ -n "${demo}" ] && [ ${demo} -eq 1 ]; then
@@ -212,8 +215,8 @@ do_install_mender() {
 
   if [ -z "${server_url}" ] && [ -z "${demo_host_ip}" ] && \
      [ -z "${tenant_token}" ]; then
-    log "No server type specified. Aborting."
-    show_help
+    log "No Mender server configuration was provided, it will only be possible to update using standalone mode."
+    standalone_operation="true"
   fi
 
   if [ -n "${server_url}" ] && [ -n "${demo_host_ip}" ]; then
