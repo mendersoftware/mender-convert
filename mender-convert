@@ -799,7 +799,7 @@ case "$1" in
     log "You can find the Mender Artifact at:\n\t$mender_artifact\nand use it to deploy updates."
     ;;
   from-raw-disk-image)
-    total=9
+    total=10
     do_from_raw_disk_image || rc=$?
     [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
     log "Conversion complete!"
