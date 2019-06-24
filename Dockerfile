@@ -28,7 +28,9 @@ RUN apt-get update && apt-get install -y \
 # to download mender-artifact
     wget \
 # to download mender-convert and U-Boot sources
-    git
+    git \
+# for arm64 support
+    gcc-aarch64-linux-gnu
 
 # Disable sanity checks made by mtools. These checks reject copy/paste operations on converted disk images.
 RUN echo "mtools_skip_check=1" >> $HOME/.mtoolsrc
@@ -61,13 +63,25 @@ RUN go get -d github.com/mendersoftware/mender
 WORKDIR $GOPATH/src/github.com/mendersoftware/mender
 RUN git checkout $MENDER_CLIENT_VERSION
 
-ENV CC "arm-buildroot-linux-gnueabihf-gcc"
+# Toolchain configuration
+ARG toolchain_host
+RUN test -n "$toolchain_host" || (echo "Argument 'toolchain_host' is mandatory." && exit 1)
+ENV TOOLCHAIN_HOST=${toolchain_host}
+
+ARG go_flags
+RUN test -n "$go_flags" || (echo "Argument 'go_flags' is mandatory." && exit 1)
+ENV GO_FLAGS=$go_flags
+
+RUN test -n "$mender_client_version" || (echo "Argument 'mender_client_version' is mandatory." && exit 1)
+ENV MENDER_CLIENT_VERSION=$mender_client_version
+
+ENV CC "${TOOLCHAIN_HOST}-gcc"
 
 # Build liblzma from source
 RUN wget -q https://tukaani.org/xz/xz-5.2.4.tar.gz \
     && tar -C /root -xzf xz-5.2.4.tar.gz \
     && cd /root/xz-5.2.4 \
-    && ./configure --host=arm-buildroot-linux-gnueabihf --prefix=/root/xz-5.2.4/install \
+    && ./configure --host=${TOOLCHAIN_HOST} --prefix=/root/xz-5.2.4/install \
     && make \
     && make install
 
@@ -79,7 +93,7 @@ RUN env CGO_ENABLED=1 \
     CGO_LDFLAGS="-L${LIBLZMA_INSTALL_PATH}/lib" \
     CC=$CC \
     GOOS=linux \
-    GOARM=6 GOARCH=arm make build
+    ${GO_FLAGS} make build
 
 # allow us to keep original PATH variables when sudoing
 RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
