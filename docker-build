@@ -6,4 +6,14 @@ IMAGE_NAME=mender-convert
 
 MENDER_CLIENT_VERSION="2.0.0"
 
-docker build . -t ${IMAGE_NAME} --build-arg mender_client_version=${MENDER_CLIENT_VERSION}
+DOCKER_ARGS="--build-arg mender_client_version=${MENDER_CLIENT_VERSION}"
+
+if [ "$1" = "arm64" ]; then
+    DOCKER_ARGS="${DOCKER_ARGS} --build-arg toolchain_host=aarch64-linux-gnu"
+    DOCKER_ARGS="${DOCKER_ARGS} --build-arg go_flags=GOARCH=arm64"
+else
+    DOCKER_ARGS="${DOCKER_ARGS} --build-arg toolchain_host=arm-buildroot-linux-gnueabihf"
+    DOCKER_ARGS="${DOCKER_ARGS} --build-arg go_flags=\"GOARM=6 GOARCH=arm\""
+fi
+
+eval docker build . -t ${IMAGE_NAME} ${DOCKER_ARGS}
