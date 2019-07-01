@@ -4,7 +4,7 @@ set -e
 
 IMAGE_NAME=mender-convert
 
-MENDER_CLIENT_VERSION="2.0.0"
+MENDER_CLIENT_VERSION="2.0.1"
 
 DOCKER_ARGS="--build-arg mender_client_version=${MENDER_CLIENT_VERSION}"
 
