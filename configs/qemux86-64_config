@@ -1,0 +1,16 @@
+# This configuration can be used to run on a qemux86-64 machine.
+#
+# This has been tested on images generated with the following command:
+#
+#    mkosi -d ubuntu -r bionic -t gpt_ext4 -b --checksum --password password -o image.raw
+#
+# Converted with the following command:
+#
+#    MENDER_ARTIFACT_NAME=release-1 ./mender-convert --disk-image input/image.raw  --overlay rootfs_overlay_demo --config configs/qemux86-64_config
+#
+# and qemu is executed with the following command:
+#
+#    qemu-system-x86_64 -enable-kvm -m 512 -smp 2 -bios /usr/share/ovmf/x64/OVMF_CODE.fd -drive format=raw,file=qemux86_64-release-1.sdimg
+
+MENDER_STORAGE_DEVICE=/dev/sda
+MENDER_DEVICE_TYPE="qemux86_64"

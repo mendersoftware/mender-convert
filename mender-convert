@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# Copyright 2019 Northern.tech AS
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+MENDER_CONVERT_VERSION=$(git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD)
+
+function show_help() {
+  cat << EOF
+mender-convert
+
+A tool that takes an existing embedded image (Debian, Ubuntu, Raspbian, etc)
+and converts it to a Mender image by restructuring partition table and adding
+necessary files.
+
+Usage: $0 COMMAND [options]
+
+Options:
+  -d, --disk-image            - Path to disk image to convert (Debian, Raspbian,
+                                Ubuntu, etc)
+  -o, --overlay               - Path to root filesystem overlay directory, you
+                                are able to provide this option multiple times
+  -c, --config                - Path to configuration file, you are able to
+                                provide this option multiple times
+  -v, --version               - output version information and exit
+  -h, --help                  - display this help and exit
+
+EOF
+}
+
+function show_version() {
+  echo "Version: ${MENDER_CONVERT_VERSION}"
+}
+
+function trap_exit() {
+  sudo rm -rf work
+}
+
+function trap_term() {
+  echo "Program interrupted by user"
+}
+
+trap trap_term INT TERM
+trap trap_exit EXIT
+
+mender_convert_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+if [ "${mender_convert_dir}" != "${PWD}" ]; then
+    echo "You must execute mender-convert from the root directory: ${mender_convert_dir}"
+    exit 1
+fi
+
+if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
+  echo "Sorry, it seems that you have not defined MENDER_ARTIFACT_NAME"
+  echo "You can do this with the following command:"
+  echo ""
+  echo -e "\tMENDER_ARTIFACT_NAME="release-1" ./mender-convert"
+  exit 1
+fi
+
+source modules/bootstrap.sh
+
+# We only handle a selection of the arguments here, the rest are passed on
+# to the sub-scripts.
+while (( "$#" )); do
+  case "$1" in
+    -h | --help)
+      show_help
+      exit 0
+      ;;
+    -v | --version)
+      show_version
+      exit 0
+      ;;
+    *)
+      break;
+      ;;
+  esac
+done
+
+mkdir -p work
+touch work/convert.log
+
+./mender-convert-extract "$@"
+./mender-convert-modify "$@"
+./mender-convert-package "$@"
+
+echo "Output Artifacts and images can be found in deploy directory:"
+ls -1 deploy/*

@@ -1,0 +1,25 @@
+# ROCKPro64 do not support GRUB bootloader integration, fallback to U-boot.
+MENDER_GRUB_EFI_INTEGRATION=n
+
+ROCKPRO64_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/armbian/rockpro64/${ROCKPRO64_BINARIES}"
+
+function platform_modify() {
+  mkdir -p work/rockpro64
+
+  run_and_log_cmd "wget -Nq ${ROCKPRO64_BINARIES_URL} -P work/rockpro64"
+  run_and_log_cmd "tar xvf work/rockpro64/${ROCKPRO64_BINARIES} -C work/rockpro64"
+
+  run_and_log_cmd "sudo cp work/rockpro64/boot.scr work/boot"
+
+  run_and_log_cmd "sudo cp work/rockpro64/fw_env.config work/rootfs/etc/"
+
+  # It is not possible to resize rootfs part when using Mender. so disable
+  # the service
+  run_and_log_cmd "sudo touch work/rootfs/root/.no_rootfs_resize"
+}
+
+function platform_package() {
+  log_info "Embedding bootloader in disk image"
+  run_and_log_cmd "dd if=work/rockpro64/rksd_loader.img of=${sdimg_path} \
+     seek=64 conv=notrunc status=none"
+}

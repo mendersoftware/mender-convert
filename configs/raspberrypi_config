@@ -1,0 +1,82 @@
+# Raspberry Pi does not support GRUB bootloader integration, fallback to U-boot.
+MENDER_GRUB_EFI_INTEGRATION=n
+
+# 4MB alignment
+MENDER_PARTITION_ALIGNMENT="4194304"
+
+RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/raspberrypi/${RASPBERRYPI_BINARIES}"
+
+function platform_modify() {
+  mkdir -p work/rpi/binaries
+
+  run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
+  run_and_log_cmd "tar xvf work/rpi/binaries/${RASPBERRYPI_BINARIES} -C work/rpi/binaries"
+
+  # Make a copy of Linux kernel arguments and modify.
+  run_and_log_cmd "cp work/boot/cmdline.txt work/rpi/cmdline.txt"
+
+  # Set a dynamic rootfs part (required for Mender A/B update strategy)
+  run_and_log_cmd "sed -i 's/\b[ ]root=[^ ]*/ root=\${mender_kernel_root}/' work/rpi/cmdline.txt"
+
+  # Root filesystem can not be resized when the disk is partition according
+  # to Mender layout, where the rootfs partition is the not last one which
+  # is a requirement to be able to do an "online" resize.
+  #
+  # This disables resize of rootfs on boot but applies the changes to
+  # cmdline.txt that are performed in the init_resize.sh script.
+  #
+  # Extracted from /usr/lib/raspi-config/init_resize.sh
+  run_and_log_cmd "sed -i 's| init=/usr/lib/raspi-config/init_resize\.sh||' work/rpi/cmdline.txt"
+  run_and_log_cmd "sed -i 's| sdhci\.debug_quirks2=4||' work/rpi/cmdline.txt"
+  if ! grep -q splash work/rpi/cmdline.txt; then
+    run_and_log_cmd "sed -i 's/ quiet//g' work/rpi/cmdline.txt"
+  fi
+
+  # Update Linux kernel command arguments with our custom configuration
+  run_and_log_cmd "sudo cp work/rpi/cmdline.txt work/boot/"
+
+  # Enable Full KMS (Kernel Mode Setting) graphics driver. This is the
+  # the open-source GPU driver that is part of mesa, also known as VC4.
+  #
+  # This is done because it seems that the firmware GPU driver does currently
+  # not play well when U-boot is enabled and HDMI output is "scrambled"
+  #
+  # Fixes: https://tracker.mender.io/browse/MEN-2685
+  #
+  # Will need to revisit this later when there are new firware releases.
+  #
+  # Should be noted that RPi4 only works with this enabled and the
+  # configuration in the Yocto BSP (meta-raspberrypi) is also nowdays using
+  # this driver by default.
+  run_and_log_cmd "echo 'dtoverlay=vc4-kms-v3d' | sudo tee -a work/boot/config.txt"
+
+  # Mask udisks2.service, otherwise it will mount the inactive part and we
+  # might write an update while it is mounted which often result in
+  # corruptions.
+  #
+  # TODO: Find a way to only blacklist mmcblk0pX devices instead of masking
+  # the service.
+  run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
+
+  # Extract Linux kernel and install to /boot directory on rootfs
+  run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
+
+  # Replace kernel with U-boot and add boot script
+  run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
+  run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_KERNEL_IMAGE}"
+  run_and_log_cmd "sudo cp work/rpi/binaries/boot.scr work/boot"
+  run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
+
+  # Raspberry Pi applications expect to find this on the device and in some
+  # cases parse the options to determinate functionality.
+  run_and_log_cmd "sudo ln -fs /uboot/config.txt work/rootfs/boot/config.txt"
+  run_and_log_cmd "sudo ln -fs /uboot/overlays work/rootfs/boot/overlays"
+  run_and_log_cmd "sudo ln -fs /uboot/cmdline.txt work/rootfs/boot/cmdline.txt"
+
+  run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
+  run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+
+  # Remove original 'resize2fs_once' script and its symbolic link.
+  run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
+  run_and_log_cmd "sudo rm work/rootfs/etc/init.d/resize2fs_once"
+}
