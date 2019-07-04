@@ -68,6 +68,9 @@ append_rootfs_configuration() {
   if [ "$device_type" == "qemux86_64" ]; then
     rootfsparta="/dev/hda2"
     rootfspartb="/dev/hda3"
+  elif [ "$device_type" == "rockpro64" ]; then
+    rootfsparta="/dev/mmcblk1p2"
+    rootfspartb="/dev/mmcblk1p3"
   fi
 
   jq_inplace '.RootfsPartA = \"'$rootfsparta'\" | .RootfsPartB = \"'$rootfspartb'\"' ${conffile}
@@ -75,22 +78,29 @@ append_rootfs_configuration() {
 
 create_client_files() {
   cat <<- EOF > $mender_dir/device_type
-	device_type=${device_type}
-	EOF
+device_type=${device_type}
+EOF
 
   case "$device_type" in
     "beaglebone" | "qemux86_64")
       cat <<- EOF > $mender_dir/fw_env.config
-	/dev/mmcblk0 0x800000 0x20000
-	/dev/mmcblk0 0x1000000 0x20000
-	EOF
+/dev/mmcblk0 0x800000 0x20000
+/dev/mmcblk0 0x1000000 0x20000
+EOF
       ;;
     "raspberrypi3"|"raspberrypi0w")
       cat <<- EOF > $mender_dir/fw_env.config
-	/dev/mmcblk0 0x400000 0x4000
-	/dev/mmcblk0 0x800000 0x4000
-	EOF
+/dev/mmcblk0 0x400000 0x4000
+/dev/mmcblk0 0x800000 0x4000
+EOF
       ;;
+    "rockpro64")
+      cat <<- EOF > $mender_dir/fw_env.config
+/dev/mmcblk1 0x400000 0x8000
+/dev/mmcblk1 0x800000 0x8000
+EOF
+      ;;
+
   esac
 }
 

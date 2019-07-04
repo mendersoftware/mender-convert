@@ -31,6 +31,7 @@ declare -A mender_disk_sizes
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 files_dir=${tool_dir}/files
 output_dir=${tool_dir}/output
+integration_dir=${tool_dir}/integration
 build_log=${output_dir}/build.log
 
 embedded_base_dir=$output_dir/embedded
@@ -206,7 +207,7 @@ set_mender_disk_alignment() {
       local lvar_partition_alignment=${PART_ALIGN_8MB}
       local lvar_vfat_storage_offset=$lvar_partition_alignment
       ;;
-    "raspberrypi3" | "raspberrypi0w")
+    "raspberrypi3" | "raspberrypi0w" | "rockpro64")
       local lvar_partition_alignment=${PART_ALIGN_4MB}
       local lvar_uboot_env_size=$(( $lvar_partition_alignment * 2 ))
       local lvar_vfat_storage_offset=$(( $lvar_partition_alignment + $lvar_uboot_env_size ))
@@ -766,6 +767,10 @@ set_fstab() {
     "raspberrypi3"|"raspberrypi0w")
       mountpoint="/uboot"
       blk_device=mmcblk0p
+      ;;
+    "rockpro64")
+      mountpoint="/uboot"
+      blk_device=mmcblk1p
       ;;
     "qemux86_64")
       mountpoint="/boot/efi"

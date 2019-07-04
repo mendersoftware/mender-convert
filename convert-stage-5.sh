@@ -36,6 +36,7 @@ EOF
 
 tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 output_dir=${tool_dir}/output
+integration_dir=${tool_dir}/integration
 grub_dir=$output_dir/grub
 grubenv_dir=$output_dir/grubenv
 mender_disk_image=
@@ -109,6 +110,10 @@ build_env_lock_boot_files() {
 #
 #  $1 - linux kernel version
 build_grub_efi() {
+  if [ "$device_type" == "rockpro64" ]; then
+    return 0
+  fi
+
   log "\tBuilding GRUB efi file."
 
   local grub_build_dir=$grub_dir/build
@@ -210,6 +215,15 @@ install_files() {
   local boot_dir=$1
   local rootfs_dir=$2
   local linux_version=$3
+
+  if [ "$device_type" == "rockpro64" ]; then
+    cp $integration_dir/rockpro64/boot.scr ${boot_dir}/
+
+    # It is not possible to resize rootfs part when using Mender. so disable
+    # the service
+    touch ${rootfs_dir}/root/.no_rootfs_resize
+    return 0
+  fi
 
   local grub_build_dir=$grub_dir/build
   local grub_arm_dir=$grub_build_dir/arm
