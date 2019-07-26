@@ -31,7 +31,7 @@ This will create a container image `device-image-shell`.
 
 The also assumes your device is based on the ARM architecture, which is the most common (e.g. Raspberry Pi, BeagleBoard, etc.).
 
-You need a root file system image (usually with .ext4 extension) for your device as a starting point, such as one output by [mender-convert](https://github.com/mendersoftware/mender-convert).
+You need a root file system image (usually with .ext4 extension) for your device as a starting point, such as one output by [mender-convert](https://github.com/mendersoftware/mender-convert). Make sure to have `qemu-user-static` installed on a host machine.
 
 You can now enter a shell in your device root file system image by running `docker-device-image-shell` with the desired arguments:
 
