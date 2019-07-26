@@ -202,6 +202,7 @@ install_files() {
   # Install provided or demo certificate
   if [ -n "${server_cert}" ]; then
     sudo install -m 0444 ${server_cert} ${primary_dir}/${sysconfdir}/server.crt
+    jq_inplace '.ServerCertificate = \"$'{primary_dir}'/'${sysconfdir}'/server.crt\"' ${primary_dir}/${sysconfdir}/mender.conf 
   else
     sudo install -m 0444 ${mender_dir}/server.demo.crt ${primary_dir}/${sysconfdir}/server.crt
   fi
