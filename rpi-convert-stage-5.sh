@@ -138,14 +138,6 @@ install_files() {
 
   sudo cp ${bin_dir_pi}/boot.scr ${boot_dir}
 
-  sudo cp ${boot_dir}/config.txt ${output_dir}/config.txt
-
-  # dtoverlays seems to break U-boot for some reason, simply remove all of
-  # them as they do not actually work when U-boot is used.
-  sed -i /^dtoverlay=/d ${output_dir}/config.txt
-
-  sudo cp ${output_dir}/config.txt ${boot_dir}/config.txt
-
   # Raspberry Pi configuration files, applications expect to find this on
   # the device and in some cases parse the options to determinate
   # functionality.
