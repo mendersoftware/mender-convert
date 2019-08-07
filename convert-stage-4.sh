@@ -204,6 +204,10 @@ install_files() {
   if [ -n "${server_cert}" ]; then
     sudo install -m 0444 ${server_cert} ${primary_dir}/${sysconfdir}/server.crt
   fi
+
+  if [ -e "${primary_dir}/${sysconfdir}/server.crt" ]; then
+    jq_inplace '.ServerCertificate = \"'${primary_dir}'/'${sysconfdir}'/server.crt\"' ${primary_dir}/${sysconfdir}/mender.conf
+  fi
 }
 
 do_install_mender() {
