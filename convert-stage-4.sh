@@ -180,17 +180,16 @@ install_files() {
     sudo sh -c -e "echo artifact_name=${artifact_name} > ${primary_dir}/${sysconfdir}/artifact_info";
   fi
 
-  # Set demo server
+  # Set demo server and install demo certificate
   if [ -n "${demo_host_ip}" ]; then
     sudo sh -c -e "echo '$demo_host_ip docker.mender.io s3.docker.mender.io' >> $primary_dir/etc/hosts";
     jq_inplace '.ServerURL = \"https://docker.mender.io\"' ${primary_dir}/${sysconfdir}/mender.conf
+    sudo install -m 0444 ${mender_dir}/server.demo.crt ${primary_dir}/${sysconfdir}/server.crt
   fi
 
-  # Install provided or demo certificate
+  # Install provided
   if [ -n "${server_cert}" ]; then
     sudo install -m 0444 ${server_cert} ${primary_dir}/${sysconfdir}/server.crt
-  else
-    sudo install -m 0444 ${mender_dir}/server.demo.crt ${primary_dir}/${sysconfdir}/server.crt
   fi
 }
 
