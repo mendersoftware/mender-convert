@@ -193,7 +193,7 @@ install_files() {
   fi
 
   if [ -e "${primary_dir}/${sysconfdir}/server.crt" ]; then
-    jq_inplace '.ServerCertificate = \"'${primary_dir}'/'${sysconfdir}'/server.crt\"' ${primary_dir}/${sysconfdir}/mender.conf
+    jq_inplace '.ServerCertificate = \"/'${sysconfdir}'/server.crt\"' ${primary_dir}/${sysconfdir}/mender.conf
   fi
 }
 
