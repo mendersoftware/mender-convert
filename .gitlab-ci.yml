@@ -2,7 +2,6 @@ image: docker:git
 
 variables:
   DOCKER_REPOSITORY: mendersoftware/mender-convert
-  MENDER_CLIENT_VERSION: '2.0.0'
 
 stages:
   - test
@@ -33,7 +32,7 @@ build:
   services:
     - docker:dind
   script:
-    - docker build -t $DOCKER_REPOSITORY:pr --build-arg mender_client_version=${MENDER_CLIENT_VERSION} .
+    - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build
     - docker save $DOCKER_REPOSITORY:pr > image.tar
   artifacts:
     expire_in: 2w
