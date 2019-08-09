@@ -56,6 +56,8 @@ server_cert=
 tenant_token=
 # Mender tenant token.
 mender_tenant_token="dummy"
+# Mender state-script format version
+mender_state_scripts_version="3"
 
 declare -a mender_disk_mappings
 
@@ -129,6 +131,9 @@ install_files() {
   # Prepare 'data' partition
   sudo install -d -m 755 ${data_dir}/${dataconfdir}
   sudo install -d -m 755 ${data_dir}/${databootdir}
+
+  sudo install -d -m 755 ${primary_dir}/${sysconfdir}/scripts/
+  echo -n "${mender_state_scripts_version}" | sudo tee ${primary_dir}/${sysconfdir}/scripts/version
 
   sudo install -m 0444 ${mender_dir}/device_type ${data_dir}/${dataconfdir}
   sudo install -m 0644 ${mender_dir}/fw_env.config ${data_dir}/${databootdir}
