@@ -138,6 +138,24 @@ install_files() {
 
   sudo cp ${bin_dir_pi}/boot.scr ${boot_dir}
 
+  # Enable Full KMS (Kernel Mode Setting) graphics driver on Buster images.
+  # This is the the open-source GPU driver that is part of mesa, also known as
+  # VC4.
+  #
+  # This is done because it seems that the firmware GPU driver does currently
+  # not play well when U-boot is enabled and HDMI output is "scrambled"
+  #
+  # Fixes: https://tracker.mender.io/browse/MEN-2685
+  #
+  # Will need to revisit this later when there are new firware releases.
+  #
+  # Should be noted that RPi4 only works with this enabled and the
+  # configuration in the Yocto BSP (meta-raspberrypi) is also nowdays using
+  # this driver by default.
+  if grep -q buster ${rootfs_dir}/etc/os-release; then
+    echo 'dtoverlay=vc4-kms-v3d' | sudo tee -a ${boot_dir}/config.txt
+  fi
+
   # Raspberry Pi configuration files, applications expect to find this on
   # the device and in some cases parse the options to determinate
   # functionality.
