@@ -2,7 +2,6 @@ image: docker:git
 
 variables:
   DOCKER_REPOSITORY: mendersoftware/mender-convert
-  MENDER_CLIENT_VERSION: '2.0.0'
 
 stages:
   - test
@@ -10,9 +9,19 @@ stages:
 
 test:
   stage: test
-  script:
+  before_script:
     - apk add --no-cache bash perl-utils
-    - git clone git://github.com/mendersoftware/mendertesting
+    # Rename the branch we're on, so that it's not in the way for the
+    # subsequent fetch. It's ok if this fails, it just means we're not on any
+    # branch.
+    - git branch -m temp-branch || true
+    # Git trick: Fetch directly into our local branches instead of remote
+    # branches.
+    - git fetch origin 'refs/heads/*:refs/heads/*'
+    # Get last remaining tags, if any.
+    - git fetch --tags origin
+    - git clone http://github.com/mendersoftware/mendertesting
+  script:
     # Check commit compliance.
     - mendertesting/check_commits.sh
     # Check licenses
@@ -23,7 +32,7 @@ build:
   services:
     - docker:dind
   script:
-    - docker build -t $DOCKER_REPOSITORY:pr --build-arg mender_client_version=${MENDER_CLIENT_VERSION} .
+    - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build
     - docker save $DOCKER_REPOSITORY:pr > image.tar
   artifacts:
     expire_in: 2w
