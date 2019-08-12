@@ -43,7 +43,7 @@ RUN wget -nc -q https://toolchains.bootlin.com/downloads/releases/toolchains/arm
     && rm armv6-eabihf--glibc--stable-2018.11-1.tar.bz2 \
     && echo 'export PATH=$PATH:/armv6-eabihf--glibc--stable-2018.11-1/bin' >> /root/.bashrc
 
-RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/mender-artifact \
+RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
     && chmod +x /usr/bin/mender-artifact
 
 # Golang environment, for cross-compiling the Mender client
