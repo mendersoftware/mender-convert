@@ -88,6 +88,10 @@ mount -t sysfs sys /sys
 
 mount /uboot
 sed -i 's| init=/usr/lib/raspi-config/init_resize.sh||' /uboot/cmdline.txt
+sed -i 's| sdhci\.debug_quirks2=4||' ${output_dir}/cmdline.txt
+if ! grep -q splash /uboot/cmdline.txt; then
+  sed -i "s/ quiet//g" /uboot/cmdline.txt
+fi
 mount /uboot -o remount,ro
 sync
 
