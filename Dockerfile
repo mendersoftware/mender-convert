@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-ARG MENDER_ARTIFACT_VERSION=3.0.1
+ARG MENDER_ARTIFACT_VERSION=3.1.0b1
 ARG GOLANG_VERSION=1.11.2
 
 RUN apt-get update && apt-get install -y \
