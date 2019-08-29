@@ -589,7 +589,8 @@ create_device_maps() {
   local -n mappings=$2
 
   if [[ -n "$1" ]]; then
-    mapfile -t mappings < <( sudo kpartx -v -a $1 | grep 'loop' | cut -d' ' -f3 )
+    loopdevice=$(sudo losetup --show -f $1)
+    mapfile -t mappings < <( sudo kpartx -s -v -a $loopdevice | grep 'loop' | cut -d' ' -f3 )
     [[ ${#mappings[@]} -eq 0 ]] \
         && { log "Error: partition mappings failed. Aborting."; exit 1; }
   else
