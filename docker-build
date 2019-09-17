@@ -6,7 +6,7 @@ if [ -z "$IMAGE_NAME" ]; then
     IMAGE_NAME=mender-convert
 fi
 
-MENDER_CLIENT_VERSION="2.1.0b1"
+MENDER_CLIENT_VERSION="2.1.0"
 
 DOCKER_ARGS="--build-arg mender_client_version=${MENDER_CLIENT_VERSION}"
 
