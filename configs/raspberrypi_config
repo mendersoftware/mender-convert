@@ -62,6 +62,8 @@ function platform_modify() {
   run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
 
   # Remove original 'resize2fs_once' script and its symbolic link.
-  run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
-  run_and_log_cmd "sudo rm work/rootfs/etc/init.d/resize2fs_once"
+  if [ -L work/rootfs/etc/rc3.d/S01resize2fs_once ]; then
+    run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
+  fi
+  run_and_log_cmd "sudo rm -f work/rootfs/etc/init.d/resize2fs_once"
 }
