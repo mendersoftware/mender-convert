@@ -19,6 +19,8 @@ echo "Running $(basename $0): $@"
 source modules/bootstrap.sh
 source modules/disk.sh
 
+declare -a configs
+
 disk_image=""
 while (( "$#" )); do
   case "$1" in
@@ -27,7 +29,7 @@ while (( "$#" )); do
       shift 2
       ;;
     -c | --config)
-      configs+="${2}"
+      configs+=("${2}")
       shift 2
       ;;
     -d | --disk-image)
@@ -50,7 +52,11 @@ if [ ! -e ${disk_image} ]; then
   log_fatal "File not found: ${disk_image}"
 fi
 
-source modules/config.sh "${configs[@]}"
+# Note the use of %q formatting here. This is a bash feature to add
+# proper quoting to the strings so that spaces and special characters
+# will be treated properly.  Primarily for supporting spaces in
+# pathnames and avoid splitting those into multiple parameters.
+source modules/config.sh $(printf "%q " "${configs[@]}")
 
 MKFS_VFAT="/usr/bin/mkfs.vfat"
 if [ ! -f ${MKFS_VFAT} ]; then

@@ -38,6 +38,8 @@ echo "Running $(basename $0): $@"
 source modules/bootstrap.sh
 source modules/disk.sh
 
+declare -a configs
+
 while (( "$#" )); do
   case "$1" in
     -o | --overlay)
@@ -45,7 +47,7 @@ while (( "$#" )); do
       shift 2
       ;;
     -c | --config)
-      configs+="${2}"
+      configs+=("${2}")
       shift 2
       ;;
     -d | --disk-image)
@@ -58,7 +60,11 @@ while (( "$#" )); do
   esac
 done
 
-source modules/config.sh "${configs[@]}"
+# Note the use of %q formatting here. This is a bash feature to add
+# proper quoting to the strings so that spaces and special characters
+# will be treated properly.  Primarily for supporting spaces in
+# pathnames and avoid splitting those into multiple parameters.
+source modules/config.sh $(printf "%q " "${configs[@]}")
 
 PARTED="/usr/bin/parted"
 if [ ! -f ${PARTED} ]; then
