@@ -1,0 +1,1 @@
+binutils xz-utils file rsync parted e2fsprogs xfsprogs pigz dosfstools wget git make bmap-tools

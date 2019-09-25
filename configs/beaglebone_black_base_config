@@ -1,0 +1,37 @@
+# Binaries generated with the following script:
+#
+#    https://github.com/drewmoseley/mender-convert-integration-scripts/blob/master/build-uboot-bbb.sh
+#
+
+# There are reported issues with GRUB bootloader integration, fallback to U-boot.
+MENDER_GRUB_EFI_INTEGRATION=n
+
+# 4MB alignment
+MENDER_PARTITION_ALIGNMENT="4194304"
+
+BEAGLEBONE_BLACK_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/beaglebone/${BEAGLEBONE_BLACK_BINARIES}"
+
+function platform_modify() {
+  mkdir -p work/bbb/binaries
+
+  run_and_log_cmd "wget -q ${BEAGLEBONE_BLACK_BINARIES_URL} -P work/bbb/binaries"
+  run_and_log_cmd "tar xvf work/bbb/binaries/${BEAGLEBONE_BLACK_BINARIES} -C work/bbb/binaries"
+
+  # Mask udisks2.service, otherwise it will mount the inactive part and we
+  # might write an update while it is mounted which often result in
+  # corruptions.
+  #
+  # TODO: Find a way to only blacklist mmcblk0pX devices instead of masking
+  # the service.
+  run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
+
+  # Place u-boot and MLO into rootfs/boot
+  run_and_log_cmd "sudo mkdir -p work/rootfs/boot"
+  run_and_log_cmd "sudo cp work/bbb/binaries/MLO work/boot/"
+  run_and_log_cmd "sudo cp work/bbb/binaries/u-boot.img work/boot/"
+  run_and_log_cmd "sudo cp work/bbb/binaries/fw_env.config work/rootfs/etc/"
+  run_and_log_cmd "sudo cp work/bbb/binaries/uboot-git-log.txt work/boot"
+
+  run_and_log_cmd "sudo install -m 755 work/bbb/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
+  run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+}

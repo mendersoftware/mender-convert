@@ -1,9 +1,24 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Copyright 2019 Northern.tech AS
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 
-show_help() {
-cat << EOF
+MENDER_CONVERT_VERSION=$(git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD)
 
-Mender conversion tool
+function show_help() {
+  cat << EOF
+mender-convert
 
 A tool that takes an existing embedded image (Debian, Ubuntu, Raspbian, etc)
 and converts it to a Mender image by restructuring partition table and adding
@@ -11,860 +26,74 @@ necessary files.
 
 Usage: $0 COMMAND [options]
 
-General commands:
-
-        from-raw-disk-image                     - composes fully functional Mender
-                                                  image compliant with Mender
-                                                  partition layout, having all
-                                                  necessary files installed
-        mender-disk-image-to-artifact           - creates Mender artifact file
-                                                  from Mender image
-
-Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb |
-          -d|--device-type | -p|--rootfs-partition-id | -n|--demo | -i|--demo-host-ip |
-          -c|--server-cert | -u|--server-url | -t|--tenant-token |
-          -g|--mender-client | -b|--bootloader-toolchain | -a|--artifact-name |
-          -e|--storage-total-size-mb | -k|--keep | -v|--version -h|--help]
-
-        raw-disk-image        - raw disk embedded Linux (Debian, Raspbian,
-                                Ubuntu, etc.) image path
-        mender-disk-image     - Mender disk image name where the script writes to
-                                should have "sdimg" suffix
-        data-part-size-mb     - data partition size in MB; default value 128MB
-        device-type           - target device identification used to build
-                                Mender image
-        rootfs-partition-id   - selects root filesystem (primary|secondary)
-                                as the source filesystem for an artifact
-        demo                  - Configure image using demo parameters
-        demo-host-ip          - server demo ip used for testing purposes
-        server-cert           - server certificate file
-        server-url            - production server url
-        tenant-token          - Mender tenant token
-        mender-client         - Mender client binary
-        bootloader-toolchain  - GNU Arm Embedded Toolchain
-        artifact-name         - Mender artifact name
-        storage-total-size-mb - total storage size in MB; default value 8000MB;
-                                it is used to calculate the rootfs final size
-        keep                  - keep intermediate files in output directory
-        version               - print the version
-        help                  - show help and exit
-
-        Note: root filesystem size used in Mender image creation can be found as
-              an output from 'raw-disk-image-shrink-rootfs' command or, in case
-              of using unmodified embedded raw disk image, can be checked with
-              any partition manipulation program (e.g. parted, fdisk, etc.).
-
-Examples:
-
-    To create fully functional Mender image from raw disk image in a single step:
-
-        ./mender-convert from-raw-disk-image
-                --raw-disk-image <raw_disk_image_path>
-                [--mender-disk-image <mender_image_name>]
-                --device-type <beaglebone | raspberrypi3>
-                [--mender-client <mender_binary_path>]
-                --artifact-name release-1_1.5.0
-                --bootloader-toolchain arm-linux-gnueabihf
-                --demo-host-ip 192.168.10.2
-                --keep
-
-        Output:
-            - Mender image: ready to use image with client and bootloader installed
-            - Mender artifact: update file based on the already built Mender image
-            - Mender root filesystem: EXT4 image used to produce the Mender artifact
-
-    To create Mender artifact file from Mender image:
-
-        ./mender-convert mender-disk-image-to-artifact
-                --mender-disk-image <mender_image_path>
-                --device-type <beaglebone | raspberrypi3>
-                --artifact-name release-1_1.5.0
-                --rootfs-partition-id <primary | secondary>
-
-        Note: artifact name format is: release-<release_no>_<mender_version>
+Options:
+  -d, --disk-image            - Path to disk image to convert (Debian, Raspbian,
+                                Ubuntu, etc)
+  -o, --overlay               - Path to root filesystem overlay directory, you
+                                are able to provide this option multiple times
+  -c, --config                - Path to configuration file, you are able to
+                                provide this option multiple times
+  -v, --version               - output version information and exit
+  -h, --help                  - display this help and exit
 
 EOF
 }
 
-show_version() {
-  local version=$(cd "$tool_dir" && (git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD))
-  echo "mender-convert version: $version"
+function show_version() {
+  echo "Version: ${MENDER_CONVERT_VERSION}"
 }
 
-if [ $# -eq 0 ]; then
-  show_help
+function trap_exit() {
+  sudo rm -rf work
+}
+
+function trap_term() {
+  echo "Program interrupted by user"
+}
+
+trap trap_term INT TERM
+trap trap_exit EXIT
+
+mender_convert_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+if [ "${mender_convert_dir}" != "${PWD}" ]; then
+    echo "You must execute mender-convert from the root directory: ${mender_convert_dir}"
+    exit 1
+fi
+
+if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
+  echo "Sorry, it seems that you have not defined MENDER_ARTIFACT_NAME"
+  echo "You can do this with the following command:"
+  echo ""
+  echo -e "\tMENDER_ARTIFACT_NAME="release-1" ./mender-convert"
   exit 1
 fi
 
-tool_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source modules/bootstrap.sh
 
-mender_disk_image=
-raw_disk_image=
-device_type=
-mender_disk_counts=
-artifact_name=
-rootfs_partition_id=
-raw_disk_counts=
-mender_client=
-# Mender production certificate.
-server_cert=
-# Mender production server url.
-server_url=
-# Mender demo server IP address.
-demo_host_ip=
-# Mender hosted token.
-tenant_token=
-
-# Conversion progress.
-declare -i step=1
-declare -i total=
-
-declare -a rootfs_partition_ids=("primary" "secondary")
-declare -a mender_disk_mappings
-declare -a raw_disk_mappings
-#Supported devices
-declare -a supported_devices=("beaglebone" "raspberrypi3" "qemux86_64" "raspberrypi0w" "rockpro64")
-
-do_raw_disk_image_shrink_rootfs() {
-  log "$step/$total Shrinking raw disk image root filesystem..."
-  ((step++))
-  if [ -z "${raw_disk_image}" ]; then
-    log "Raw disk image not set. Aborting."
-    return 1
-  fi
-
-  # For root filesystem partition set 8MB alignment for shrinking purpose.
-  partition_alignment=$PART_ALIGN_8MB
-
-  # Gather information about raw disk image.
-  get_raw_disk_sizes ${raw_disk_image} raw_disk_counts raw_disk_sizes
-  local sector_size=${raw_disk_sizes[sector_size]}
-
-  if [[ $raw_disk_counts -eq 1 ]]; then
-    offset=${raw_disk_sizes[pboot_start]}
-  elif [[ $raw_disk_counts -eq 2 ]]; then
-    offset=${raw_disk_sizes[prootfs_start]}
-  else
-    log "Warning: invalid/unsupported embedded raw disk image. Skipping resize..."
-    return 0
-  fi
-
-  # Find first available loopback device and mount appropriate partition.
-  loopdevice=$(sudo losetup --show -f -o $((${offset} * $sector_size)) $raw_disk_image)
-  [ $? -ne 0 ] && { log "Error: inaccesible loopback device"; return 1; }
-
-  block_size=($(sudo dumpe2fs -h $loopdevice | grep 'Block size' | tr -s ' ' | cut -d ' ' -f3))
-  min_size_blocks=($(sudo resize2fs -P $loopdevice | awk '{print $NF}'))
-
-  new_size_sectors=$(( $min_size_blocks * $block_size / $sector_size ))
-  align_partition_size new_size_sectors $sector_size
-
-  log "\tRoot filesystem size:\
-       \n\tminimal: $(( $min_size_blocks * $block_size ))  \
-       \n\taligned: $(( $new_size_sectors * $sector_size ))\
-       \n\tsectors: $new_size_sectors"
-
-  sudo e2fsck -y -f $loopdevice >> "$build_log" 2>&1
-  sudo resize2fs -p $loopdevice ${new_size_sectors}s >> "$build_log" 2>&1
-  sudo e2fsck -y -f $loopdevice >> "$build_log" 2>&1
-
-  sudo losetup -d $loopdevice
-  loopdevice=$(sudo losetup --show -f $raw_disk_image)
-
-  if [[ $raw_disk_counts -eq 1 ]]; then
-    create_single_disk_partition_table $loopdevice \
-        ${raw_disk_sizes[pboot_start]} $new_size_sectors
-  elif [[ $raw_disk_counts -eq 2 ]]; then
-    create_double_disk_partition_table $loopdevice \
-        ${raw_disk_sizes[prootfs_start]} $new_size_sectors
-  fi
-
-  sudo partprobe
-  endsector=($(sudo parted $loopdevice -ms unit s print | grep "^$raw_disk_counts" | cut -f3 -d: | sed 's/[^0-9]*//g'))
-
-  sudo losetup -d $loopdevice
-  log "\tRaw disk image new endsector: $endsector"
-  sudo truncate -s $((($endsector+1) * $sector_size)) $raw_disk_image
-  log "\tNew root filesystem size (sectors): $new_size_sectors"
-
-  return 0
-}
-
-do_raw_disk_image_create_partitions() {
-  log "$step/$total Repartitioning raw disk image..."
-  ((step++))
-
-  if [ -z "$raw_disk_image" ] || [ -z "$device_type" ] || \
-     [ -z "$artifact_name" ]; then
-    show_help
-    return 1
-  fi
-
-  if [[ ! -f ${raw_disk_image} ]]; then
-    log "Raw disk image not found. Aborting."
-    return 1
-  fi
-
-  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
-
-  [[ $supported -eq 0 ]] && \
-      { log "Error: incorrect device type. Aborting."; return 1; }
-
-  # Change current directory to 'output' directory.
-  cd $output_dir
-
-  set_mender_disk_alignment $device_type partition_alignment vfat_storage_offset
-
-  get_raw_disk_sizes ${raw_disk_image} raw_disk_counts raw_disk_sizes
-  rc=$?
-  [ $rc -eq 0 ] || { return 1; }
-
-  log "\tDetected raw disk image with $raw_disk_counts partition(s)."
-
-  log "\tCalculating partitions' sizes of the Mender image."
-  set_mender_disk_sizes ${raw_disk_counts} ${partition_alignment} \
-                        ${vfat_storage_offset} ${data_part_size_mb} \
-                        raw_disk_sizes mender_disk_sizes
-
-  local mender_disk_image_size=
-  calculate_mender_disk_size ${partition_alignment} mender_disk_sizes \
-                             mender_disk_counts mender_disk_image_size
-
-  mender_image_size_to_total_storage_size ${mender_disk_counts} \
-          mender_disk_image_size ${storage_total_size_mb} \
-          mender_disk_sizes
-  rc=$?
-  [ $rc -eq 0 ] || { return 1; }
-
-  if [[ ${raw_disk_counts} -gt 1 ]]; then
-    log "\tExtracting boot partition from raw disk image."
-
-    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[pboot_start]} \
-                          ${raw_disk_sizes[pboot_size]} "boot.vfat"
-
-    log "\tExtracting root filesystem partition from raw disk image."
-    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[prootfs_start]} \
-                          ${raw_disk_sizes[prootfs_size]} "rootfs.img"
-  else
-    log "\tGenerating boot partition (required, does not exist in original image)"
-
-    dd if=/dev/zero of=${output_dir}/boot.vfat count=${mender_disk_sizes[pboot_size]} bs=512 >> "$build_log" 2>&1
-    mkfs.vfat ${output_dir}/boot.vfat >> "$build_log" 2>&1
-
-    log "\tExtracting root filesystem partition from raw disk image."
-    extract_file_from_image ${raw_disk_image} ${raw_disk_sizes[pboot_start]} \
-                          ${raw_disk_sizes[pboot_size]} "rootfs.img"
-  fi
-
-  local sector_size=${mender_disk_sizes[sector_size]}
-  log "\tCreating blank Mender disk image:\
-       \n\t\timage size: ${mender_disk_image_size} bytes\
-       \n\t\tboot partition size: $((${mender_disk_sizes[pboot_size]} * $sector_size)) bytes\
-       \n\t\troot filesystem size: $((${mender_disk_sizes[prootfs_size]} * $sector_size)) bytes\
-       \n\t\tdata partition size: $((${mender_disk_sizes[pdata_size]} * $sector_size)) bytes"
-
-  if [ -v mender_disk_sizes[pswap_size] ]; then
-    log "\t\tswap partition size: $((${mender_disk_sizes[pswap_size]} * $sector_size)) bytes"
-  fi
-
-  create_test_config_file $device_type $partition_alignment $mender_disk_image_size \
-                          mender_disk_sizes
-
-  create_mender_disk $mender_disk_image $mender_disk_image_size
-  format_mender_disk $mender_disk_image $mender_disk_image_size \
-                     $partition_alignment mender_disk_sizes
-  rc=$?
-  [ $rc -eq 0 ] || { return 1; }
-
-  verify_mender_disk $mender_disk_image $mender_disk_counts
-  rc=$?
-  [ $rc -eq 0 ] || { return 1; }
-
-  create_device_maps $mender_disk_image mender_disk_mappings
-
-  log "$step/$total Formatting repartitioned raw disk image..."
-  ((step++))
-  make_mender_disk_filesystem ${mender_disk_mappings[@]}
-
-  case "$device_type" in
-    "beaglebone")
-      do_make_sdimg_beaglebone
-      ;;
-    "raspberrypi3" | "raspberrypi0w")
-      do_make_sdimg_raspberrypi3
-      ;;
-    "qemux86_64")
-      do_make_sdimg_qemux86_64
-      ;;
-    "rockpro64")
-      do_make_sdimg_rockpro64
-      ;;
-    *)
-      log "Error: unsupported device type $device_type"
-      exit 1
-      ;;
-  esac
-
-  rc=$?
-
-  log "$step/$total Cleaning intermediate files..."
-  ((step++))
-  # Clean and detach.
-  detach_device_maps ${mender_disk_mappings[@]}
-  detach_device_maps ${raw_disk_mappings[@]}
-  sync
-  rm -rf $embedded_base_dir
-  rm -rf $sdimg_base_dir
-
-  [ $rc -eq 0 ] || { log "\nRepartitioning of $raw_disk_image image failed."; }
-
-  return $rc
-}
-
-do_make_sdimg_rockpro64() {
-  local ret=0
-
-  create_device_maps $raw_disk_image raw_disk_mappings
-  mount_raw_disk ${raw_disk_mappings[@]}
-
-  log "$step/$total Setting boot partition..."
-  ((step++))
-
-  stage_2_args="$output_dir ${mender_disk_mappings[0]} ${embedded_rootfs_dir}"
-  ${tool_dir}/rockpro64-convert-stage-2.sh ${stage_2_args} || ret=$?
-  [[ $ret -ne 0 ]] && { log "Aborting."; return $ret; }
-
-  log "$step/$total Setting root filesystem partition..."
-  ((step++))
-
-  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
-  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
-  [[ $ret -ne 0 ]] && { return $ret; }
-
-  mount_mender_disk ${mender_disk_mappings[@]}
-
-  log "$step/$total Setting file system table..."
-  ((step++))
-  set_fstab $device_type
-
-  log "Write bootloader"
-  dd if=$integration_dir/rockpro64/rksd_loader.img of=$mender_disk_image \
-     seek=64 conv=notrunc status=none
-
-  return $ret
-}
-
-do_make_sdimg_beaglebone() {
-  local ret=0
-
-  create_device_maps $raw_disk_image raw_disk_mappings
-  mount_raw_disk ${raw_disk_mappings[@]}
-
-  log "$step/$total Setting boot partition..."
-  ((step++))
-
-  stage_2_args="$output_dir ${mender_disk_mappings[0]} ${embedded_rootfs_dir}"
-  ${tool_dir}/bbb-convert-stage-2.sh ${stage_2_args} || ret=$?
-  [[ $ret -ne 0 ]] && { log "Aborting."; return $ret; }
-
-  log "$step/$total Setting root filesystem partition..."
-  ((step++))
-
-  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
-  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
-  [[ $ret -ne 0 ]] && { return $ret; }
-
-  mount_mender_disk ${mender_disk_mappings[@]}
-
-  log "$step/$total Setting file system table..."
-  ((step++))
-  set_fstab $device_type
-
-  return $ret
-}
-
-do_make_sdimg_raspberrypi3() {
-  log "$step/$total Setting boot partition..."
-  ((step++))
-
-  stage_2_args="$output_dir ${mender_disk_mappings[0]}"
-  ${tool_dir}/rpi-convert-stage-2.sh ${stage_2_args} || ret=$?
-  [[ $ret -ne 0 ]] && { return $ret; }
-
-  log "$step/$total Setting root filesystem partition..."
-  ((step++))
-
-  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
-  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
-  [[ $ret -ne 0 ]] && { return $ret; }
-
-  mount_mender_disk ${mender_disk_mappings[@]}
-
-  log "$step/$total Setting file system table..."
-  ((step++))
-  set_fstab $device_type
-
-  return 0
-}
-
-do_make_sdimg_qemux86_64() {
-  log "$step/$total Setting boot partition..."
-  ((step++))
-
-  stage_2_args="$output_dir ${mender_disk_mappings[0]}"
-  ${tool_dir}/qemux86_64-convert-stage-2.sh ${stage_2_args} || ret=$?
-  [[ $ret -ne 0 ]] && { return $ret; }
-
-  log "$step/$total Setting root filesystem partition..."
-  ((step++))
-
-  stage_3_args="$output_dir ${mender_disk_mappings[1]}"
-  ${tool_dir}/convert-stage-3.sh ${stage_3_args} || ret=$?
-  [[ $ret -ne 0 ]] && { return $ret; }
-
-  mount_mender_disk ${mender_disk_mappings[@]}
-
-  log "$step/$total Setting file system table..."
-  ((step++))
-  set_fstab $device_type
-
-  return 0
-}
-
-do_install_mender_to_mender_disk_image() {
-  log "$step/$total Installing Mender to Mender disk image..."
-  ((step++))
-
-  if [ -z "$mender_disk_image" ] || [ -z "$device_type" ] || \
-     [ -z "$artifact_name" ]; then
-    show_help
-    return 1
-  fi
-
-  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
-
-  [[ $supported -eq 0 ]] && \
-      { log "Error: incorrect device type. Aborting."; return 1; }
-
-  # mender-image-1.5.0
-  stage_4_args="-m $mender_disk_image -d $device_type -a ${artifact_name}"
-
-  if [ -n "$mender_client" ]; then
-    stage_4_args="${stage_4_args} --mender-client ${mender_client}"
-  fi
-
-  if [ -n "$demo" ] && [ ${demo} -eq 1 ]; then
-    stage_4_args="${stage_4_args} --demo"
-  fi
-
-  if [ -n "$demo_host_ip" ]; then
-    stage_4_args="${stage_4_args} -i ${demo_host_ip}"
-  fi
-
-  if [ -n "$server_cert" ]; then
-    stage_4_args="${stage_4_args} -c ${server_cert}"
-  fi
-
-  if [ -n "$server_url" ]; then
-    stage_4_args="${stage_4_args} -u ${server_url}"
-  fi
-
-  if [ -n "${tenant_token}" ]; then
-    stage_4_args="${stage_4_args} -t ${tenant_token}"
-  fi
-
-  if [ -n "${keep}" ]; then
-    stage_4_args="${stage_4_args} -k"
-  fi
-
-  eval set -- " ${stage_4_args}"
-
-  ${tool_dir}/convert-stage-4.sh ${stage_4_args} || ret=$?
-  [[ $ret -ne 0 ]] && { log "\nInstalling Mender to Mender disk image failed."; return $ret; }
-
-  # Update test configuration file
-  update_test_config_file $device_type artifact-name $artifact_name
-
-  return 0
-}
-
-do_install_bootloader_to_mender_disk_image() {
-  log "$step/$total Installing Bootloader to Mender disk image..."
-  ((step++))
-
-  if [ -z "$mender_disk_image" ] || [ -z "$device_type" ] || \
-     [ -z "$bootloader_toolchain" ]; then
-    show_help
-    return 1
-  fi
-
-  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
-
-  [[ $supported -eq 0 ]] && \
-      { log "Error: incorrect device type. Aborting."; return 1; }
-
-  case "$device_type" in
-    "beaglebone" | "qemux86_64" | "rockpro64")
-      stage_5_args="-m $mender_disk_image -d $device_type -b ${bootloader_toolchain} $keep"
-      eval set -- " ${stage_5_args}"
-      ${tool_dir}/convert-stage-5.sh ${stage_5_args}|| ret=$?
-      [[ $ret -ne 0 ]] && { log "\nInstalling Bootloader failed."; return $ret; }
-
-      # Update test configuration file
-      update_test_config_file $device_type distro-feature "mender-grub" \
-                                           mount-location "\/boot\/efi"
-      ;;
-    "raspberrypi3"|"raspberrypi0w")
-      stage_5_args="-m $mender_disk_image -d $device_type -b ${bootloader_toolchain} $keep"
-      eval set -- " ${stage_5_args}"
-      ${tool_dir}/rpi-convert-stage-5.sh ${stage_5_args}|| ret=$?
-      [[ $ret -ne 0 ]] && { log "\nInstalling Bootloader failed."; return $ret; }
-
-      # Update test configuration file
-      update_test_config_file $device_type distro-feature "mender-uboot" \
-                              mount-location "\/uboot"
-      ;;
-    *)
-      log "Error: unsupported device type $device_type"
-      exit 1
-      ;;
-  esac
-
-  return 0
-}
-
-do_mender_disk_image_to_artifact() {
-  log "$step/$total Creating Mender Artifact..."
-  ((step++))
-
-  if [ -z "${mender_disk_image}" ]; then
-    log "Mender disk image not set. Aborting."
-    return 1
-  fi
-
-  if [ -z "${device_type}" ]; then
-    log "Target device_type name not set. Aborting."
-    return 1
-  fi
-
-  if [ -z "${artifact_name}" ]; then
-    log "Artifact name not set. Aborting."
-    return 1
-  fi
-
-  if [ -z "${rootfs_partition_id}" ]; then
-    log "\tRootfs partition id not set - 'primary' will be used by default."
-    rootfs_partition_id="primary"
-  fi
-
-  local supported=$(echo ${supported_devices[@]} | grep -o $device_type | wc -w)
-
-  [[ $supported -eq 0 ]] && \
-      { log "Error: incorrect device type. Aborting."; return 1; }
-
-  inarray=$(echo ${rootfs_partition_ids[@]} | grep -o $rootfs_partition_id | wc -w)
-
-  [[ $inarray -eq 0 ]] && \
-      { log "Error: invalid rootfs partition id provided. Aborting."; return 1; }
-
-  local count=0
-  local sector_size=0
-  local prootfs_start=0
-  local prootfs_size=0
-  local rootfs_a_start=0
-  local rootfs_a_size=0
-  local rootfs_b_start=0
-  local rootfs_b_size=0
-  local rootfs_path=
-  local mender_device_type=
-
-  get_mender_disk_sizes $mender_disk_image count sector_size rootfs_a_start \
-                        rootfs_a_size rootfs_b_start rootfs_b_size
-  ret=$?
-  [[ $ret -ne 0 ]] && \
-      { log "Error: cannot validate Mender disk image. Aborting."; return 1; }
-
-  # Check if device type matches.
-  create_device_maps $mender_disk_image mender_disk_mappings
-  mount_mender_disk ${mender_disk_mappings[@]}
-
-  # Find .sdimg file's dedicated device type.
-  mender_device_type=$( cat $sdimg_data_dir/mender/device_type | sed 's/[^=].*=//' )
-
-  if [ "$mender_device_type" != "$device_type" ]; then
-    log "Error: device types of Mender artifact & Mender not matching. Aborting."
-    ret=1
-  fi
-
-  if ! [ -x "$(command -v mender-artifact)" ]; then
-    log "Error: mender-artifact not found in PATH. Aborting."
-    ret=1
-  fi
-
-  if [ $ret -eq 0 ]; then
-    if [[ $rootfs_partition_id == "primary" ]]; then
-      prootfs_start=$rootfs_a_start
-      prootfs_size=$rootfs_a_size
-      rootfs_path=$sdimg_primary_dir
-    elif [[ $rootfs_partition_id == "secondary" ]]; then
-      prootfs_start=$rootfs_b_start
-      prootfs_size=$rootfs_b_size
-      rootfs_path=$sdimg_secondary_dir
-    fi
-
-    # Extract root filesystem ext4 image to use it to generate Mender artifact.
-    # Ext4 disk image will be also verified in acceptance tests.
-    extract_file_from_image $mender_disk_image $prootfs_start \
-                            $prootfs_size $mender_rootfs_basename
-
-    fsck.ext4 -fp $mender_rootfs_image &> /dev/null || ret=$?
-    [[ $ret -ne 0 ]] && \
-        { log "Error: checking $mender_rootfs_basename file system failed. Aborting."; }
-
-    # Find first available loopback device and use it.
-    loopdevice=($(sudo losetup --show -f ${mender_rootfs_image} || ret=$?))
-    [[ $ret -ne 0 ]] && \
-        { log "Error: cannot find an unused loop device. Aborting."; }
-
-    if [ $ret -eq 0 ]; then
-      # Mount extracted ext4 partition to verify 'artifact_info' file content.
-      rootfs_mountpoint=${output_dir}/mnt/${rootfs_partition_id}
-      mkdir -p ${rootfs_mountpoint}
-      sudo mount $loopdevice ${rootfs_mountpoint}
-
-      # Set 'artifact name' as passed in the command line.
-      sudo sed -i '/^artifact/s/=.*$/='${artifact_name}'/' "${rootfs_mountpoint}/etc/mender/artifact_info"
-
-      sudo umount -l ${rootfs_mountpoint}
-      sudo losetup -d $loopdevice
-      rm -rf ${output_dir}/mnt
-
-      log "\tWriting Mender artifact to: ${mender_artifact}"
-      log "\tThis may take 10-20 minutes (using LZMA)..."
-
-      #Create Mender artifact
-      mender-artifact \
-        --compression lzma \
-        write rootfs-image \
-        --file ${mender_rootfs_image} \
-        --output-path ${mender_artifact} \
-        --artifact-name ${artifact_name} \
-        --device-type ${device_type}
-
-      ret=$?
-      [[ $ret -eq 0 ]] && \
-        { log "\tCreating Mender Artifact succeeded."; } || \
-        { log "\tCreating Mender Artifact failed."; }
-    fi
-  fi
-
-  # Clean and detach.
-  detach_device_maps ${mender_disk_mappings[@]}
-
-  rm -rf $sdimg_base_dir
-  return $ret
-}
-
-do_from_raw_disk_image() {
-  if [ -z "$raw_disk_image" ] || [ -z "$device_type" ] ||  \
-     [ -z "$artifact_name" ] || \
-     [ -z "$bootloader_toolchain" ]; then
-    show_help
-    return 1
-  fi
-
-  do_raw_disk_image_shrink_rootfs || rc=$?
-  [[ $rc -ne 0 ]] && { return 1; }
-
-  do_raw_disk_image_create_partitions || rc=$?
-  [[ $rc -ne 0 ]] && { return 1; }
-
-  do_install_mender_to_mender_disk_image || rc=$?
-  [[ $rc -ne 0 ]] && { return 1; }
-
-  do_install_bootloader_to_mender_disk_image || rc=$?
-  [[ $rc -ne 0 ]] && { return 1; }
-
-  do_mender_disk_image_to_artifact || rc=$?
-  [[ $rc -ne 0 ]] && { return 1; }
-
-  return 0
-}
-
-PARAMS=""
-
-# Load necessary functions.
-source ${tool_dir}/mender-convert-functions.sh
-
-export -f create_device_maps
-export -f detach_device_maps
-export -f mount_mender_disk
-export -f log
-export -f logsetup
-
+# We only handle a selection of the arguments here, the rest are passed on
+# to the sub-scripts.
 while (( "$#" )); do
   case "$1" in
-    -p | --rootfs-partition-id)
-      rootfs_partition_id=$2
-      shift 2
-      ;;
-    -m | --mender-disk-image)
-      mender_disk_image=$2
-      shift 2
-      ;;
-    -r | --raw-disk-image)
-      raw_disk_image=$(get_path $2)
-      shift 2
-      ;;
-    -s | --data-part-size-mb)
-      data_part_size_mb=$2
-      shift 2
-      ;;
-    -d | --device-type)
-      device_type=$2
-      shift 2
-      ;;
-    -a | --artifact-name)
-      artifact_name=$2
-      shift 2
-      ;;
-    -g | --mender-client)
-      mender_client=$(get_path $2)
-      shift 2
-      ;;
-    -b | --bootloader-toolchain)
-      bootloader_toolchain=$2
-      shift 2
-      ;;
-    -n | --demo)
-      demo="1"
-      shift 1
-      ;;
-    -i | --demo-host-ip)
-      demo_host_ip=$2
-      shift 2
-      ;;
-    -c | --server-cert)
-      server_cert=$(get_path $2)
-      shift 2
-      ;;
-    -u | --server-url)
-      server_url=$2
-      shift 2
-      ;;
-    -t | --tenant-token)
-      tenant_token=$2
-      shift 2
-      ;;
-    -e | --storage-total-size-mb)
-      storage_total_size_mb=$2
-      shift 2
-      ;;
-    -k | --keep)
-      keep="-k"
-      shift 1
+    -h | --help)
+      show_help
+      exit 0
       ;;
     -v | --version)
       show_version
       exit 0
       ;;
-    -h | --help)
-      show_help
-      exit 0
-      ;;
-    --)
-      shift
-      break
-      ;;
-    -*)
-      log "Error: unsupported option $1"
-      exit 1
-      ;;
     *)
-      PARAMS="$PARAMS $1"
-      shift
+      break;
       ;;
   esac
 done
 
-[ -z "${data_part_size_mb}" ] && \
-    { log "*** Data partition size set to default value: 128MB ***"; \
-      data_part_size_mb=$DATA_PART_SIZE_MB; }
-[ -z "${storage_total_size_mb}" ] && \
-    { log "*** Total storage size set to default value: 8GB ***"; \
-      storage_total_size_mb=$STORAGE_TOTAL_SIZE_MB; }
+mkdir -p work
+touch work/convert.log
 
-eval set -- "$PARAMS"
+./mender-convert-extract "$@"
+./mender-convert-modify "$@"
+./mender-convert-package "$@"
 
-# Before running any command first create output directory
-# and configure where logs should be redirected.
-mkdir -p $output_dir
-logsetup
-
-# Fetch integration binaries
-
-MENDER_INTEGRATION_URL="https://d1b0l86ne08fsf.cloudfront.net/mender-convert"
-if [ "$device_type" == "rockpro64" ]; then
-  if [ ! -f $integration_dir/rockpro64/emmc-boot-integration.tar.gz ]; then
-    rockpro64_integration_dir=$integration_dir/rockpro64
-
-    mkdir -p $rockpro64_integration_dir
-    wget -P $rockpro64_integration_dir \
-           ${MENDER_INTEGRATION_URL}/armbian/rockpro64/emmc-boot-integration.tar.gz
-
-    tar xvf $rockpro64_integration_dir/emmc-boot-integration.tar.gz -C $rockpro64_integration_dir
-  fi
-fi
-
-# Some commands expect elevated privileges.
-sudo true
-
-# Make sure the user's given Mender image name has a correct extension.
-# If Mender image name is not provided, then use following syntax:
-# mender-<device_name>-<artifact_name>.sdimg
-if [ -n "${mender_disk_image}" ]; then
-  mender_disk_filename=$(basename -- "$mender_disk_image")
-  if [[ $mender_disk_filename =~ \.sdimg$ ]]; then
-    mender_disk_image=$output_dir/${mender_disk_filename}
-  else
-    mender_disk_image=$output_dir/${mender_disk_filename}.sdimg
-  fi
-else
-  mender_disk_filename="mender-${device_type}-${artifact_name}"
-  mender_disk_image=$output_dir/${mender_disk_filename}.sdimg
-fi
-
-mender_disk_basename="${mender_disk_filename%.*}"
-mender_rootfs_basename=${mender_disk_basename}.ext4
-mender_rootfs_image=${output_dir}/${mender_rootfs_basename}
-mender_artifact=${output_dir}/${mender_disk_basename}.mender
-
-case "$1" in
-  mender-disk-image-to-artifact)
-    total=1
-    do_mender_disk_image_to_artifact || rc=$?
-    [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
-    log "A Mender Artifact has been successfully extracted from your Mender disk image!"
-    log "You can find the Mender Artifact at:\n\t$mender_artifact\nand use it to deploy updates."
-    ;;
-  from-raw-disk-image)
-    total=10
-    do_from_raw_disk_image || rc=$?
-    [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
-    log "Conversion complete!"
-    log "The Mender disk image you can provision your device storage with is at:\
-         \n\t${mender_disk_image}"
-    log "The Mender root file system partition is at:\n\t${mender_rootfs_image}"
-    log "The Mender Artifact you can upload to your Mender server to deploy to your devices is at:\
-         \n\t${mender_artifact}"
-    ;;
-  *)
-    show_help
-    ;;
-esac
-
-[[ $keep != "-k" ]] && { rm -f $output_dir/boot.vfat \
-  $output_dir/cmdline.txt $output_dir/config.txt \
-  $output_dir/syslinux.cfg $output_dir/rootfs.img; }
-
-exit 0
+echo "Output Artifacts and images can be found in deploy directory:"
+ls -1 deploy/*

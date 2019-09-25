@@ -1,0 +1,6 @@
+# Binaries generated with the following script:
+#
+#    https://github.com/drewmoseley/mender-convert-integration-scripts/blob/master/build-uboot-bbb.sh
+#
+BEAGLEBONE_BLACK_BINARIES="beaglebone-black-integration-debian-2018.07.002.tar"
+source configs/beaglebone_black_base_config
