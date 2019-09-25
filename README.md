@@ -6,7 +6,7 @@ This repository contains mender-convert, which is used to convert pre-built disk
 
 For a full list of tested devices and images please visit [Mender Hub](https://hub.mender.io/c/board-integrations/debian-family). If your device and image combination is not listed as supported, this does not necessarily mean that it will not work, it probably just means that no one has tested and reported it back and usually only small tweaks are necessary to get this running on your device.
 
-![Mender logo](https://mender.io/user/pages/resources/06.digital-assets/mender.io.png)
+![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
 
 ## Getting started
