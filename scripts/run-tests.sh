@@ -103,12 +103,6 @@ else
     cd -
 fi
 
-if ! [ -x "$(command -v mender-artifact)" ]; then
-    echo "mender-artifact: not found in PATH."
-    github_PR_status "failure" "mender-artifact: not found in PATH."
-    exit 1
-fi
-
 mkdir -p ${WORKSPACE}
 
 get_pytest_files
