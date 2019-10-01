@@ -14,7 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-for config in configs/mender_convert_config "$@"; do
-  log_info "Using configuration file: ${config}"
-  source ${config}
+# Read in the array of config files to process
+read -a configs <<< "${@}"
+configs=( "configs/mender_convert_config" "${configs[@]}" )
+for config in "${configs[@]}"; do
+    log_info "Using configuration file: ${config}"
+    source "${config}"
 done
