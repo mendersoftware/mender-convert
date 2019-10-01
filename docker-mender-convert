@@ -16,7 +16,7 @@
 
 set -e
 
-IMAGE_NAME=mender-convert
+IMAGE_NAME=${IMAGE_NAME:-mender-convert}
 
 MENDER_CONVERT_DIR="$(pwd)"
 mkdir -p output
