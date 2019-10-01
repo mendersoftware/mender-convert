@@ -6,6 +6,7 @@ variables:
 stages:
   - test
   - build
+  - test_acceptance
 
 test:
   stage: test
@@ -39,3 +40,31 @@ build:
     paths:
       - image.tar
 
+test_acceptance:
+  stage: test_acceptance
+  image: docker:18-dind
+  tags:
+    - mender-qa-slave
+  dependencies:
+    - build
+  before_script:
+    # Start up Docker (DonD)
+    - /usr/local/bin/dockerd-entrypoint.sh &
+    - sleep 10
+    - export DOCKER_HOST="unix:///var/run/docker.sock"
+    - docker version
+    # Install dependencies
+    - apk --update --no-cache add bash wget git util-linux mtools python
+      py-pip gcc python2-dev libffi-dev libc-dev openssl-dev make
+    - pip install "pytest>=3.0" "Fabric>=1.13.0, <2" pytest-html
+    # Load image under test
+    - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
+    - docker load -i image.tar
+  script:
+    - ./scripts/run-tests.sh
+  artifacts:
+    expire_in: 2w
+    when: always
+    paths:
+      - results_*.xml
+      - report_*.html

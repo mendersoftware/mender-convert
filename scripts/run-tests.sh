@@ -75,10 +75,15 @@ convert_and_test() {
         --disk-image input/${image_name} \
         --config ${WORKSPACE}/test_config
 
+    if pip list | grep -q -e pytest-html; then
+        html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
+    fi
+
     cd ${WORKSPACE}/mender-image-tests
 
     python2 -m pytest --verbose \
-            --junit-xml="${WORKSPACE}/results.xml" \
+            --junit-xml="${MENDER_CONVERT_DIR}/results_${device_type}.xml" \
+            ${html_report_args} \
             --test-conversion \
             --test-variables="${MENDER_CONVERT_DIR}/deploy/${device_type}-${artifact_name}.cfg" \
             --board-type="${device_type}" \
@@ -106,8 +111,6 @@ fi
 mkdir -p ${WORKSPACE}
 
 get_pytest_files
-
-./docker-build
 
 convert_and_test "qemux86_64" \
                  "release-1" \
