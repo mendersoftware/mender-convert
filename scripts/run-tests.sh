@@ -77,7 +77,7 @@ convert_and_test() {
 
     cd ${WORKSPACE}/mender-image-tests
 
-    py.test --verbose \
+    python2 -m pytest --verbose \
             --junit-xml="${WORKSPACE}/results.xml" \
             --test-conversion \
             --test-variables="${MENDER_CONVERT_DIR}/deploy/${device_type}-${artifact_name}.cfg" \
