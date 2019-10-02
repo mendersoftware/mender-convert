@@ -16,7 +16,6 @@
 
 # Read in the array of config files to process
 read -a configs <<< "${@}"
-configs=( "configs/mender_convert_config" "${configs[@]}" )
 for config in "${configs[@]}"; do
     log_info "Using configuration file: ${config}"
     source "${config}"

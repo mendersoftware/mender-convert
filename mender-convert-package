@@ -38,7 +38,8 @@ echo "Running $(basename $0): $@"
 source modules/bootstrap.sh
 source modules/disk.sh
 
-declare -a configs
+# The mender_convert_config is always used and provides all the defaults
+declare -a configs=("configs/mender_convert_config")
 
 while (( "$#" )); do
   case "$1" in
