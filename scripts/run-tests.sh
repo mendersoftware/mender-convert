@@ -89,8 +89,11 @@ convert_and_test() {
             --board-type="${device_type}" \
             --mender-image=${device_type}-${artifact_name}.sdimg \
             --sdimg-location="${MENDER_CONVERT_DIR}/deploy"
+    exitcode=$?
 
     cd -
+
+    return $exitcode
 }
 
 get_pytest_files() {
@@ -112,29 +115,32 @@ mkdir -p ${WORKSPACE}
 
 get_pytest_files
 
+test_result=0
+
 convert_and_test "qemux86_64" \
                  "release-1" \
                  "${UBUNTU_IMAGE_URL}" \
                  "${UBUNTU_IMAGE}" \
                  "${UBUNTU_IMAGE}.gz" \
-                 "configs/qemux86-64_config"
-
+                 "configs/qemux86-64_config" || test_result=$?
 
 convert_and_test "raspberrypi" \
                  "release-1" \
                  "${RASPBIAN_IMAGE_URL}" \
                  "${RASPBIAN_IMAGE}.img" \
                  "${RASPBIAN_IMAGE}.zip" \
-                 "configs/raspberrypi3_config"
+                 "configs/raspberrypi3_config" || test_result=$?
 
 convert_and_test "linaro-alip" \
                  "release-1" \
                  "${TINKER_IMAGE_URL}" \
                  "${TINKER_IMAGE}.img" \
-                 "${TINKER_IMAGE}.zip"
+                 "${TINKER_IMAGE}.zip" || test_result=$?
 
 convert_and_test "beaglebone" \
                  "release-1" \
                  "${BBB_DEBIAN_IMAGE_URL}" \
                  "${BBB_DEBIAN_IMAGE}" \
-                 "${BBB_DEBIAN_IMAGE}.xz"
+                 "${BBB_DEBIAN_IMAGE}.xz" || test_result=$?
+
+exit $test_result
