@@ -131,11 +131,12 @@ convert_and_test "raspberrypi" \
                  "${RASPBIAN_IMAGE}.zip" \
                  "configs/raspberrypi3_config" || test_result=$?
 
-convert_and_test "linaro-alip" \
-                 "release-1" \
-                 "${TINKER_IMAGE_URL}" \
-                 "${TINKER_IMAGE}.img" \
-                 "${TINKER_IMAGE}.zip" || test_result=$?
+# MEN-2809: Disabled due broken download link
+#convert_and_test "linaro-alip" \
+#                 "release-1" \
+#                 "${TINKER_IMAGE_URL}" \
+#                 "${TINKER_IMAGE}.img" \
+#                 "${TINKER_IMAGE}.zip" || test_result=$?
 
 convert_and_test "beaglebone" \
                  "release-1" \
