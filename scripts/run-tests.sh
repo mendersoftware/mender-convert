@@ -38,7 +38,7 @@ convert_and_test() {
     image_name_compressed=$5
     config=$6 # Optional
 
-    wget -N ${image_url} -P input/
+    wget --progress=dot:giga -N ${image_url} -P input/
 
     echo "Extracting: ${image_name_compressed}"
     case "${image_name_compressed}" in
