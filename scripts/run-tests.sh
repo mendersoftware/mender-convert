@@ -38,7 +38,7 @@ convert_and_test() {
     image_name_compressed=$5
     config=$6 # Optional
 
-    wget -N ${image_url} -P input/
+    wget --progress=dot:giga -N ${image_url} -P input/
 
     echo "Extracting: ${image_name_compressed}"
     case "${image_name_compressed}" in
@@ -75,17 +75,25 @@ convert_and_test() {
         --disk-image input/${image_name} \
         --config ${WORKSPACE}/test_config
 
+    if pip list | grep -q -e pytest-html; then
+        html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
+    fi
+
     cd ${WORKSPACE}/mender-image-tests
 
-    py.test --verbose \
-            --junit-xml="${WORKSPACE}/results.xml" \
+    python2 -m pytest --verbose \
+            --junit-xml="${MENDER_CONVERT_DIR}/results_${device_type}.xml" \
+            ${html_report_args} \
             --test-conversion \
             --test-variables="${MENDER_CONVERT_DIR}/deploy/${device_type}-${artifact_name}.cfg" \
             --board-type="${device_type}" \
             --mender-image=${device_type}-${artifact_name}.sdimg \
             --sdimg-location="${MENDER_CONVERT_DIR}/deploy"
+    exitcode=$?
 
     cd -
+
+    return $exitcode
 }
 
 get_pytest_files() {
@@ -103,41 +111,37 @@ else
     cd -
 fi
 
-if ! [ -x "$(command -v mender-artifact)" ]; then
-    echo "mender-artifact: not found in PATH."
-    github_PR_status "failure" "mender-artifact: not found in PATH."
-    exit 1
-fi
-
 mkdir -p ${WORKSPACE}
 
 get_pytest_files
 
-./docker-build
+test_result=0
 
 convert_and_test "qemux86_64" \
                  "release-1" \
                  "${UBUNTU_IMAGE_URL}" \
                  "${UBUNTU_IMAGE}" \
                  "${UBUNTU_IMAGE}.gz" \
-                 "configs/qemux86-64_config"
-
+                 "configs/qemux86-64_config" || test_result=$?
 
 convert_and_test "raspberrypi" \
                  "release-1" \
                  "${RASPBIAN_IMAGE_URL}" \
                  "${RASPBIAN_IMAGE}.img" \
                  "${RASPBIAN_IMAGE}.zip" \
-                 "configs/raspberrypi3_config"
+                 "configs/raspberrypi3_config" || test_result=$?
 
-convert_and_test "linaro-alip" \
-                 "release-1" \
-                 "${TINKER_IMAGE_URL}" \
-                 "${TINKER_IMAGE}.img" \
-                 "${TINKER_IMAGE}.zip"
+# MEN-2809: Disabled due broken download link
+#convert_and_test "linaro-alip" \
+#                 "release-1" \
+#                 "${TINKER_IMAGE_URL}" \
+#                 "${TINKER_IMAGE}.img" \
+#                 "${TINKER_IMAGE}.zip" || test_result=$?
 
 convert_and_test "beaglebone" \
                  "release-1" \
                  "${BBB_DEBIAN_IMAGE_URL}" \
                  "${BBB_DEBIAN_IMAGE}" \
-                 "${BBB_DEBIAN_IMAGE}.xz"
+                 "${BBB_DEBIAN_IMAGE}.xz" || test_result=$?
+
+exit $test_result
