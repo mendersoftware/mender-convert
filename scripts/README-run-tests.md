@@ -1,13 +1,16 @@
 # Run tests
 
-Run the following commands to install test dependencies (assumes that all mender-convert dependencies are already installed):
+The tests utilize the provided Docker container in this repository and conversion
+is done using the `docker-mender-convert` command. For this reason we first need
+to build the container (commands must be run from the root directory of
+`mender-convert`):
 
-    sudo apt-get update e2fsprogs=1.44.1-1
-    sudo apt-get -qy --force-yes install python-pip
-    sudo pip2 install pytest --upgrade
-    sudo pip2 install pytest-xdist --upgrade
-    sudo pip2 install pytest-html --upgrade
+```bash
+./docker-build
+```
 
 Run tests:
 
-    ./scripts/run-tests.sh
+```bash
+./scripts/run-tests.sh
+```

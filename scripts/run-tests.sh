@@ -60,23 +60,38 @@ convert_and_test() {
 
     rm -f ${WORKSPACE}/test_config
 
+
+    # Two motives for the following statement
+    #
+    # - speed up tests by avoiding decompression on all images (majority of images
+    #   we test have a platform specific configuration)
+    #
+    # - test providing multiple '--config' options
+    #
+    # - (when no platform configuration is provided) test conversion without
+    #   '--config' and with MENDER_COMPRESS_DISK_IMAGE=y. Compressed disk
+    #   images is the default user facing option and we need to ensure that we
+    #   cover this in the tests.
     if [ -n "${config}" ]; then
-        cp ${config} ${WORKSPACE}/test_config
+        echo "Will disable MENDER_COMPRESS_DISK_IMAGE for this image"
+        echo "MENDER_COMPRESS_DISK_IMAGE=n" > ${WORKSPACE}/test_config
+        local MENDER_CONVERT_EXTRA_ARGS="--config ${config} --config ${WORKSPACE}/test_config"
     fi
-
-    # Disable compression of disk image when testing, otherwise we need to
-    # unpack each image we test which is time consuming
-    echo "MENDER_COMPRESS_DISK_IMAGE=n" >> ${WORKSPACE}/test_config
-
-    echo "Configuration used:"
-    cat ${WORKSPACE}/test_config
 
     MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
         --disk-image input/${image_name} \
-        --config ${WORKSPACE}/test_config
+        ${MENDER_CONVERT_EXTRA_ARGS}
 
     if pip list | grep -q -e pytest-html; then
         html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
+    fi
+
+    # Need to decompress images built with MENDER_COMPRESS_DISK_IMAGE=y before
+    # running tests.
+    if [ -f deploy/${device_type}-${artifact_name}.sdimg.gz ]; then
+        # sudo is needed because the image is created using docker-mender-convert
+        # which sets root permissions on the image
+        sudo gunzip --force deploy/${device_type}-${artifact_name}.sdimg.gz
     fi
 
     cd ${WORKSPACE}/mender-image-tests
