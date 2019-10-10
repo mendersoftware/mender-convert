@@ -35,21 +35,6 @@ function platform_modify() {
   # Update Linux kernel command arguments with our custom configuration
   run_and_log_cmd "sudo cp work/rpi/cmdline.txt work/boot/"
 
-  # Enable Full KMS (Kernel Mode Setting) graphics driver. This is the
-  # the open-source GPU driver that is part of mesa, also known as VC4.
-  #
-  # This is done because it seems that the firmware GPU driver does currently
-  # not play well when U-boot is enabled and HDMI output is "scrambled"
-  #
-  # Fixes: https://tracker.mender.io/browse/MEN-2685
-  #
-  # Will need to revisit this later when there are new firware releases.
-  #
-  # Should be noted that RPi4 only works with this enabled and the
-  # configuration in the Yocto BSP (meta-raspberrypi) is also nowdays using
-  # this driver by default.
-  run_and_log_cmd "echo 'dtoverlay=vc4-kms-v3d' | sudo tee -a work/boot/config.txt"
-
   # Mask udisks2.service, otherwise it will mount the inactive part and we
   # might write an update while it is mounted which often result in
   # corruptions.
