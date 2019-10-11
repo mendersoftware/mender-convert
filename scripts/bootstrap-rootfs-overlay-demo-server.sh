@@ -23,23 +23,21 @@ if [ "${root_dir}" != "${PWD}" ]; then
     exit 1
 fi
 
-# Do not actually paste it here, this is just the default value that will
-# end up in mender.conf if no token is specified using '--tenant-token'
-tenant_token="Paste your Hosted Mender token here"
+server_ip=""
 output_dir=""
 while (( "$#" )); do
   case "$1" in
-    -t | --tenant-token)
-      tenant_token="${2}"
-      shift 2
-      ;;
     -o | --output-dir)
       output_dir="${2}"
       shift 2
       ;;
+    -s | --server-ip)
+      server_ip="${2}"
+      shift 2
+      ;;
     *)
       echo "Sorry but the provided option is not supported: $1"
-      echo "Usage:  $(basename $0) --tenant-token"
+      echo "Usage:  $(basename $0) --output-dir ./rootfs_overlay_demo --server-ip <your server IP address>"
       exit 1
       ;;
   esac
@@ -49,16 +47,31 @@ if [ -z "${output_dir}" ]; then
     echo "Sorry, but you need to provide an output directory using the '-o/--output-dir' option"
     exit 1
 fi
+if [ -z "${server_ip}" ]; then
+    echo "Sorry, but you need to provide a server IP address using the '-s/--server-ip' option"
+    exit 1
+fi
 
 mkdir -p ${output_dir}/etc/mender
 cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
   "InventoryPollIntervalSeconds": 5,
   "RetryPollIntervalSeconds": 30,
-  "ServerURL": "https://hosted.mender.io/",
-  "TenantToken": "${tenant_token}",
+  "ServerURL": "https://docker.mender.io",
+  "ServerCertificate": "/etc/mender/server.crt",
   "UpdatePollIntervalSeconds": 5
 }
 EOF
+cat <<- EOF > ${output_dir}/etc/hosts
+127.0.0.1	localhost
 
-echo "Configuration file written to: ${output_dir}/etc/mender"
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+${server_ip} docker.mender.io s3.docker.mender.io
+EOF
+wget -q "https://raw.githubusercontent.com/mendersoftware/mender/master/support/demo.crt" -O ${output_dir}/etc/mender/server.crt
+
+echo "Configuration file for using Demo Mender Server written to: ${output_dir}/etc/mender"
