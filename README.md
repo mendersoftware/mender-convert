@@ -1,3 +1,5 @@
+[![Build Status](https://gitlab.com/Northern.tech/Mender/mender-convert/badges/next/pipeline.svg)](https://gitlab.com/Northern.tech/Mender/mender-convert/pipelines)
+
 # mender-convert
 
 Mender is an open source over-the-air (OTA) software updater for embedded Linux devices. Mender comprises a client running at the embedded device, as well as a server that manages deployments across many devices.
