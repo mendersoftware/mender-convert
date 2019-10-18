@@ -43,12 +43,22 @@ function platform_modify() {
   # the service.
   run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
 
+  # Ubuntu Server images actually use U-boot by default on RPi3 and the
+  # layout is slightly different on the boot partition. That is why we need
+  # additional logic here to determinant what we are converting.
+  if [ -e work/boot/uboot.bin ] && [ -e work/boot/vmlinuz ]; then
+    RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
+    RASPBERRYPI_BOOTLOADER_IMAGE="uboot.bin"
+  else
+    RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
+  fi
+
   # Extract Linux kernel and install to /boot directory on rootfs
   run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
 
   # Replace kernel with U-boot and add boot script
   run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
-  run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_KERNEL_IMAGE}"
+  run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
   run_and_log_cmd "sudo cp work/rpi/binaries/boot.scr work/boot"
   run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
 
@@ -62,6 +72,8 @@ function platform_modify() {
   run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
 
   # Remove original 'resize2fs_once' script and its symbolic link.
-  run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
-  run_and_log_cmd "sudo rm work/rootfs/etc/init.d/resize2fs_once"
+  if [ -L work/rootfs/etc/rc3.d/S01resize2fs_once ]; then
+    run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
+  fi
+  run_and_log_cmd "sudo rm -f work/rootfs/etc/init.d/resize2fs_once"
 }
