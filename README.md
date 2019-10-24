@@ -10,7 +10,7 @@ image by restructuring partition table and injecting the necessary files.
 
 Currently official Raspberry Pi 3 and BeagleBone Black images are supported and this will be extended.
 
-![Mender logo](https://mender.io/user/pages/resources/06.digital-assets/mender.io.png)
+![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
 ## Getting started
 

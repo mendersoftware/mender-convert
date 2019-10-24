@@ -140,19 +140,18 @@ do_raw_disk_image_shrink_rootfs() {
   get_raw_disk_sizes ${raw_disk_image} raw_disk_counts raw_disk_sizes
   local sector_size=${raw_disk_sizes[sector_size]}
 
-  # Find first available loopback device.
-  loopdevice=($(losetup -f))
-  [ $? -ne 0 ] && { log "Error: inaccesible loopback device"; return 1; }
-
-  # Mount appropriate partition.
   if [[ $raw_disk_counts -eq 1 ]]; then
-    sudo losetup $loopdevice $raw_disk_image -o $((${raw_disk_sizes[pboot_start]} * $sector_size))
+    offset=${raw_disk_sizes[pboot_start]}
   elif [[ $raw_disk_counts -eq 2 ]]; then
-    sudo losetup $loopdevice $raw_disk_image -o $((${raw_disk_sizes[prootfs_start]} * $sector_size))
+    offset=${raw_disk_sizes[prootfs_start]}
   else
     log "Warning: invalid/unsupported embedded raw disk image. Skipping resize..."
     return 0
   fi
+
+  # Find first available loopback device and mount appropriate partition.
+  loopdevice=$(sudo losetup --show -f -o $((${offset} * $sector_size)) $raw_disk_image)
+  [ $? -ne 0 ] && { log "Error: inaccesible loopback device"; return 1; }
 
   block_size=($(sudo dumpe2fs -h $loopdevice | grep 'Block size' | tr -s ' ' | cut -d ' ' -f3))
   min_size_blocks=($(sudo resize2fs -P $loopdevice | awk '{print $NF}'))
@@ -170,7 +169,7 @@ do_raw_disk_image_shrink_rootfs() {
   sudo e2fsck -y -f $loopdevice >> "$build_log" 2>&1
 
   sudo losetup -d $loopdevice
-  sudo losetup $loopdevice $raw_disk_image
+  loopdevice=$(sudo losetup --show -f $raw_disk_image)
 
   if [[ $raw_disk_counts -eq 1 ]]; then
     create_single_disk_partition_table $loopdevice \
@@ -622,14 +621,13 @@ do_mender_disk_image_to_artifact() {
     [[ $ret -ne 0 ]] && \
         { log "Error: checking $mender_rootfs_basename file system failed. Aborting."; }
 
-    # Find first available loopback device.
-    loopdevice=($(sudo losetup -f || ret=$?))
+    # Find first available loopback device and use it.
+    loopdevice=($(sudo losetup --show -f ${mender_rootfs_image} || ret=$?))
     [[ $ret -ne 0 ]] && \
         { log "Error: cannot find an unused loop device. Aborting."; }
 
     if [ $ret -eq 0 ]; then
-      #Mount extracted ext4 partition to verify 'artifact_info' file content.
-      sudo losetup $loopdevice ${mender_rootfs_image}
+      # Mount extracted ext4 partition to verify 'artifact_info' file content.
       rootfs_mountpoint=${output_dir}/mnt/${rootfs_partition_id}
       mkdir -p ${rootfs_mountpoint}
       sudo mount $loopdevice ${rootfs_mountpoint}
