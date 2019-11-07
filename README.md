@@ -38,17 +38,22 @@ unzip 2019-06-20-raspbian-buster-lite.zip && cd ..
 ```
 
 Bootstrap the demo rootfs overlay that is configured to connect to
-https://hosted.mender.io with polling intervals set appropriately for
+a Mender server with polling intervals set appropriately for
 demonstration purposes.  There are three scripts here to support
-the Mender demo server, the Mender production server, and hosted
-Mender.
+the Mender demo server, the Mender production server, and Mender
+Professional.
 
+**NOTE!** Only run one of these three steps depending on the server
+type you are implementing.
+
+#### Using the [Mender demo server](https://docs.mender.io/getting-started/on-premise-installation/create-a-test-environment)
 ```
 ./scripts/bootstrap-rootfs-overlay-demo-server.sh \
     --output-dir ${PWD}/rootfs_overlay_demo \
     --server-ip 192.168.1.1
 ```
 
+#### Using the [Mender production server](https://docs.mender.io/administration/production-installation)
 ```
 ./scripts/bootstrap-rootfs-overlay-production-server.sh \
     --output-dir ${PWD}/rootfs_overlay_demo \
@@ -56,10 +61,11 @@ Mender.
     [ --server-cert ~/server.crt ]
 ```
 
+#### Using [Mender Professional](https://mender.io/products/mender-professional)
 ```
 ./scripts/bootstrap-rootfs-overlay-hosted-server.sh \
     --output-dir ${PWD}/rootfs_overlay_demo \
-    --tenant-token "Paste token from Hosted Mender"
+    --tenant-token "Paste token from Mender Professional"
 ```
 
 
