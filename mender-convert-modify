@@ -84,7 +84,7 @@ log_info "Installing Mender client and related files"
 
 deb_arch=$(probe_debian_arch_name)
 deb_name="mender-client_${MENDER_CLIENT_VERSION}-1_${deb_arch}.deb"
-run_and_log_cmd "wget -Nq ${MENDER_STORAGE_URL}/mender-convert/deb/${deb_name} -P work/mender-deb"
+run_and_log_cmd "wget -Nq ${MENDER_STORAGE_URL}/${MENDER_CLIENT_VERSION}/dist-packages/debian/${deb_arch}/${deb_name} -P work/mender-deb"
 
 cd work/mender-deb
 run_and_log_cmd "ar -xv ${deb_name}"
