@@ -20,6 +20,10 @@ function platform_modify() {
     true
 }
 
+function user_local_modify() {
+    true
+}
+
 function trap_exit() {
   echo "mender-convert-modify has finished. Cleaning up..."
   sudo umount -f work/boot
@@ -215,6 +219,9 @@ EOF"
 
 log_info "Performing platform specific modifications (if any)"
 platform_modify
+
+log_info "Performing user/local specific modifications (if any)"
+user_local_modify
 
 for overlay in "${overlays[@]}"; do
   log_info "Applying rootfs overlay: ${overlay}"
