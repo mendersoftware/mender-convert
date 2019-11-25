@@ -98,8 +98,8 @@ cd - > /dev/null 2>&1
 run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose work/mender-deb/files/ work/rootfs/"
 
 if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
-  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender.service \
-        work/rootfs/etc/systemd/system/multi-user.target.wants/mender.service"
+  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \
+        work/rootfs/etc/systemd/system/multi-user.target.wants/mender-client.service"
 fi
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
