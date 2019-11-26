@@ -27,8 +27,7 @@ UBUNTU_IMAGE_URL="https://d1b0l86ne08fsf.cloudfront.net/mender-convert/images/${
 
 UBUNTU_SERVER_RPI_IMAGE="ubuntu-18.04.3-preinstalled-server-armhf+raspi3.img"
 UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/${UBUNTU_SERVER_RPI_IMAGE}.xz"
-
-MENDER_ACCEPTANCE_URL="https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance"
+MENDER_ACCEPTANCE_URL="https://raw.githubusercontent.com/mendersoftware/meta-mender/50f3b353223267088cca45379e58644e08407d4d/tests/acceptance"
 
 # Some distros do not have /sbin in path for "normal users"
 export PATH="${PATH}:/sbin"
