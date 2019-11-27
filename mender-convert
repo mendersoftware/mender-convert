@@ -95,5 +95,5 @@ touch work/convert.log
 ./mender-convert-modify "$@"
 ./mender-convert-package "$@"
 
-echo "Output Artifacts and images can be found in deploy directory:"
+echo "Output Artifacts and images can be found in the deploy directory:"
 ls -1 deploy/*
