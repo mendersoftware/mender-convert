@@ -21,7 +21,7 @@ function platform_package() {
 }
 
 function trap_exit() {
-  echo "mender-convert-package has finished. Cleaning..."
+  echo "mender-convert-package has finished. Cleaning up..."
   sudo umount -f work/boot > /dev/null
   sudo umount -f work/rootfs > /dev/null
 }
