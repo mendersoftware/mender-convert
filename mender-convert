@@ -54,6 +54,24 @@ function trap_term() {
 trap trap_term INT TERM
 trap trap_exit EXIT
 
+# We only handle a selection of the arguments here, the rest are passed on
+# to the sub-scripts.
+while (( "$#" )); do
+    case "$1" in
+        -h | --help)
+            show_help
+            exit 0
+            ;;
+        -v | --version)
+            show_version
+            exit 0
+            ;;
+        *)
+            break;
+            ;;
+    esac
+done
+
 mender_convert_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 if [ "${mender_convert_dir}" != "${PWD}" ]; then
     echo "You must execute mender-convert from the root directory: ${mender_convert_dir}"
@@ -69,24 +87,6 @@ if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
 fi
 
 source modules/bootstrap.sh
-
-# We only handle a selection of the arguments here, the rest are passed on
-# to the sub-scripts.
-while (( "$#" )); do
-  case "$1" in
-    -h | --help)
-      show_help
-      exit 0
-      ;;
-    -v | --version)
-      show_version
-      exit 0
-      ;;
-    *)
-      break;
-      ;;
-  esac
-done
 
 mkdir -p work
 touch work/convert.log
