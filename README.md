@@ -2,11 +2,22 @@
 
 # mender-convert
 
-Mender is an open source over-the-air (OTA) software updater for embedded Linux devices. Mender comprises a client running at the embedded device, as well as a server that manages deployments across many devices.
+Mender is an open source over-the-air (OTA) software updater for embedded Linux
+devices. Mender comprises a client running at the embedded device, as well as a
+server that manages deployments across many devices.
 
-This repository contains mender-convert, which is used to convert pre-built disk images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible image by restructuring partition table and injecting the necessary files.
+This repository contains mender-convert, which is used to convert pre-built disk
+images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible image by
+restructuring partition table and injecting the necessary files.
 
-For a full list of tested devices and images please visit [Mender Hub](https://hub.mender.io/c/board-integrations/debian-family). If your device and image combination is not listed as supported, this does not necessarily mean that it will not work, it probably just means that no one has tested and reported it back and usually only small tweaks are necessary to get this running on your device.
+For a full list of tested devices and images please visit [Mender
+Hub](https://hub.mender.io/c/board-integrations/debian-family). If your device
+and image combination is not listed as supported, this does not necessarily mean
+that it will not work, it probably just means that no one has tested and
+reported it back and usually only small tweaks are necessary to get this running
+on your device.
+
+-------------------------------------------------------------------------------
 
 ![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
@@ -34,7 +45,9 @@ wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-0
 Extract the raw Raspberry Pi disk image:
 
 ```bash
-unzip 2019-06-20-raspbian-buster-lite.zip && cd ..
+unzip 2019-06-20-raspbian-buster-lite.zip
+INPUT_DISK_IMAGE=$(ls *raspbian-buster*.img)
+cd ..
 ```
 
 Bootstrap the demo rootfs overlay that is configured to connect to
@@ -47,14 +60,14 @@ Professional.
 type you are implementing.
 
 #### Using the [Mender demo server](https://docs.mender.io/getting-started/on-premise-installation/create-a-test-environment)
-```
+```bash
 ./scripts/bootstrap-rootfs-overlay-demo-server.sh \
     --output-dir ${PWD}/rootfs_overlay_demo \
     --server-ip 192.168.1.1
 ```
 
 #### Using the [Mender production server](https://docs.mender.io/administration/production-installation)
-```
+```bash
 ./scripts/bootstrap-rootfs-overlay-production-server.sh \
     --output-dir ${PWD}/rootfs_overlay_demo \
     --server-url https://foobar.mender.io \
@@ -62,7 +75,7 @@ type you are implementing.
 ```
 
 #### Using [Mender Professional](https://mender.io/products/mender-professional)
-```
+```bash
 ./scripts/bootstrap-rootfs-overlay-hosted-server.sh \
     --output-dir ${PWD}/rootfs_overlay_demo \
     --tenant-token "Paste token from Mender Professional"
@@ -86,8 +99,9 @@ Build a container with all required dependencies for `mender-convert`:
 ./docker-build
 ```
 
-This will create a container image which you can use to run `mender-convert`
-without polluting your host environment with the necessary dependencies.
+This will create a container image with the name `mender-convert` which you can
+use to run `mender-convert` without polluting your host environment with the
+necessary dependencies.
 
 
 #### Use the mender-convert container image
@@ -96,9 +110,9 @@ Run mender-convert from inside the container with your desired options, e.g.
 
 ```bash
 MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
-    --disk-image input/2019-04-08-raspbian-stretch-lite.img \
-    --config configs/raspberrypi3_config \
-    --overlay rootfs_overlay_demo/
+   --disk-image input/$INPUT_DISK_IMAGE \
+   --config configs/raspberrypi3_config \
+   --overlay rootfs_overlay_demo/
 ```
 
 Conversion will take 10-30 minutes, depending on image size and resources
@@ -115,7 +129,7 @@ mender-convert has a few dependencies, and their version and name vary between
 Linux distributions. Here is an example of how to install the dependencies on a
 Debian based distribution:
 
-```
+```bash
 sudo apt install $(cat requirements-deb.txt)
 ```
 
@@ -123,16 +137,17 @@ Start the conversion process with:
 
 ```bash
 MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
-    --disk-image input/2019-04-08-raspbian-stretch-lite.img \
-    --config configs/raspberrypi3_config \
-    --overlay rootfs_overlay_demo/
+   --disk-image input/$INPUT_DISK_IMAGE \
+   --config configs/raspberrypi3_config \
+   --overlay rootfs_overlay_demo/
 ```
 
 **NOTE!** You will be prompted to enter `sudo` password during the conversion
 process. This is required to be able to loopback mount images and for modifying
 them. Our recommendation is to use the provided Docker container, to run the
-tool in a isolated environment (at least to some degree).
+tool in a isolated environment.
 
+-------------------------------------------------------------------------------
 
 ## Contributing
 
