@@ -72,14 +72,14 @@ if [ ${nr_of_parts} -eq 0 ]; then
   log_fatal "Sorry, but could not find any valid partitions for: ${disk_image}"
 fi
 
-log_info "Disk parsed succesfully"
+log_info "Disk parsed successfully"
 log_info "NUMBER OF PARTS: ${nr_of_parts} TYPE: $(disk_get_part_value ${disk_image} 1 SCHEME)"
 
 for ((n=1;n<=${nr_of_parts};n++)); do
   part_dst_file="work/part-${n}.fs"
 
   if [ "$(disk_get_part_value ${disk_image} ${n} TYPE)" == "0x8e" ]; then
-    log_fatal "Detected an LVM volume group on disk. Unfortunatly this is not yet supported"
+    log_fatal "Detected an LVM volume group on disk. Unfortunately this is not yet supported"
   fi
 
   log_info "PART ${n}: SIZE: $(disk_get_part_value ${disk_image} ${n} SIZE) TYPE: $(disk_get_part_value ${disk_image} ${n} TYPE)"
