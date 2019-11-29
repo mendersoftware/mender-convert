@@ -40,9 +40,10 @@ test_acceptance:
     - export DOCKER_HOST="unix:///var/run/docker.sock"
     - docker version
     # Install dependencies
-    - apk --update --no-cache add bash wget git util-linux mtools python
-      py-pip gcc python2-dev libffi-dev libc-dev openssl-dev make sudo
-    - pip install "pytest>=3.0" "Fabric>=1.13.0, <2" pytest-html
+    - apk --update --no-cache add bash wget git util-linux mtools python3 py3-pip
+      gcc python3-dev libffi-dev lzo-dev libc-dev openssl-dev make sudo
+    # Python3 dependencies
+    - pip3 install -r https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance/requirements_py3.txt
     # Load image under test
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar

@@ -85,7 +85,7 @@ convert_and_test() {
         --disk-image input/${image_name} \
         ${MENDER_CONVERT_EXTRA_ARGS}
 
-    if pip list | grep -q -e pytest-html; then
+    if pip3 list | grep -q -e pytest-html; then
         html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
     fi
 
@@ -99,7 +99,7 @@ convert_and_test() {
 
     cd ${WORKSPACE}/mender-image-tests
 
-    python2 -m pytest --verbose \
+    python3 -m pytest --verbose \
             --junit-xml="${MENDER_CONVERT_DIR}/results_${device_type}.xml" \
             ${html_report_args} \
             --test-conversion \
