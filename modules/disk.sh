@@ -65,16 +65,15 @@ disk_extract_part() {
 #
 #  $1 - MiB value
 disk_mb_to_sectors() {
-    echo "$(( (${1} * 1024 * 1024) / 512 ))"
+  echo "$(( (${1} * 1024 * 1024) / 512 ))"
 }
 
 # Convert 512 sectors to MiB
 #
 #  $1 - number of 512 sectors
 disk_sectors_to_mb() {
-    echo "$(( (${1} * 512) / 1024 / 1024 ))"
+  echo "$(( (${1} * 512) / 1024 / 1024 ))"
 }
-
 
 # Align value (result is number of 512 sectors)
 #
@@ -115,7 +114,7 @@ disk_create_file_system_from_folder() {
     "ext4")
       MKFS_EXT4="/usr/bin/mkfs.ext4"
       if [ ! -f ${MKFS_EXT4} ]; then
-          MKFS_EXT4="/sbin/mkfs.ext4"
+        MKFS_EXT4="/sbin/mkfs.ext4"
       fi
       run_and_log_cmd "${MKFS_EXT4} -q -F ${2}"
       ;;
@@ -123,12 +122,13 @@ disk_create_file_system_from_folder() {
     "xfs")
       MKFS_XFS="/usr/bin/mkfs.xfs"
       if [ ! -f ${MKFS_XFS} ]; then
-          MKFS_XFS="/sbin/mkfs.xfs"
+        MKFS_XFS="/sbin/mkfs.xfs"
       fi
       run_and_log_cmd "${MKFS_XFS} -q -f ${2}"
       ;;
     *)
-    log_fatal "Unknown file system type specified: ${4}"
+      log_fatal "Unknown file system type specified: ${4}"
+      ;;
   esac
 
   run_and_log_cmd "mkdir -p work/output"
@@ -158,7 +158,7 @@ disk_boot_part() {
   # boot part was extracted or generated.
   boot_part="work/boot-generated.vfat"
   if [ ! -f ${boot_part} ]; then
-      boot_part="work/part-1.fs"
+    boot_part="work/part-1.fs"
   fi
   echo "${boot_part}"
 }
@@ -168,9 +168,9 @@ disk_boot_part() {
 disk_root_part() {
   boot_part="work/boot-generated.vfat"
   if [ ! -f ${boot_part} ]; then
-      root_part="work/part-2.fs"
+    root_part="work/part-2.fs"
   else
-      root_part="work/part-1.fs"
+    root_part="work/part-1.fs"
   fi
   echo "${root_part}"
 }

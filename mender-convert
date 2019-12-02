@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 #
 # Copyright 2019 Northern.tech AS
 #
@@ -56,33 +56,33 @@ trap trap_exit EXIT
 
 # We only handle a selection of the arguments here, the rest are passed on
 # to the sub-scripts.
-while (( "$#" )); do
-    case "$1" in
-        -h | --help)
-            show_help
-            exit 0
-            ;;
-        -v | --version)
-            show_version
-            exit 0
-            ;;
-        *)
-            break;
-            ;;
-    esac
+while (("$#")); do
+  case "$1" in
+    -h | --help)
+      show_help
+      exit 0
+      ;;
+    -v | --version)
+      show_version
+      exit 0
+      ;;
+    *)
+      break
+      ;;
+  esac
 done
 
 mender_convert_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 if [ "${mender_convert_dir}" != "${PWD}" ]; then
-    echo "You must execute mender-convert from the root directory: ${mender_convert_dir}"
-    exit 1
+  echo "You must execute mender-convert from the root directory: ${mender_convert_dir}"
+  exit 1
 fi
 
 if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
   echo "Sorry, it seems that you have not defined MENDER_ARTIFACT_NAME"
   echo "You can do this with the following command:"
   echo ""
-  echo -e "\tMENDER_ARTIFACT_NAME="release-1" ./mender-convert"
+  echo -e "\tMENDER_ARTIFACT_NAME=\"release-1\" ./mender-convert"
   exit 1
 fi
 

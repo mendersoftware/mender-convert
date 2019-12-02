@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /usr/bin/env bash
 #
 # Copyright 2019 Northern.tech AS
 #
@@ -17,11 +17,11 @@
 # Default that can be overridden by providing this method in a
 # configuration file passed with '--config'
 function platform_modify() {
-    true
+  true
 }
 
 function user_local_modify() {
-    true
+  true
 }
 
 function trap_exit() {

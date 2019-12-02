@@ -19,8 +19,8 @@ set -o errexit
 
 root_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )/../" && pwd )
 if [ "${root_dir}" != "${PWD}" ]; then
-    echo "You must execute $(basename $0) from the root directory: ${root_dir}"
-    exit 1
+  echo "You must execute $(basename $0) from the root directory: ${root_dir}"
+  exit 1
 fi
 
 server_url=""
@@ -48,13 +48,13 @@ while (( "$#" )); do
 done
 
 if [ -z "${output_dir}" ]; then
-    echo "Sorry, but you need to provide an output directory using the '-o/--output-dir' option"
-    exit 1
+  echo "Sorry, but you need to provide an output directory using the '-o/--output-dir' option"
+  exit 1
 fi
 
 if [ -z "${server_url}" ]; then
-    echo "Sorry, but you need to provide a server URL using the '-s/--server-url' option"
-    exit 1
+  echo "Sorry, but you need to provide a server URL using the '-s/--server-url' option"
+  exit 1
 fi
 
 mkdir -p ${output_dir}/etc/mender
@@ -65,11 +65,11 @@ cat <<- EOF > ${output_dir}/etc/mender/mender.conf
   "ServerURL": "${server_url}",
 EOF
 
-if [ -n "${server_cert}" ] ; then
-cat <<- EOF >> ${output_dir}/etc/mender/mender.conf
+if [ -n "${server_cert}" ]; then
+  cat <<- EOF >> ${output_dir}/etc/mender/mender.conf
   "ServerCertificate": "/etc/mender/server.crt",
 EOF
-cp -f "${server_cert}" ${output_dir}/etc/mender/server.crt
+  cp -f "${server_cert}" ${output_dir}/etc/mender/server.crt
 fi
 
 cat <<- EOF >> ${output_dir}/etc/mender/mender.conf
