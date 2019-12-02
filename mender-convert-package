@@ -102,6 +102,16 @@ else
   overhead_sectors=$(( ${alignment_sectors} * 6 ))
 fi
 
+# Validate boot-gap.bin size, ensuring it will fit between MBR and boot_part_start
+if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
+  # Add one block for MBR
+  boot_gap_sectors=$(( $(stat --printf="%b" work/boot-gap.bin) + 1))
+  if [ ${boot_gap_sectors} -ge ${boot_part_start} ]; then
+    log_warn "The work/boot-gap.bin file will overwrite the boot partition"
+    log_fatal "Please increase MENDER_PARTITION_ALIGNMENT (2x will typically solve this))"
+  fi
+fi
+
 # Validate boot part size
 actual_boot_size=$(du --apparent-size -s --block-size=512 ${boot_part} | cut -f 1)
 if [ ${actual_boot_size} -gt ${boot_part_sectors} ]; then
@@ -198,6 +208,12 @@ run_and_log_cmd "${PARTED} -s ${sdimg_path} -- unit s mkpart primary ext2 ${root
 run_and_log_cmd "${PARTED} -s ${sdimg_path} -- unit s mkpart primary ext2 ${rootfsb_start} ${rootfsb_end}"
 run_and_log_cmd "${PARTED} -s ${sdimg_path} -- unit s mkpart primary ext2 ${data_start} ${data_end}"
 run_and_log_cmd "${PARTED} -s ${sdimg_path} print"
+
+# Write boot-gap
+if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
+  log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
+  disk_write_at_offset "${output_dir}/boot-gap.bin" "${sdimg_path}" "1"
+fi
 
 # Burn Partitions
 disk_write_at_offset "${boot_part}" "${sdimg_path}" "${boot_part_start}"

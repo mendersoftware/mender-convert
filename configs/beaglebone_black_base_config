@@ -6,6 +6,9 @@
 # There are reported issues with GRUB bootloader integration, fallback to U-boot.
 MENDER_GRUB_EFI_INTEGRATION=n
 
+# We will write a modified bootloader
+MENDER_COPY_BOOT_GAP=n
+
 # 4MB alignment
 MENDER_PARTITION_ALIGNMENT="4194304"
 

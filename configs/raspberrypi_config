@@ -1,6 +1,9 @@
 # Raspberry Pi does not support GRUB bootloader integration, fallback to U-boot.
 MENDER_GRUB_EFI_INTEGRATION=n
 
+# Nothing to copy
+MENDER_COPY_BOOT_GAP=n
+
 # 4MB alignment
 MENDER_PARTITION_ALIGNMENT="4194304"
 

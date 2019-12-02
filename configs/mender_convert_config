@@ -120,6 +120,13 @@ MENDER_KERNEL_DEVICETREE=kernel.dtb
 #    https://github.com/intel/bmap-tools
 MENDER_USE_BMAP="n"
 
+# Copy the boot gap, which is the area from sector 1 until first parition,
+# this is done because some images might contain the bootloader embedded here
+# and we need to copy the bootloader to the output image.
+#
+# In most cases you would like this enabled.
+MENDER_COPY_BOOT_GAP="y"
+
 source configs/mender_grub_config
 
 # Function to create Mender Artifact

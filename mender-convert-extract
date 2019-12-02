@@ -102,5 +102,8 @@ fi
 # this is done because some images might contain the bootloader embedded here
 # and we might need to keep this area intact when we generate our custom
 # image.
-disk_extract_part "${disk_image}" \
-  1 $(( $(disk_get_part_value ${disk_image} 1 START) - 1)) work/boot-gap.bin
+if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
+  log_info "Extracting boot gap to work/boot-gap.bin"
+  disk_extract_part "${disk_image}" \
+    1 $(( $(disk_get_part_value ${disk_image} 1 START) - 1)) work/boot-gap.bin
+fi

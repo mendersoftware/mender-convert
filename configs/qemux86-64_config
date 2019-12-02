@@ -14,3 +14,6 @@
 
 MENDER_STORAGE_DEVICE=/dev/sda
 MENDER_DEVICE_TYPE="qemux86_64"
+
+# Nothing to copy
+MENDER_COPY_BOOT_GAP="n"
