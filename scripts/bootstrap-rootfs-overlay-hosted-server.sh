@@ -19,8 +19,8 @@ set -o errexit
 
 root_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )/../" && pwd )
 if [ "${root_dir}" != "${PWD}" ]; then
-    echo "You must execute $(basename $0) from the root directory: ${root_dir}"
-    exit 1
+  echo "You must execute $(basename $0) from the root directory: ${root_dir}"
+  exit 1
 fi
 
 tenant_token=""
@@ -44,13 +44,13 @@ while (( "$#" )); do
 done
 
 if [ -z "${output_dir}" ]; then
-    echo "Sorry, but you need to provide an output directory using the '-o/--output-dir' option"
-    exit 1
+  echo "Sorry, but you need to provide an output directory using the '-o/--output-dir' option"
+  exit 1
 fi
 
 if [ -z "${tenant_token}" ]; then
-    echo "Sorry, but you need to provide a tenant token using the '-t/--tenant-token' option"
-    exit 1
+  echo "Sorry, but you need to provide a tenant token using the '-t/--tenant-token' option"
+  exit 1
 fi
 
 mkdir -p ${output_dir}/etc/mender

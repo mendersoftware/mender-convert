@@ -17,7 +17,7 @@
 # Default that can be overridden by providing this method in a
 # configuration file passed with '--config'
 function platform_package() {
-    true
+  true
 }
 
 function trap_exit() {
@@ -69,7 +69,7 @@ source modules/config.sh $(printf "%q " "${configs[@]}")
 
 PARTED="/usr/bin/parted"
 if [ ! -f ${PARTED} ]; then
-    PARTED="/sbin/parted"
+  PARTED="/sbin/parted"
 fi
 
 output_dir=work
@@ -129,8 +129,8 @@ fi
 boot_part_sectors=$(disk_align_sectors ${boot_part_sectors} ${MENDER_PARTITION_ALIGNMENT} )
 
 # Calculate rootfs size
-rootfs_part_sectors=$(( (${disk_image_total_sectors} - ${data_part_sectors} \
-        - ${boot_part_sectors} - ${overhead_sectors}) / 2 ))
+rootfs_part_sectors=$(((${disk_image_total_sectors} - ${data_part_sectors} - \
+  ${boot_part_sectors} - ${overhead_sectors}) / 2))
 
 # Make sure rootfs size is aligned to MENDER_PARTITION_ALIGNMENT
 rootfs_part_sectors=$(disk_align_sectors ${rootfs_part_sectors} ${MENDER_PARTITION_ALIGNMENT} )
@@ -146,9 +146,9 @@ actual_rootfs_size=$(sudo du --apparent-size -s --block-size=512 work/rootfs | c
 rootfs_image_sectors=$(awk -v r1="$actual_rootfs_size" 'BEGIN{printf "%.0f", r1 * 1.50}')
 
 if [ ${rootfs_image_sectors} -gt ${rootfs_part_sectors} ]; then
-    log_warn "The calculated rootfs partition size $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB is too small."
-    log_warn "The actual rootfs image size is $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
-    log_fatal "You can try adjusting the MENDER_STORAGE_TOTAL_SIZE_MB variable to increase available space"
+  log_warn "The calculated rootfs partition size $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB is too small."
+  log_warn "The actual rootfs image size is $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
+  log_fatal "You can try adjusting the MENDER_STORAGE_TOTAL_SIZE_MB variable to increase available space"
 fi
 
 # Extract file-system type from rootfs

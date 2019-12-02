@@ -19,31 +19,31 @@
 # No input parameters and these work on the assumption that boot and root parts
 # are mounted at work/boot and work/rootfs
 probe_arch() {
-    # --dereference, means to follow symlinks because 'ls' could be a symlink
-    # to busybox
-    file_info=""
-    for location in bin/ls usr/bin/ls; do
-      if [ -e work/rootfs/${location} ]; then
-        file_info=$(file -b --dereference work/rootfs/${location})
-        break
-      fi
-    done
-
-    if [ -z "${file_info}" ]; then
-        log_fatal "Sorry, where not able to determinate target architecture"
+  # --dereference, means to follow symlinks because 'ls' could be a symlink
+  # to busybox
+  file_info=""
+  for location in bin/ls usr/bin/ls; do
+    if [ -e work/rootfs/${location} ]; then
+      file_info=$(file -b --dereference work/rootfs/${location})
+      break
     fi
+  done
 
-    target_arch="unknown"
-    if grep -q x86-64 <<< "${file_info}"; then
-        target_arch="x86-64"
-    elif grep -Eq "ELF 32-bit.*ARM" <<< "${file_info}"; then
-        target_arch="arm"
-    elif grep -Eq "ELF 64-bit.*aarch64" <<< "${file_info}"; then
-        target_arch="aarch64"
-    else
-        log_fatal "Unsupported architecture: ${file_info}"
-    fi
-    echo "${target_arch}"
+  if [ -z "${file_info}" ]; then
+    log_fatal "Sorry, where not able to determinate target architecture"
+  fi
+
+  target_arch="unknown"
+  if grep -q x86-64 <<< "${file_info}"; then
+    target_arch="x86-64"
+  elif grep -Eq "ELF 32-bit.*ARM" <<< "${file_info}"; then
+    target_arch="arm"
+  elif grep -Eq "ELF 64-bit.*aarch64" <<< "${file_info}"; then
+    target_arch="aarch64"
+  else
+    log_fatal "Unsupported architecture: ${file_info}"
+  fi
+  echo "${target_arch}"
 }
 
 # Prints GRUB EFI name depending on target architecture
@@ -64,7 +64,8 @@ probe_grub_efi_name() {
       efi_name="grub-efi-bootaa64.efi"
       ;;
     *)
-    log_fatal "Unknown arch: ${arch}"
+      log_fatal "Unknown arch: ${arch}"
+      ;;
   esac
   echo "$efi_name"
 }
@@ -87,7 +88,8 @@ probe_debian_arch_name() {
       deb_arch="arm64"
       ;;
     *)
-    log_fatal "Unknown arch: ${arch}"
+      log_fatal "Unknown arch: ${arch}"
+      ;;
   esac
   echo "${deb_arch}"
 }
@@ -112,7 +114,8 @@ probe_grub_efi_target_name() {
       efi_target_name="bootaa64.efi"
       ;;
     *)
-    log_fatal "Unknown arch: ${arch}"
+      log_fatal "Unknown arch: ${arch}"
+      ;;
   esac
   echo "$efi_target_name"
 }
@@ -162,7 +165,6 @@ probe_initrd_image() {
   done
   echo "${initrd_image_path}"
 }
-
 
 # Prints Linux kernel image name
 #

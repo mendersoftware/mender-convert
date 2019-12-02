@@ -21,10 +21,10 @@ IMAGE_NAME=${IMAGE_NAME:-mender-convert}
 MENDER_CONVERT_DIR="$(pwd)"
 
 docker run \
-       -v $MENDER_CONVERT_DIR:/mender-convert \
-       --privileged=true \
-       --cap-add=SYS_MODULE \
-       -v /dev:/dev \
-       -v /lib/modules:/lib/modules:ro \
-       --env MENDER_ARTIFACT_NAME=${MENDER_ARTIFACT_NAME} \
-       $IMAGE_NAME "$@"
+  -v $MENDER_CONVERT_DIR:/mender-convert \
+  --privileged=true \
+  --cap-add=SYS_MODULE \
+  -v /dev:/dev \
+  -v /lib/modules:/lib/modules:ro \
+  --env MENDER_ARTIFACT_NAME=${MENDER_ARTIFACT_NAME} \
+  $IMAGE_NAME "$@"

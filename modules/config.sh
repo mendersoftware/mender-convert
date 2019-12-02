@@ -17,6 +17,6 @@
 # Read in the array of config files to process
 read -a configs <<< "${@}"
 for config in "${configs[@]}"; do
-    log_info "Using configuration file: ${config}"
-    source "${config}"
+  log_info "Using configuration file: ${config}"
+  source "${config}"
 done
