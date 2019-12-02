@@ -82,7 +82,7 @@ if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
   echo "Sorry, it seems that you have not defined MENDER_ARTIFACT_NAME"
   echo "You can do this with the following command:"
   echo ""
-  echo -e "\tMENDER_ARTIFACT_NAME="release-1" ./mender-convert"
+  echo -e "\tMENDER_ARTIFACT_NAME=\"release-1\" ./mender-convert"
   exit 1
 fi
 
