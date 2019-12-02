@@ -55,3 +55,5 @@ test_acceptance:
     paths:
       - results_*.xml
       - report_*.html
+    reports:
+      junit: results_*.xml
