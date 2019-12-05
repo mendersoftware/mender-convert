@@ -197,9 +197,9 @@ log_info "Creating Mender compatible disk-image"
 sdimg_path=deploy/${image_name}.sdimg
 
 log_info "Total disk size: $(disk_sectors_to_mb ${disk_image_total_sectors}) MiB"
-log_info "  Boot partition $(disk_sectors_to_mb ${boot_part_sectors}) MiB"
-log_info "  RootFS         $(disk_sectors_to_mb ${rootfs_part_sectors}) x 2 MiB"
-log_info "  Data           $(disk_sectors_to_mb ${data_part_sectors}) MiB"
+log_info "  Boot partition    $(disk_sectors_to_mb ${boot_part_sectors}) MiB"
+log_info "  RootFS partitions $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB x 2"
+log_info "  Data partition    $(disk_sectors_to_mb ${data_part_sectors}) MiB"
 
 # Initialize sdcard image file
 run_and_log_cmd \
