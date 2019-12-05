@@ -140,7 +140,7 @@ artifact_name=$(cat work/rootfs/etc/mender/artifact_info | sed 's/[^=]*=//')
 
 image_name="${device_type}-${artifact_name}"
 
-actual_rootfs_size=$(sudo du --apparent-size -s --block-size=512 work/rootfs | cut -f 1)
+actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
 
 # 50 % free space, not to be confused with rootfs_part_sectors
 rootfs_image_sectors=$(awk -v r1="$actual_rootfs_size" 'BEGIN{printf "%.0f", r1 * 1.50}')
