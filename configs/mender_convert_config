@@ -127,6 +127,41 @@ MENDER_USE_BMAP="n"
 # In most cases you would like this enabled.
 MENDER_COPY_BOOT_GAP="y"
 
+# The size of each of the two rootfs filesystems, in KiB. If this is 0,
+# mender-convert will use the size of the filesystem content as a basis. If the
+# value is -1, mender-convert will use the maximum size that will fit inside the
+# created partition. The size is further modified by IMAGE_ROOTFS_EXTRA_SPACE
+# and IMAGE_OVERHEAD_FACTOR.
+#
+# This variable directly mirrors the variable from the Yocto Project, which is
+# why it is missing a "MENDER_" prefix.
+IMAGE_ROOTFS_SIZE="0"
+
+# The amount of extra free space requested on the rootfs, in KiB. This is added
+# to the value of IMAGE_ROOTFS_SIZE. The size is further modified by
+# IMAGE_OVERHEAD_FACTOR.
+#
+# Note that due to reserved space for the root user on the filesystem, "df" may
+# report a significantly lower number than requested. A more accurate number can
+# be fetched using for example "dumpe2fs" and looking for the "Free blocks"
+# field, but even this value is usually going to be lower than requested due to
+# meta data on the filesystem.
+#
+# This variable directly mirrors the variable from the Yocto Project, which is
+# why it is missing a "MENDER_" prefix.
+IMAGE_ROOTFS_EXTRA_SPACE="0"
+
+# This factor is multiplied by the used space value for the generated rootfs,
+# and if the result is larger than IMAGE_ROOTFS_SIZE + IMAGE_ROOTFS_EXTRA_SPACE,
+# it will be used as the size of the rootfs instead of the other two variables.
+#
+# The actual free space will usually be lower than requested. See comment for
+# IMAGE_ROOTFS_EXTRA_SPACE.
+#
+# This variable directly mirrors the variable from the Yocto Project, which is
+# why it is missing a "MENDER_" prefix.
+IMAGE_OVERHEAD_FACTOR="1.5"
+
 source configs/mender_grub_config
 
 # Function to create Mender Artifact
