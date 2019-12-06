@@ -11,7 +11,7 @@ RUN cd /root/pxz && make
 
 FROM ubuntu:19.04
 
-ARG MENDER_ARTIFACT_VERSION=3.1.0
+ARG MENDER_ARTIFACT_VERSION=3.2.1
 
 RUN apt-get update && apt-get install -y \
 # For 'ar' command to unpack .deb
