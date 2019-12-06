@@ -4,12 +4,18 @@
 #
 # NOTE! This file will always be sourced.
 
-# Compress generated disk image using gzip
+# Compress generated disk image
 #
 # This is useful when you have large disk images, compressing them
 # makes it easier to transfer them between e.g an build server and a local
 # machine, and obviously saves space.
-MENDER_COMPRESS_DISK_IMAGE=y
+#
+# Possible values are:
+# 'n'    - No compression
+# 'gzip' - Compress with gzip
+# 'lzma' - Compress with xz (LZMA)
+# 'y'    - Alias for 'gzip'
+MENDER_COMPRESS_DISK_IMAGE=gzip
 
 # Compression algorithm for Mender Artifact
 #

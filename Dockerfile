@@ -1,3 +1,14 @@
+# Build pxz in separate image to avoid big image size
+FROM ubuntu:19.04 AS build
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    liblzma-dev
+
+# Parallel xz (LZMA) compression
+RUN git clone https://github.com/jnovy/pxz.git /root/pxz
+RUN cd /root/pxz && make
+
 FROM ubuntu:19.04
 
 ARG MENDER_ARTIFACT_VERSION=3.1.0
@@ -30,7 +41,11 @@ RUN apt-get update && apt-get install -y \
 # to get rid of 'sh: 1: udevadm: not found' errors triggered by parted
     udev \
 # to create bmap index file (MENDER_USE_BMAP)
-    bmap-tools
+    bmap-tools \
+# needed to run pxz
+    libgomp1
+
+COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
 RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
     && chmod +x /usr/bin/mender-artifact
