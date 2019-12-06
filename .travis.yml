@@ -7,7 +7,7 @@ git:
 dist: trusty
 
 before_script:
-    - git clone git://github.com/mendersoftware/mendertesting
+    - git clone git://github.com/mendersoftware/mendertesting /tmp/mendertesting
 
     # Rename the branch we're on, so that it's not in the way for the
     # subsequent fetch. It's ok if this fails, it just means we're not on any
@@ -21,7 +21,7 @@ before_script:
 
 script:
     # Check commit compliance.
-    - mendertesting/check_commits.sh
+    - /tmp/mendertesting/check_commits.sh
     # Check licenses
-    - mendertesting/check_license.sh
+    - /tmp/mendertesting/check_license.sh
     - ./docker-build

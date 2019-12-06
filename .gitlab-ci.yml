@@ -20,12 +20,12 @@ test:
     - git fetch origin 'refs/heads/*:refs/heads/*'
     # Get last remaining tags, if any.
     - git fetch --tags origin
-    - git clone http://github.com/mendersoftware/mendertesting
+    - git clone http://github.com/mendersoftware/mendertesting /tmp/mendertesting
   script:
     # Check commit compliance.
-    - mendertesting/check_commits.sh
+    - /tmp/mendertesting/check_commits.sh
     # Check licenses
-    - mendertesting/check_license.sh
+    - /tmp/mendertesting/check_license.sh
 
 build:
   stage: build
