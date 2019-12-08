@@ -94,6 +94,35 @@ You can watch `output/build.log` for progress and diagnostics information.
 After it finishes, you can find your images in the `output` directory on your host machine!
 
 
+### Customizing the image
+`mender-convert` allows custom files to be added to the image after all processing has taken place but before the artifact is created. This is done using the following command line options:
+* `--rootfs-overlay`: Add files to the rootfs partition.
+* `--boot-overlay`: Add files to the boot partition.
+* `--data-overlay`: Add files to the data partition.
+
+To use this feature, create a new directory under the directory where you copied these files and place the files to be copied inside, making sure that the directory structure and permissions are how they should be on the target file system. Then, pass the directory path to `mender-convert` using one of the above command line options.
+
+E.g. With the following file structure created for a rootfs overlay:
+
+```
+rootfs/
+├── [drwxr-xr-x pi     ]  etc
+│   └── [-rw------- root    ]  testfile
+└── [drwxr-xr-x pi     ]  home
+    └── [drwxr-xr-x pi     ]  pi
+        ├── [-rw-r--r-- pi     ]  file1
+        ├── [-rw-r--r-- pi     ]  file2
+        └── [-rw-r--r-- pi     ]  file3
+```
+and `mender-convert` called with the following additional option:
+
+```
+mender-convert ..... --rootfs-overlay rootfs/
+```
+
+...the contents of the `rootfs` folder would be copied as-is to the root directory of the rootfs partition, resulting in `testfile` present under `/etc/` and `file1 file2 file3` under `/home/pi/`, with all the file attributes preserved.
+
+
 ### Known issues
 * An issue for `Raspberry Pi Zero W` has been spotted with the `mender-convert` tool version 1.1.0.
   After an initial boot, having last partition resized to the end of the SD card, the correct device

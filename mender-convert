@@ -24,6 +24,7 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
           -d|--device-type | -p|--rootfs-partition-id | -n|--demo | -i|--demo-host-ip |
           -c|--server-cert | -u|--server-url | -t|--tenant-token |
           -g|--mender-client | -b|--bootloader-toolchain | -a|--artifact-name |
+          -R|--rootfs-overlay | -B|--boot-overlay | -D|--data-overlay | -S|--state-script |
           -e|--storage-total-size-mb | -k|--keep | -v|--version -h|--help]
 
         raw-disk-image        - raw disk embedded Linux (Debian, Raspbian,
@@ -43,6 +44,11 @@ Options: [-r|--raw-disk-image | -m|--mender-disk-image | -s|--data-part-size-mb 
         mender-client         - Mender client binary
         bootloader-toolchain  - GNU Arm Embedded Toolchain
         artifact-name         - Mender artifact name
+        rootfs-overlay        - Path to rootfs overlay
+        boot-overlay          - Path to boot partition overlay
+        data-overlay          - Path to data partition overlay
+        state-script          - Path to state script to be included in artifact. 
+                                Can be specified multiple times to include multiple scripts.
         storage-total-size-mb - total storage size in MB; default value 8000MB;
                                 it is used to calculate the rootfs final size
         keep                  - keep intermediate files in output directory
@@ -533,6 +539,38 @@ do_install_bootloader_to_mender_disk_image() {
   return 0
 }
 
+do_install_custom_files_to_mender_image() {
+  log "$step/$total Installing custom files..."
+  ((step++))
+
+  if [ -z "${mender_disk_image}" ]; then
+    log "Mender disk image not set. Aborting."
+    return 1
+  fi
+
+  stage_6_args=
+
+  if [ -n "${rootfs_overlay}" ]; then
+    stage_6_args="${stage_6_args} -r ${rootfs_overlay}"
+  fi
+
+  if [ -n "${boot_overlay}" ]; then
+    stage_6_args="${stage_6_args} -b ${boot_overlay}"
+  fi
+
+  if [ -n "${data_overlay}" ]; then
+    stage_6_args="${stage_6_args} -d ${data_overlay}"
+  fi
+
+  if [ -n "${stage_6_args}" ]; then
+      stage_6_args="-m $mender_disk_image ${stage_6_args}"
+      ${tool_dir}/convert-stage-6.sh ${stage_6_args} || ret=$?
+      [[ $ret -ne 0 ]] && { log "\nInstalling custom files failed."; return $ret; }
+  fi
+
+  return 0
+}
+
 do_mender_disk_image_to_artifact() {
   log "$step/$total Creating Mender Artifact..."
   ((step++))
@@ -642,6 +680,13 @@ do_mender_disk_image_to_artifact() {
       log "\tWriting Mender artifact to: ${mender_artifact}"
       log "\tThis may take 10-20 minutes (using LZMA)..."
 
+      state_script_args=
+      if [ -n "${state_scripts}" ]; then
+        for s in "${state_scripts[@]}"; do
+          state_script_args="${state_script_args} -s ${tool_dir}/${s}"
+        done
+      fi
+      
       #Create Mender artifact
       mender-artifact \
         --compression lzma \
@@ -649,7 +694,8 @@ do_mender_disk_image_to_artifact() {
         --file ${mender_rootfs_image} \
         --output-path ${mender_artifact} \
         --artifact-name ${artifact_name} \
-        --device-type ${device_type}
+        --device-type ${device_type} \
+        ${state_script_args}
 
       ret=$?
       [[ $ret -eq 0 ]] && \
@@ -683,6 +729,9 @@ do_from_raw_disk_image() {
   [[ $rc -ne 0 ]] && { return 1; }
 
   do_install_bootloader_to_mender_disk_image || rc=$?
+  [[ $rc -ne 0 ]] && { return 1; }
+
+  do_install_custom_files_to_mender_image || rc=$?
   [[ $rc -ne 0 ]] && { return 1; }
 
   do_mender_disk_image_to_artifact || rc=$?
@@ -754,6 +803,22 @@ while (( "$#" )); do
       ;;
     -t | --tenant-token)
       tenant_token=$2
+      shift 2
+      ;;
+    -R | --rootfs-overlay)
+      rootfs_overlay=$2
+      shift 2
+      ;;
+    -B | --boot-overlay)
+      boot_overlay=$2
+      shift 2
+      ;;
+    -D | --data-overlay)
+      data_overlay=$2
+      shift 2
+      ;;
+    -S | --state-script)
+      state_scripts+=("${2}")
       shift 2
       ;;
     -e | --storage-total-size-mb)
@@ -848,7 +913,7 @@ case "$1" in
     log "You can find the Mender Artifact at:\n\t$mender_artifact\nand use it to deploy updates."
     ;;
   from-raw-disk-image)
-    total=10
+    total=11
     do_from_raw_disk_image || rc=$?
     [[ $rc -ne 0 ]] && { log "Check $build_log for details."; exit 1; }
     log "Conversion complete!"
