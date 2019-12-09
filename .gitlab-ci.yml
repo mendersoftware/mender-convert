@@ -2,6 +2,11 @@ image: docker:git
 
 variables:
   DOCKER_REPOSITORY: mendersoftware/mender-convert
+  S3_BUCKET_NAME: mender-convert-images
+  MENDER_ARTIFACT_VERSION: master
+  MENDER_CLIENT_VERSION: master
+  RASPBIAN_URL: http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip
+  RASPBIAN_NAME: 2019-09-26-raspbian-buster-lite
 
 include:
   - project: 'Northern.tech/Mender/mendertesting'
@@ -13,13 +18,15 @@ stages:
   - test
   - build
   - test_acceptance
+  - convert
+  - publish
 
 build:
   stage: build
   services:
     - docker:dind
   script:
-    - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build
+    - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build --build-arg MENDER_ARTIFACT_VERSION=${MENDER_ARTIFACT_VERSION}
     - docker save $DOCKER_REPOSITORY:pr > image.tar
   artifacts:
     expire_in: 2w
@@ -57,3 +64,52 @@ test_acceptance:
       - report_*.html
     reports:
       junit: results_*.xml
+
+convert_raspbian:
+  stage: convert
+  image: teracy/ubuntu:18.04-dind-18.09.9
+  services:
+    - docker:18-dind
+  tags:
+    - mender-qa-slave
+  dependencies:
+    - build
+  before_script:
+    - apt update && apt install -yy bash wget unzip
+
+    - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
+    - docker load -i image.tar
+
+    - wget -q ${RASPBIAN_URL}
+    - unzip ${RASPBIAN_NAME}.zip
+
+  script:
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > mender_client_version_config
+    - env MENDER_ARTIFACT_NAME=mender-raspbian
+      ./docker-mender-convert -d ${RASPBIAN_NAME}.img
+      -c configs/raspberrypi3_config
+      -c configs/images/raspberrypi3_raspbian_config
+      -c mender_client_version_config
+    - mv deploy/*-mender-raspbian.sdimg.xz deploy/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
+
+  after_script:
+    - mkdir -p output
+    - mv deploy/*.img.xz output
+
+  artifacts:
+    paths:
+      - output
+    expire_in: 2 weeks
+
+publish:s3:
+  when: manual
+  stage: publish
+  image: debian:buster
+  before_script:
+    - apt update && apt install -yyq awscli
+  script:
+    - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz version to S3"
+    - aws s3 cp output/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
+        s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
+    - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
+        --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
