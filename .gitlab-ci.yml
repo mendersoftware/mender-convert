@@ -55,7 +55,7 @@ test_acceptance:
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar
   script:
-    - ./scripts/run-tests.sh
+    - ./scripts/test/run-tests.sh
   artifacts:
     expire_in: 2w
     when: always
@@ -90,7 +90,11 @@ convert_raspbian:
       -c configs/raspberrypi3_config
       -c configs/images/raspberrypi3_raspbian_config
       -c mender_client_version_config
-    - mv deploy/*-mender-raspbian.sdimg.xz deploy/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
+    - cp deploy/raspberrypi-mender-raspbian.sdimg.xz deploy/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
+    - unxz deploy/raspberrypi-mender-raspbian.sdimg.xz
+      # Verify converted image
+    - . ./scripts/test/test-utils.sh
+    - run_tests raspbian mender-raspbian "-k TestMenderInstalled"
 
   after_script:
     - mkdir -p output
