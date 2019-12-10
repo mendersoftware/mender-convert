@@ -2,8 +2,7 @@ MENDER_ACCEPTANCE_URL="https://raw.githubusercontent.com/mendersoftware/meta-men
 
 WORKSPACE=${WORKSPACE:-./tests}
 
-# Relative to where scripts are executed (${WORKSPACE}/mender-image-tests)
-MENDER_CONVERT_DIR=../../
+MENDER_CONVERT_DIR=$PWD
 
 convert_and_test() {
   device_type=$1
