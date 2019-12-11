@@ -45,6 +45,7 @@ test_acceptance:
   dependencies:
     - build
     - convert_raspbian
+  timeout: 2h
   before_script:
     # Install dependencies
     - apt update
