@@ -13,9 +13,6 @@ WORKSPACE=./tests
 BBB_DEBIAN_IMAGE="bone-debian-9.5-iot-armhf-2018-10-07-4gb.img"
 BBB_DEBIAN_IMAGE_URL="http://debian.beagleboard.org/images/${BBB_DEBIAN_IMAGE}.xz"
 
-RASPBIAN_IMAGE="2019-04-08-raspbian-stretch-lite"
-RASPBIAN_IMAGE_URL="https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-04-09/${RASPBIAN_IMAGE}.zip"
-
 TINKER_IMAGE="20170417-tinker-board-linaro-stretch-alip-v1.8"
 TINKER_IMAGE_URL="http://dlcdnet.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/${TINKER_IMAGE}.zip"
 
@@ -53,12 +50,12 @@ convert_and_test "qemux86_64" \
   "${UBUNTU_IMAGE}.gz" \
   "configs/qemux86-64_config" || test_result=$?
 
-convert_and_test "raspberrypi" \
-  "release-1" \
-  "${RASPBIAN_IMAGE_URL}" \
-  "${RASPBIAN_IMAGE}.img" \
-  "${RASPBIAN_IMAGE}.zip" \
-  "configs/raspberrypi3_config" || test_result=$?
+if [ -f deploy/raspberrypi-mender-raspbian.sdimg ]; then
+  run_tests "raspberrypi" "mender-raspbian" || test_result=$?
+else
+  echo "FAILED! This test needs a pre-converted Raspbian image. See the convert_raspbian job in the .gitlab-ci.yml file for how to generate, and then put the *uncompressed* image in the deploy folder"
+  test_result=1
+fi
 
 # MEN-2809: Disabled due broken download link
 #convert_and_test "linaro-alip" \
