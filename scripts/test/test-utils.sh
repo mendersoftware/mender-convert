@@ -56,8 +56,12 @@ convert_and_test() {
     --disk-image input/${image_name} \
     ${MENDER_CONVERT_EXTRA_ARGS}
 
-  run_tests "${device_type}" "${artifact_name}"
-  return $?
+  local ret=0
+  run_tests "${device_type}" "${artifact_name}" || ret=$?
+
+  rm -f deploy/${device_type}-${artifact_name}.*
+
+  return $ret
 }
 
 run_tests() {
