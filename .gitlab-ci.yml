@@ -117,6 +117,9 @@ publish:s3:
 
   script:
     - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz version to S3"
+    # Prepare high privilege S3 keys (the base keys are for the tmp storage only)
+    - export AWS_ACCESS_KEY_ID=$PUBLISH_AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$PUBLISH_AWS_SECRET_ACCESS_KEY
     - aws s3 cp deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
         s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
     - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
