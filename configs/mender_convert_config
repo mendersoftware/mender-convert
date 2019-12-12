@@ -11,10 +11,9 @@
 # machine, and obviously saves space.
 #
 # Possible values are:
-# 'n'    - No compression
+# 'none' - No compression
 # 'gzip' - Compress with gzip
 # 'lzma' - Compress with xz (LZMA)
-# 'y'    - Alias for 'gzip'
 MENDER_COMPRESS_DISK_IMAGE=gzip
 
 # Compression algorithm for Mender Artifact

@@ -43,12 +43,12 @@ convert_and_test() {
   # - test providing multiple '--config' options
   #
   # - (when no platform configuration is provided) test conversion without
-  #   '--config' and with MENDER_COMPRESS_DISK_IMAGE=y. Compressed disk
+  #   '--config' and with MENDER_COMPRESS_DISK_IMAGE=gzip. Compressed disk
   #   images is the default user facing option and we need to ensure that we
   #   cover this in the tests.
   if [ -n "${config}" ]; then
     echo "Will disable MENDER_COMPRESS_DISK_IMAGE for this image"
-    echo "MENDER_COMPRESS_DISK_IMAGE=n" > ${WORKSPACE}/test_config
+    echo "MENDER_COMPRESS_DISK_IMAGE=none" > ${WORKSPACE}/test_config
     local MENDER_CONVERT_EXTRA_ARGS="--config ${config} --config ${WORKSPACE}/test_config"
   fi
 
@@ -74,7 +74,7 @@ run_tests() {
     html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
   fi
 
-  # Need to decompress images built with MENDER_COMPRESS_DISK_IMAGE=y before
+  # Need to decompress images built with MENDER_COMPRESS_DISK_IMAGE=gzip before
   # running tests.
   if [ -f deploy/${device_type}-${artifact_name}.sdimg.gz ]; then
     # sudo is needed because the image is created using docker-mender-convert

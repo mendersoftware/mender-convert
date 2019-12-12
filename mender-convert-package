@@ -252,7 +252,7 @@ if [ "${MENDER_USE_BMAP}" == "y" ]; then
 fi
 
 case "${MENDER_COMPRESS_DISK_IMAGE}" in
-  y | gzip)
+  gzip)
     log_info "Compressing ${sdimg_path}.gz"
     run_and_log_cmd "pigz --best --force ${sdimg_path}"
     ;;
@@ -260,7 +260,7 @@ case "${MENDER_COMPRESS_DISK_IMAGE}" in
     log_info "Compressing ${sdimg_path}.xz"
     run_and_log_cmd "pxz --best --force ${sdimg_path}"
     ;;
-  n)
+  none)
     :
     ;;
   *)
