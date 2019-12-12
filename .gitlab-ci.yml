@@ -61,9 +61,10 @@ test_acceptance:
     - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
     - tar xzf deploy.tar.gz
     # Extract converted Raspbian artifacts
-    - unxz deploy/raspberrypi-mender-raspbian.sdimg.xz
+    - unxz deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
   script:
-    - ./scripts/test/run-tests.sh
+    - ./scripts/test/run-tests.sh --prebuilt-image raspberrypi ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
+    - ./scripts/test/run-tests.sh --all
   artifacts:
     expire_in: 2w
     when: always
@@ -93,7 +94,7 @@ convert_raspbian:
 
   script:
     - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > mender_client_version_config
-    - env MENDER_ARTIFACT_NAME=mender-raspbian
+    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
       ./docker-mender-convert -d ${RASPBIAN_NAME}.img
       -c configs/raspberrypi3_config
       -c configs/images/raspberrypi3_raspbian_config
@@ -116,7 +117,7 @@ publish:s3:
 
   script:
     - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz version to S3"
-    - aws s3 cp deploy/raspberrypi-mender-raspbian.sdimg.xz
+    - aws s3 cp deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
         s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
     - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
         --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
