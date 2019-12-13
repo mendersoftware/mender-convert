@@ -307,5 +307,4 @@ EOF
 cat <<- EOF >> deploy/${image_name}.cfg
 IMAGE_FSTYPES="${image_fs_type} mender sdimg"
 ARTIFACTIMG_FSTYPE="${image_fs_type}"
-LAYER_CONF_VERSION="2"
 EOF
