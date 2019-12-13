@@ -2,6 +2,13 @@ image: docker:git
 
 variables:
   DOCKER_REPOSITORY: mendersoftware/mender-convert
+  S3_BUCKET_NAME: mender-convert-images
+  MENDER_ARTIFACT_VERSION: master
+  MENDER_CLIENT_VERSION: master
+  RASPBIAN_URL: http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip
+  RASPBIAN_NAME: 2019-09-26-raspbian-buster-lite
+
+  DEBIAN_FRONTEND: noninteractive
 
 include:
   - project: 'Northern.tech/Mender/mendertesting'
@@ -12,14 +19,16 @@ include:
 stages:
   - test
   - build
+  - convert
   - test_acceptance
+  - publish
 
 build:
   stage: build
   services:
     - docker:dind
   script:
-    - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build
+    - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build --build-arg MENDER_ARTIFACT_VERSION=${MENDER_ARTIFACT_VERSION}
     - docker save $DOCKER_REPOSITORY:pr > image.tar
   artifacts:
     expire_in: 2w
@@ -28,27 +37,34 @@ build:
 
 test_acceptance:
   stage: test_acceptance
-  image: docker:18-dind
+  image: teracy/ubuntu:18.04-dind-18.09.9
+  services:
+    - docker:18-dind
   tags:
     - mender-qa-slave
   dependencies:
     - build
+    - convert_raspbian
+  timeout: 2h
   before_script:
-    # Start up Docker (DonD)
-    - /usr/local/bin/dockerd-entrypoint.sh &
-    - sleep 10
-    - export DOCKER_HOST="unix:///var/run/docker.sock"
-    - docker version
     # Install dependencies
-    - apk --update --no-cache add bash wget git util-linux mtools python3 py3-pip
-      gcc python3-dev libffi-dev lzo-dev libc-dev openssl-dev make sudo
+    - apt update
+    - apt install -qyy bash wget git util-linux mtools python3 python3-pip
+      gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
+      awscli unzip
     # Python3 dependencies
     - pip3 install -r https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance/requirements_py3.txt
     # Load image under test
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar
+    # Fetch artifacts from temporary S3 bucket
+    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
+    - tar xzf deploy.tar.gz
+    # Extract converted Raspbian artifacts
+    - unxz deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
   script:
-    - ./scripts/run-tests.sh
+    - ./scripts/test/run-tests.sh --prebuilt-image raspberrypi ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
+    - ./scripts/test/run-tests.sh --all
   artifacts:
     expire_in: 2w
     when: always
@@ -57,3 +73,54 @@ test_acceptance:
       - report_*.html
     reports:
       junit: results_*.xml
+
+convert_raspbian:
+  stage: convert
+  image: teracy/ubuntu:18.04-dind-18.09.9
+  services:
+    - docker:18-dind
+  tags:
+    - mender-qa-slave
+  dependencies:
+    - build
+  before_script:
+    - apt update && apt install -yy bash wget unzip awscli
+
+    - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
+    - docker load -i image.tar
+
+    - wget -q ${RASPBIAN_URL}
+    - unzip ${RASPBIAN_NAME}.zip
+
+  script:
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > mender_client_version_config
+    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
+      ./docker-mender-convert -d ${RASPBIAN_NAME}.img
+      -c configs/raspberrypi3_config
+      -c configs/images/raspberrypi3_raspbian_config
+      -c mender_client_version_config
+
+    # Upload to temporary S3 bucket
+    - tar czf deploy.tar.gz deploy
+    - aws s3 cp deploy.tar.gz s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz
+
+publish:s3:
+  when: manual
+  stage: publish
+  image: debian:buster
+  before_script:
+    - apt update && apt install -yyq awscli
+
+    # Fetch artifacts from temporary S3 bucket
+    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
+    - tar xzf deploy.tar.gz
+
+  script:
+    - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz version to S3"
+    # Prepare high privilege S3 keys (the base keys are for the tmp storage only)
+    - export AWS_ACCESS_KEY_ID=$PUBLISH_AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$PUBLISH_AWS_SECRET_ACCESS_KEY
+    - aws s3 cp deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
+        s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
+    - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
+        --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz

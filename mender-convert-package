@@ -140,16 +140,33 @@ artifact_name=$(cat work/rootfs/etc/mender/artifact_info | sed 's/[^=]*=//')
 
 image_name="${device_type}-${artifact_name}"
 
-actual_rootfs_size=$(sudo du --apparent-size -s --block-size=512 work/rootfs | cut -f 1)
+actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
 
-# 50 % free space, not to be confused with rootfs_part_sectors
-rootfs_image_sectors=$(awk -v r1="$actual_rootfs_size" 'BEGIN{printf "%.0f", r1 * 1.50}')
+# KiB -> 512 sectors
+image_rootfs_size_sectors=$((${IMAGE_ROOTFS_SIZE} * 2))
+
+if [ "${IMAGE_ROOTFS_SIZE}" -eq -1 ]; then
+  rootfs_image_sectors="${rootfs_part_sectors}"
+elif [ "${image_rootfs_size_sectors}" -lt "${actual_rootfs_size}" ]; then
+  rootfs_image_sectors="${actual_rootfs_size}"
+else
+  rootfs_image_sectors="${image_rootfs_size_sectors}"
+fi
+
+rootfs_image_sectors=$((${rootfs_image_sectors} + ${IMAGE_ROOTFS_EXTRA_SPACE} * 2))
+
+rootfs_image_sectors_overhead=$(awk -v r1="$actual_rootfs_size" "BEGIN{printf \"%.0f\", r1 * ${IMAGE_OVERHEAD_FACTOR}}")
+if [ "${rootfs_image_sectors_overhead}" -gt "${rootfs_image_sectors}" ]; then
+  rootfs_image_sectors="${rootfs_image_sectors_overhead}"
+fi
 
 if [ ${rootfs_image_sectors} -gt ${rootfs_part_sectors} ]; then
   log_warn "The calculated rootfs partition size $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB is too small."
   log_warn "The actual rootfs image size is $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
-  log_fatal "You can try adjusting the MENDER_STORAGE_TOTAL_SIZE_MB variable to increase available space"
+  log_fatal "You can try adjusting the MENDER_STORAGE_TOTAL_SIZE_MB variable to increase available space, or modify one of the variables IMAGE_ROOTFS_SIZE, IMAGE_ROOTFS_EXTRA_SPACE or IMAGE_OVERHEAD_FACTOR to reduce the size of the root filesystem."
 fi
+
+log_info "Rootfs filesystem size will be $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
 
 # Extract file-system type from rootfs
 if file ${root_part} | grep -q ext4; then
@@ -180,9 +197,9 @@ log_info "Creating Mender compatible disk-image"
 sdimg_path=deploy/${image_name}.sdimg
 
 log_info "Total disk size: $(disk_sectors_to_mb ${disk_image_total_sectors}) MiB"
-log_info "  Boot partition $(disk_sectors_to_mb ${boot_part_sectors}) MiB"
-log_info "  RootFS         $(disk_sectors_to_mb ${rootfs_part_sectors}) x 2 MiB"
-log_info "  Data           $(disk_sectors_to_mb ${data_part_sectors}) MiB"
+log_info "  Boot partition    $(disk_sectors_to_mb ${boot_part_sectors}) MiB"
+log_info "  RootFS partitions $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB x 2"
+log_info "  Data partition    $(disk_sectors_to_mb ${data_part_sectors}) MiB"
 
 # Initialize sdcard image file
 run_and_log_cmd \
@@ -234,10 +251,22 @@ if [ "${MENDER_USE_BMAP}" == "y" ]; then
   run_and_log_cmd "${BMAP_TOOL} create ${sdimg_path} > ${sdimg_path}.bmap"
 fi
 
-if [ "${MENDER_COMPRESS_DISK_IMAGE}" == "y" ]; then
-  log_info "Compressing ${sdimg_path}.gz"
-  run_and_log_cmd "pigz --best --force ${sdimg_path}"
-fi
+case "${MENDER_COMPRESS_DISK_IMAGE}" in
+  gzip)
+    log_info "Compressing ${sdimg_path}.gz"
+    run_and_log_cmd "pigz --best --force ${sdimg_path}"
+    ;;
+  lzma)
+    log_info "Compressing ${sdimg_path}.xz"
+    run_and_log_cmd "pxz --best --force ${sdimg_path}"
+    ;;
+  none)
+    :
+    ;;
+  *)
+    log_fatal "Unknown MENDER_COMPRESS_DISK_IMAGE value: ${MENDER_COMPRESS_DISK_IMAGE}"
+    ;;
+esac
 
 log_info "Conversion has completed! \o/"
 
