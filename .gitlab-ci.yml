@@ -7,6 +7,7 @@ variables:
   MENDER_CLIENT_VERSION: master
   RASPBIAN_URL: http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip
   RASPBIAN_NAME: 2019-09-26-raspbian-buster-lite
+  MENDER_IMAGE_TESTS_REV: master
 
   DEBIAN_FRONTEND: noninteractive
 
@@ -62,9 +63,11 @@ test_acceptance:
     - tar xzf deploy.tar.gz
     # Extract converted Raspbian artifacts
     - unxz deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
+    # Set submodule to correct version
+    - ( cd tests/mender-image-tests && git submodule update --init --remote && git checkout origin/${MENDER_IMAGE_TESTS_REV} )
   script:
-    - ./scripts/test/run-tests.sh --prebuilt-image raspberrypi ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
-    - ./scripts/test/run-tests.sh --all
+    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
+    - ./scripts/test/run-tests.sh --no-pull --all
   artifacts:
     expire_in: 2w
     when: always

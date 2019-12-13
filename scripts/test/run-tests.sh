@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  echo "$0 <--all | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
+  echo "$0 [--no-pull] <--all | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
   exit 1
 }
 
@@ -37,12 +37,11 @@ source $UTILS_PATH
 # Some distros do not have /sbin in path for "normal users"
 export PATH="${PATH}:/sbin"
 
-if [ ! -d ${WORKSPACE}/mender-image-tests ]; then
-  git clone https://github.com/mendersoftware/mender-image-tests ${WORKSPACE}/mender-image-tests
+if [ "$1" = "--no-pull" ]; then
+  shift
 else
-  cd ${WORKSPACE}/mender-image-tests
-  git pull
-  cd -
+  echo "Automatically pulling submodules. Use --no-pull to disable"
+  git submodule update --init --remote
 fi
 
 mkdir -p ${WORKSPACE}
