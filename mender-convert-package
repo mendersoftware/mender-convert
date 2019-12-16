@@ -283,6 +283,7 @@ else
   # This is the name of the DISTRO_FEATURES in Yocto
   distro_feature="mender-uboot"
 fi
+distro_feature="${distro_feature} mender-convert"
 
 cat <<- EOF > deploy/${image_name}.cfg
 MENDER_BOOT_PART="${MENDER_STORAGE_DEVICE}${MENDER_BOOT_PART_INDEX}"
@@ -307,5 +308,4 @@ EOF
 cat <<- EOF >> deploy/${image_name}.cfg
 IMAGE_FSTYPES="${image_fs_type} mender sdimg"
 ARTIFACTIMG_FSTYPE="${image_fs_type}"
-LAYER_CONF_VERSION="2"
 EOF

@@ -1,0 +1,5 @@
+[submodule "tests/mender-image-tests"]
+	path = tests/mender-image-tests
+	url = https://github.com/mendersoftware/mender-image-tests
+	branch = master
+	ignore = all
