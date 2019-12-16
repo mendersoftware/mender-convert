@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Copyright 2019 Northern.tech AS
 #
@@ -14,15 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e
+# Run a command, capture output and log it
+#
+#  $1 - command to run
+function run_and_log_cmd() {
+  local -r cmd="${1}"
 
-# run conversion, args provided to container (end of docker run ...)
+  log_debug "Running: \n\r\n\r\t ${cmd}"
+  log_debug "Run result: \n\r"
 
-cd /mender-convert
-
-echo "Running mender-convert "$@""
-
-./mender-convert "$@"
-
-# Set owner and group to same as launch directory.
-[ -d deploy ] && chown -R --reference=. deploy
+  result=$(eval ${cmd})
+  log_debug "${result}"
+}

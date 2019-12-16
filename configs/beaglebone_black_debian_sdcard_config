@@ -1,0 +1,8 @@
+# Binaries generated with the following script:
+#
+#    https://github.com/drewmoseley/mender-convert-integration-scripts/blob/master/build-uboot-bbb.sh
+#
+BEAGLEBONE_BLACK_BINARIES="beaglebone-black-integration-debian-sdcard-2018.07.004.tar"
+source configs/beaglebone_black_base_config
+MENDER_DEVICE_TYPE="beaglebone-sdcard"
+MENDER_STORAGE_DEVICE="/dev/mmcblk0p"

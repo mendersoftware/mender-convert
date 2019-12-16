@@ -1,0 +1,35 @@
+# Use U-boot -> GRUB -> EFI boot-loader integration
+#
+# Only disable this if you know what you are doing
+MENDER_GRUB_EFI_INTEGRATION=y
+
+# Specific Linux kernel boot arguments
+#
+# Typically you would read the content of /proc/cmdline on a "golden image"
+# add the appropriate arguments here.
+#
+# This will override the defaults set by by grub-mender-grubenv, if not an
+# empty string
+MENDER_GRUB_KERNEL_BOOT_ARGS=""
+
+# grub-mender-grubenv is the Mender integration for the GRUB bootloader
+MENDER_GRUBENV_VERSION="1.3.0"
+MENDER_GRUBENV_URL="${MENDER_GITHUB_ORG}/grub-mender-grubenv/archive/${MENDER_GRUBENV_VERSION}.tar.gz"
+
+# Name of the storage device containing root filesystem partitions in GRUB
+# format.
+MENDER_GRUB_STORAGE_DEVICE=hd0
+
+# Type of kernel (bzImage or zImage)
+#
+# mender-convert will try to determinate this value on its own, only set this
+# if was not possible to auto-detect
+MENDER_GRUB_KERNEL_IMAGETYPE=""
+
+# Type of initrd image
+#
+# mender-convert will try to determinate this value on its own, only set this
+# if was not possible to auto-detect
+MENDER_GRUB_INITRD_IMAGETYPE=""
+
+MENDER_GRUB_BINARY_STORAGE_URL="${MENDER_STORAGE_URL}/mender-convert/grub-efi"

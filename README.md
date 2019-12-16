@@ -1,124 +1,167 @@
-[![Build Status](https://travis-ci.com/mendersoftware/mender-convert.svg?branch=master)](https://travis-ci.com/mendersoftware/mender-convert)
+[![Build Status](https://gitlab.com/Northern.tech/Mender/mender-convert/badges/next/pipeline.svg)](https://gitlab.com/Northern.tech/Mender/mender-convert/pipelines)
 
-mender-convert
-==============
+# mender-convert
 
-Mender is an open source over-the-air (OTA) software updater for embedded Linux devices. Mender comprises a client running at the embedded device, as well as a server that manages deployments across many devices.
+Mender is an open source over-the-air (OTA) software updater for embedded Linux
+devices. Mender comprises a client running at the embedded device, as well as a
+server that manages deployments across many devices.
 
-This repository contains mender-convert, which is used to convert pre-built disk images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible
-image by restructuring partition table and injecting the necessary files.
+This repository contains mender-convert, which is used to convert pre-built disk
+images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible image by
+restructuring partition table and injecting the necessary files.
 
-Currently official Raspberry Pi 3 and BeagleBone Black images are supported and this will be extended.
+For a full list of tested devices and images please visit [Mender
+Hub](https://hub.mender.io/c/board-integrations/debian-family). If your device
+and image combination is not listed as supported, this does not necessarily mean
+that it will not work, it probably just means that no one has tested and
+reported it back and usually only small tweaks are necessary to get this running
+on your device.
+
+-------------------------------------------------------------------------------
 
 ![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
+
 
 ## Getting started
 
 To start using Mender, we recommend that you begin with the Getting started
 section in [the Mender documentation](https://docs.mender.io/).
 
-
-## Docker environment for mender-convert
-
-In order to correctly set up partitions and bootloaders, mender-convert has many dependencies,
-and their version and name vary between Linux distributions.
-
-To make using mender-convert easier, a reference setup using a Ubuntu 18.04 Docker container
-is provided.
-
-You need to [install Docker Engine](https://docs.docker.com/install) to use this environment.
+For more detailed information about `mender-convert` please visit the
+[Debian family](https://docs.mender.io/artifacts/debian-family) section in
+[the Mender documentation](https://docs.mender.io/).
 
 
-### Build the mender-convert container image
+### Prepare image and configuration
 
-To build a container based on Ubuntu 18.04 with all required dependencies for mender-convert,
-copy this directory to your workstation and change the current directory to it.
+Download the raw Raspberry Pi disk image into a subdirectory input:
 
-Then run
+```bash
+mkdir -p input
+cd input
+wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-06-24/2019-06-20-raspbian-buster-lite.zip
+```
+
+Extract the raw Raspberry Pi disk image:
+
+```bash
+unzip 2019-06-20-raspbian-buster-lite.zip
+INPUT_DISK_IMAGE=$(ls *raspbian-buster*.img)
+cd ..
+```
+
+Bootstrap the demo rootfs overlay that is configured to connect to
+a Mender server with polling intervals set appropriately for
+demonstration purposes.  There are three scripts here to support
+the Mender demo server, the Mender production server, and Mender
+Professional.
+
+**NOTE!** Only run one of these three steps depending on the server
+type you are implementing.
+
+#### Using the [Mender demo server](https://docs.mender.io/getting-started/on-premise-installation/create-a-test-environment)
+```bash
+./scripts/bootstrap-rootfs-overlay-demo-server.sh \
+    --output-dir ${PWD}/rootfs_overlay_demo \
+    --server-ip 192.168.1.1
+```
+
+#### Using the [Mender production server](https://docs.mender.io/administration/production-installation)
+```bash
+./scripts/bootstrap-rootfs-overlay-production-server.sh \
+    --output-dir ${PWD}/rootfs_overlay_demo \
+    --server-url https://foobar.mender.io \
+    [ --server-cert ~/server.crt ]
+```
+
+#### Using [Mender Professional](https://mender.io/products/mender-professional)
+```bash
+./scripts/bootstrap-rootfs-overlay-hosted-server.sh \
+    --output-dir ${PWD}/rootfs_overlay_demo \
+    --tenant-token "Paste token from Mender Professional"
+```
+
+
+### Docker environment for mender-convert
+
+To make using mender-convert easier, a reference setup using a Docker
+container is provided.
+
+You need to [install Docker Engine](https://docs.docker.com/install) to use
+this environment.
+
+
+#### Build the mender-convert container image
+
+Build a container with all required dependencies for `mender-convert`:
 
 ```bash
 ./docker-build
 ```
 
-This will create a container image you can use to run mender-convert.
+This will create a container image with the name `mender-convert` which you can
+use to run `mender-convert` without polluting your host environment with the
+necessary dependencies.
 
 
-### Use the mender-convert container image
+#### Use the mender-convert container image
 
-Create a directory `input` under the directory where you copied these files (`docker-build`, `docker-mender-convert`, etc.):
-
-```bash
-mkdir input
-```
-
-Then put your raw disk image into `input/`, e.g.
+Run mender-convert from inside the container with your desired options, e.g.
 
 ```bash
-mv ~/Downloads/2018-11-13-raspbian-stretch.img input/2018-11-13-raspbian-stretch.img
+MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
+   --disk-image input/$INPUT_DISK_IMAGE \
+   --config configs/raspberrypi3_config \
+   --overlay rootfs_overlay_demo/
 ```
 
-You can run mender-convert from inside the container with your desired options, e.g.
+Conversion will take 10-30 minutes, depending on image size and resources
+available. You can watch `work/convert.log` for progress and diagnostics
+information.
 
+After it finishes, you can find your images in the `deploy` directory on your
+host machine!
+
+## Using mender-convert without Docker
+
+In order to be able to manipulate and create filesystem and disk images,
+mender-convert has a few dependencies, and their version and name vary between
+Linux distributions. Here is an example of how to install the dependencies on a
+Debian based distribution:
 
 ```bash
-DEVICE_TYPE="raspberrypi3"
-RAW_DISK_IMAGE="input/2018-11-13-raspbian-stretch.img"
-
-ARTIFACT_NAME="2018-11-13-raspbian-stretch"
-MENDER_DISK_IMAGE="2018-11-13-raspbian-stretch.sdimg"
-TENANT_TOKEN="<INSERT-TOKEN-FROM Hosted Mender>"
-
-./docker-mender-convert from-raw-disk-image                      \
-            --raw-disk-image $RAW_DISK_IMAGE                     \
-            --mender-disk-image $MENDER_DISK_IMAGE               \
-            --device-type $DEVICE_TYPE                           \
-            --artifact-name $ARTIFACT_NAME                       \
-            --bootloader-toolchain arm-buildroot-linux-gnueabihf \
-            --server-url "https://hosted.mender.io"              \
-            --tenant-token $TENANT_TOKEN
+sudo apt install $(cat requirements-deb.txt)
 ```
 
-By default conversion in containter uses GCC 7.3.0 bootlin toolchain tuned for
-ARMv6 architecture (especially for ARM1176(F)-S single-core processor).
-The aim of that is to provide a support for the Raspberry Pi Zero W development board.
+Start the conversion process with:
 
-ARMv7 is backward compatible with ARMv6, so binaries compiled for ARMv6 should also work on ARMv7.
-
-Note that the default Mender client is the latest stable and cross-compiled for generic ARM boards,
-which should work well in most cases. If you would like to use a different Mender client,
-place it in `input/` and adjust the `--mender-client` argument.
-
-Conversion will take 10-15 minutes, depending on your storage and resources available.
-You can watch `output/build.log` for progress and diagnostics information.
-
-After it finishes, you can find your images in the `output` directory on your host machine!
-
-
-### Known issues
-* An issue for `Raspberry Pi Zero W` has been spotted with the `mender-convert` tool version 1.1.0.
-  After an initial boot, having last partition resized to the end of the SD card, the correct device
-  tree cannot be found. As a result the boot cannot succeed.
-  For more information and current status, see [issue tracker](https://tracker.mender.io/browse/MEN-2436).
-* If building U-boot fails with:
+```bash
+MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
+   --disk-image input/$INPUT_DISK_IMAGE \
+   --config configs/raspberrypi3_config \
+   --overlay rootfs_overlay_demo/
 ```
-     D	scripts/Kconfig
-     input in flex scanner failed
-     ....
-     include/linux/kconfig.h:4:32: fatal error: generated/autoconf.h: No such file or directory
-     #include <generated/autoconf.h>
-```
-you might be using a case-sensitive filesystem which is not supported. Case-sensitive filesystems are typically used on OSX (Mac) and Windows but you can also run in to this on Linux if running on a NTFS formatted partition.
 
-For details see this [discussion](https://hub.mender.io/t/raspberry-pi-3-model-b-b-raspbian/140/10)
+**NOTE!** You will be prompted to enter `sudo` password during the conversion
+process. This is required to be able to loopback mount images and for modifying
+them. Our recommendation is to use the provided Docker container, to run the
+tool in a isolated environment.
 
+-------------------------------------------------------------------------------
 
 ## Contributing
 
-We welcome and ask for your contribution. If you would like to contribute to Mender, please read our guide on how to best get started [contributing code or documentation](https://github.com/mendersoftware/mender/blob/master/CONTRIBUTING.md).
+We welcome and ask for your contribution. If you would like to contribute to
+Mender, please read our guide on how to best get started
+[contributing code or documentation](https://github.com/mendersoftware/mender/blob/master/CONTRIBUTING.md).
+
 
 ## License
 
-Mender is licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/mendersoftware/mender-crossbuild/blob/master/LICENSE) for the full license text.
+Mender is licensed under the Apache License, Version 2.0. See
+[LICENSE](https://github.com/mendersoftware/mender-convert/blob/master/LICENSE)
+for the full license text.
+
 
 ## Security disclosure
 
@@ -126,6 +169,7 @@ We take security very seriously. If you come across any issue regarding
 security, please disclose the information by sending an email to
 [security@mender.io](security@mender.io). Please do not create a new public
 issue. We thank you in advance for your cooperation.
+
 
 ## Connect with us
 
@@ -136,3 +180,12 @@ issue. We thank you in advance for your cooperation.
 * Create an issue in the [bugtracker](https://tracker.mender.io/projects/MEN)
 * Email us at [contact@mender.io](mailto:contact@mender.io)
 * Connect to the [#mender IRC channel on Freenode](http://webchat.freenode.net/?channels=mender)
+
+
+## Authors
+
+Mender was created by the team at [Northern.tech AS](https://northern.tech),
+with many contributions from the community. Thanks
+[everyone](https://github.com/mendersoftware/mender/graphs/contributors)!
+
+[Mender](https://mender.io) is sponsored by [Northern.tech AS](https://northern.tech).
