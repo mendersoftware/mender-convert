@@ -47,12 +47,12 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
-RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
-    && chmod +x /usr/bin/mender-artifact
-
 # allow us to keep original PATH variables when sudoing
 RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
 RUN chmod 0440 /etc/sudoers.d/secure_path_override
+
+RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
+    && chmod +x /usr/bin/mender-artifact
 
 WORKDIR /
 
