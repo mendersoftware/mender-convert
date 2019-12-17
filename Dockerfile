@@ -47,12 +47,18 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
-RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
-    && chmod +x /usr/bin/mender-artifact
-
 # allow us to keep original PATH variables when sudoing
 RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
 RUN chmod 0440 /etc/sudoers.d/secure_path_override
+
+# Turn off default filesystem feature which is supported in newer mke2fs tools,
+# but not in Ubuntu 16.04. The result is that mender-artifact can not be used to
+# modify the artifact. Once 16.04 goes out of support, this can probably be
+# removed.
+RUN sed -i -e 's/,metadata_csum//' /etc/mke2fs.conf
+
+RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
+    && chmod +x /usr/bin/mender-artifact
 
 WORKDIR /
 

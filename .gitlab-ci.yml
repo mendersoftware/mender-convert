@@ -112,7 +112,10 @@ publish:s3:
   stage: publish
   image: debian:buster
   before_script:
-    - apt update && apt install -yyq awscli
+    - apt update && apt install -yyq awscli curl
+
+    - curl -Lo /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/${MENDER_ARTIFACT_VERSION}/linux/mender-artifact
+    - chmod ugo+x /usr/bin/mender-artifact
 
     # Fetch artifacts from temporary S3 bucket
     - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
@@ -127,3 +130,9 @@ publish:s3:
         s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
     - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
         --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
+
+    - mender-artifact modify -n release-1 deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
+    - aws s3 cp deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
+        s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}_release-1.mender
+    - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
+        --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}_release-1.mender
