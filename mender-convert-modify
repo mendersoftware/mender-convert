@@ -1,0 +1,229 @@
+#! /usr/bin/env bash
+#
+# Copyright 2019 Northern.tech AS
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Default that can be overridden by providing this method in a
+# configuration file passed with '--config'
+function platform_modify() {
+  true
+}
+
+function user_local_modify() {
+  true
+}
+
+function trap_exit() {
+  echo "mender-convert-modify has finished. Cleaning up..."
+  sudo umount -f work/boot
+  sudo umount -f work/rootfs
+}
+
+function trap_term() {
+  true
+}
+
+trap trap_term INT TERM
+trap trap_exit EXIT
+
+echo "Running $(basename $0): $@"
+
+source modules/bootstrap.sh
+source modules/disk.sh
+source modules/probe.sh
+
+# The mender_convert_config is always used and provides all the defaults
+declare -a configs=("configs/mender_convert_config")
+
+while (( "$#" )); do
+  case "$1" in
+    -o | --overlay)
+      overlays+="${2}"
+      shift 2
+      ;;
+    -c | --config)
+      configs+=("${2}")
+      shift 2
+      ;;
+    -d | --disk-image)
+      disk_image="${2}"
+      shift 2
+      ;;
+    *)
+      log_fatal "Sorry, but the provided option is not supported: $1"
+      ;;
+  esac
+done
+
+# Note the use of %q formatting here. This is a bash feature to add
+# proper quoting to the strings so that spaces and special characters
+# will be treated properly.  Primarily for supporting spaces in
+# pathnames and avoid splitting those into multiple parameters.
+source modules/config.sh $(printf "%q " "${configs[@]}")
+
+boot_part=$(disk_boot_part)
+root_part=$(disk_root_part)
+
+# Create mount points
+mkdir -p work/boot
+mkdir -p work/rootfs
+
+sudo mount ${boot_part} work/boot
+sudo mount ${root_part} work/rootfs
+
+mkdir -p work/mender-deb/files
+
+log_info "Installing Mender client and related files"
+
+deb_arch=$(probe_debian_arch_name)
+deb_name="mender-client_${MENDER_CLIENT_VERSION}-1_${deb_arch}.deb"
+run_and_log_cmd "wget -Nq ${MENDER_STORAGE_URL}/${MENDER_CLIENT_VERSION}/dist-packages/debian/${deb_arch}/${deb_name} -P work/mender-deb"
+
+cd work/mender-deb
+run_and_log_cmd "ar -xv ${deb_name}"
+run_and_log_cmd "tar -xf data.tar.xz -C files"
+cd - > /dev/null 2>&1
+
+run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose work/mender-deb/files/ work/rootfs/"
+
+if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
+  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \
+        work/rootfs/etc/systemd/system/multi-user.target.wants/mender-client.service"
+fi
+
+if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+  run_and_log_cmd "wget -Nq '${MENDER_GRUBENV_URL}' -P work/"
+  run_and_log_cmd "tar xvf work/${MENDER_GRUBENV_VERSION}.tar.gz -C work/"
+
+  if [ -z "${MENDER_GRUB_KERNEL_IMAGETYPE}" ]; then
+    kernel_imagetype=$(probe_kernel_in_boot_and_root)
+  else
+    kernel_imagetype="${MENDER_GRUB_KERNEL_IMAGETYPE}"
+  fi
+
+  if [ -z "${MENDER_GRUB_INITRD_IMAGETYPE}" ]; then
+    initrd_imagetype=$(probe_initrd_in_boot_and_root)
+  else
+    kernel_imagetype="${MENDER_GRUB_INITRD_IMAGETYPE}"
+  fi
+
+  cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+mender_rootfsa_part=${MENDER_ROOTFS_PART_A_INDEX}
+mender_rootfsb_part=${MENDER_ROOTFS_PART_B_INDEX}
+mender_kernel_root_base=${MENDER_STORAGE_DEVICE}
+mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
+kernel_imagetype=${kernel_imagetype}
+initrd_imagetype=${initrd_imagetype}
+kernel_devicetree=${MENDER_KERNEL_DEVICETREE}
+EOF
+
+  if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
+    cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/11_bootargs_grub.cfg
+set bootargs="${MENDER_GRUB_KERNEL_BOOT_ARGS}"
+EOF
+  fi
+
+  cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
+  run_and_log_cmd "make 2>&1"
+  run_and_log_cmd "sudo make DESTDIR=../ BOOT_DIR=boot install-boot-files"
+  run_and_log_cmd "sudo make DESTDIR=../rootfs install-tools"
+  cd - > /dev/null 2>&1
+
+  # Remove conflicting boot files. These files do not necessarily effect the
+  # functionality, but lets get rid of them to avoid confusion.
+  #
+  # There is no Mender integration for EFI boot or systemd-boot.
+  sudo rm -rf work/boot/loader
+  sudo rm -rf work/boot/EFI/Linux
+  sudo rm -rf work/boot/EFI/systemd
+  sudo rm -rf work/boot/NvVars
+
+  log_info "Installing GRUB"
+
+  arch=$(probe_arch)
+  efi_name=$(probe_grub_efi_name)
+  efi_target_name=$(probe_grub_efi_target_name)
+
+  log_info "GRUB EFI: ${efi_target_name}"
+
+  run_and_log_cmd "wget -Nq ${MENDER_GRUB_BINARY_STORAGE_URL}/${arch}/${efi_name} -P work/"
+  run_and_log_cmd "wget -Nq ${MENDER_GRUB_BINARY_STORAGE_URL}/${arch}/grub-editenv -P work/"
+
+  run_and_log_cmd "sudo install -m 751 work/grub-editenv work/rootfs/usr/bin/"
+
+  run_and_log_cmd "sudo mkdir -p work/boot/EFI/BOOT"
+  run_and_log_cmd "sudo cp work/${efi_name} -P work/boot/EFI/BOOT/${efi_target_name}"
+fi
+
+run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender"
+run_and_log_cmd "sudo ln -sf /data/mender work/rootfs/var/lib/mender"
+
+cat <<- EOF > work/mender.conf.data
+{
+  "RootfsPartA": "${MENDER_STORAGE_DEVICE}${MENDER_ROOTFS_PART_A_INDEX}",
+  "RootfsPartB": "${MENDER_STORAGE_DEVICE}${MENDER_ROOTFS_PART_B_INDEX}"
+}
+EOF
+
+run_and_log_cmd "sudo cp work/mender.conf.data work/rootfs/data/mender/mender.conf"
+
+if [ -z "${MENDER_DEVICE_TYPE}" ]; then
+  # Observed systems who do not have this file, e.g images generated with mkosi
+  if [ -f work/rootfs/etc/hostname ]; then
+    device_type=$(cat work/rootfs/etc/hostname)
+  else
+    device_type="default"
+  fi
+else
+  device_type="${MENDER_DEVICE_TYPE}"
+fi
+
+run_and_log_cmd "echo 'device_type=${device_type}' > work/device_type"
+run_and_log_cmd "sudo install -m 0444 work/device_type work/rootfs/data/mender/"
+run_and_log_cmd "sudo echo 'artifact_name=${MENDER_ARTIFACT_NAME}' \
+  > work/rootfs/etc/mender/artifact_info"
+
+log_info "Installing a custom /etc/fstab (see work/convert.log for more info)"
+
+if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+  boot_part_mountpoint="/boot/efi"
+else
+  boot_part_mountpoint="/uboot"
+fi
+
+run_and_log_cmd "sudo mkdir -p work/rootfs/${boot_part_mountpoint}"
+
+if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
+  MENDER_DATA_PART_FSTAB_OPTS="${MENDER_DATA_PART_FSTAB_OPTS},x-systemd.growfs"
+fi
+
+sudo bash -c "cat <<- EOF > work/rootfs/etc/fstab
+# stock fstab - you probably want to override this with a machine specific one
+/dev/root            /                    auto       defaults              1  1
+proc                 /proc                proc       defaults              0  0
+
+${MENDER_STORAGE_DEVICE}${MENDER_BOOT_PART_INDEX}   ${boot_part_mountpoint}          auto       defaults,sync    0  0
+${MENDER_STORAGE_DEVICE}${MENDER_DATA_PART_INDEX}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0
+EOF"
+
+log_info "Performing platform specific modifications (if any)"
+platform_modify
+
+log_info "Performing user/local specific modifications (if any)"
+user_local_modify
+
+for overlay in "${overlays[@]}"; do
+  log_info "Applying rootfs overlay: ${overlay}"
+  run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${overlay}/ work/rootfs/"
+done

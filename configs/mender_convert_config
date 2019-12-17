@@ -1,0 +1,194 @@
+# This is the default configuration used by mender-convert. You can override
+# any option specified here by providing your own configuration file using the
+# '--config' argument.
+#
+# NOTE! This file will always be sourced.
+
+# Compress generated disk image
+#
+# This is useful when you have large disk images, compressing them
+# makes it easier to transfer them between e.g an build server and a local
+# machine, and obviously saves space.
+#
+# Possible values are:
+# 'none' - No compression
+# 'gzip' - Compress with gzip
+# 'lzma' - Compress with xz (LZMA)
+MENDER_COMPRESS_DISK_IMAGE=gzip
+
+# Compression algorithm for Mender Artifact
+#
+# Supported values are: lzma, gzip (default), none
+#
+# LZMA will produce a smaller Mender Artifact (2-3x) but will significantly
+# increase time spent generating the Mender Artifact (10x)
+MENDER_ARTIFACT_COMPRESSION="gzip"
+
+# Enable Mender systemd server
+#
+# You want this enabled if you want the Mender client to operate in managed mode
+# and connect to a server. If you are not interested connecting to a server
+# and will only be running standalone mode updates, then you can safely disable
+# this.
+MENDER_ENABLE_SYSTEMD=y
+
+# Set the fstab options for mounting the data partition
+MENDER_DATA_PART_FSTAB_OPTS="defaults"
+
+# The file system will be grown to occupy the full block device. If the file
+# system is already at maximum size, no action will be performed.
+#
+# This feature is utilizing x−systemd.growfs and will only work on systemd 242
+# and newer and nothing will be done if an older systemd version is used.
+MENDER_DATA_PART_GROWFS=y
+
+# The name of the image or update that will be built. This is what the device
+# will report that it is running, and different updates must have different
+# names.
+#
+# This variable must be defined or the build will fail, but you should not
+# set it in a configuration file and instead it should be an input to the
+# mender-convert tool, e.g
+#
+#  MENDER_ARTIFACT_NAME="release-1" ./mender-convert
+#
+#MENDER_ARTIFACT_NAME=""
+
+# A string that defines the type of device this image will be installed on and
+# this value is used for compatibility checks between Mender Artifact and
+# what the device is reporting.
+#
+# You can define multiple types by providing a space separated string of device
+# types.
+#
+# It defaults to the content of '/etc/hostname', which is extracted from the
+# input disk image
+MENDER_DEVICE_TYPE=""
+
+# Total size of the physical storage medium that mender partitioned images
+# will be written to, expressed in MiB. The size of rootfs partition will be
+# calculated automatically by subtracting the sizes of boot
+# (see MENDER_BOOT_PART_SIZE_MB) and data partitions
+# (see MENDER_DATA_PART_SIZE_MB).
+#
+MENDER_STORAGE_TOTAL_SIZE_MB="8192"
+
+# The size of the boot partition in the generated .biosimg, .sdimg or .uefiimg
+# file.
+MENDER_BOOT_PART_SIZE_MB="40"
+
+# The size of the persistent data partition in the generated .biosimg, .sdimg
+# or .uefiimg file.
+#
+# You rarely need to increase this number as this partition will be expanded
+# on first boot to occupy the renaming free blocks on the physical storage.
+MENDER_DATA_PART_SIZE_MB="128"
+
+# Alignment of partitions used when building partitioned images, expressed in
+# bytes
+#
+# Default is 8MB
+MENDER_PARTITION_ALIGNMENT="8388608"
+
+# Mender client version
+#
+# This is used to fetch the correct binaries
+MENDER_CLIENT_VERSION="master"
+
+# File storage, containing binary files, do not modify this unless you know
+# what you are doing.
+MENDER_STORAGE_URL="https://d1b0l86ne08fsf.cloudfront.net"
+
+# Mender GitHub organization URL prefix
+MENDER_GITHUB_ORG="https://github.com/mendersoftware"
+
+# Device file corresponding to the root filesystem partitions, without index.
+MENDER_STORAGE_DEVICE=/dev/mmcblk0p
+
+# Partition index of boot partition
+MENDER_BOOT_PART_INDEX="1"
+
+# Partition index of root filesystem A
+MENDER_ROOTFS_PART_A_INDEX="2"
+
+# Partition index of root filesystem B
+MENDER_ROOTFS_PART_B_INDEX="3"
+
+# Partition index of persistent data partition
+MENDER_DATA_PART_INDEX="4"
+
+# Basename of DTB that should be loaded by the bootloader.
+MENDER_KERNEL_DEVICETREE=kernel.dtb
+
+# Generate bmap index files
+#
+#    https://github.com/intel/bmap-tools
+MENDER_USE_BMAP="n"
+
+# Copy the boot gap, which is the area from sector 1 until first parition,
+# this is done because some images might contain the bootloader embedded here
+# and we need to copy the bootloader to the output image.
+#
+# In most cases you would like this enabled.
+MENDER_COPY_BOOT_GAP="y"
+
+# The size of each of the two rootfs filesystems, in KiB. If this is 0,
+# mender-convert will use the size of the filesystem content as a basis. If the
+# value is -1, mender-convert will use the maximum size that will fit inside the
+# created partition. The size is further modified by IMAGE_ROOTFS_EXTRA_SPACE
+# and IMAGE_OVERHEAD_FACTOR.
+#
+# This variable directly mirrors the variable from the Yocto Project, which is
+# why it is missing a "MENDER_" prefix.
+IMAGE_ROOTFS_SIZE="0"
+
+# The amount of extra free space requested on the rootfs, in KiB. This is added
+# to the value of IMAGE_ROOTFS_SIZE. The size is further modified by
+# IMAGE_OVERHEAD_FACTOR.
+#
+# Note that due to reserved space for the root user on the filesystem, "df" may
+# report a significantly lower number than requested. A more accurate number can
+# be fetched using for example "dumpe2fs" and looking for the "Free blocks"
+# field, but even this value is usually going to be lower than requested due to
+# meta data on the filesystem.
+#
+# This variable directly mirrors the variable from the Yocto Project, which is
+# why it is missing a "MENDER_" prefix.
+IMAGE_ROOTFS_EXTRA_SPACE="0"
+
+# This factor is multiplied by the used space value for the generated rootfs,
+# and if the result is larger than IMAGE_ROOTFS_SIZE + IMAGE_ROOTFS_EXTRA_SPACE,
+# it will be used as the size of the rootfs instead of the other two variables.
+#
+# The actual free space will usually be lower than requested. See comment for
+# IMAGE_ROOTFS_EXTRA_SPACE.
+#
+# This variable directly mirrors the variable from the Yocto Project, which is
+# why it is missing a "MENDER_" prefix.
+IMAGE_OVERHEAD_FACTOR="1.5"
+
+source configs/mender_grub_config
+
+# Function to create Mender Artifact
+#
+# This function is defined here, to allow it to be overridden which can be
+# achieved by providing this function in a custom configuration file which will
+# take precedence of this one.
+#
+# You might want to override this to e.g provide state-scripts or providing
+# a private key to sign your artifact.
+mender_create_artifact() {
+  local -r device_type="${1}"
+  local -r artifact_name="${2}"
+
+  mender_artifact=deploy/${device_type}-${artifact_name}.mender
+  log_info "Writing Mender artifact to: ${mender_artifact}"
+  log_info "This can take up to 20 minutes depending on which compression method is used"
+
+  run_and_log_cmd "mender-artifact --compression ${MENDER_ARTIFACT_COMPRESSION} \
+      write rootfs-image \
+      --file work/rootfs.img \
+      --output-path ${mender_artifact} \
+      --artifact-name ${artifact_name} \
+      --device-type ${device_type}"
+}

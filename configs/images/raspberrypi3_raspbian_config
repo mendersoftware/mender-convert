@@ -1,0 +1,14 @@
+# Real life SD cards typically have less than they advertise. First off, they
+# often use a base of 1000 instead of 1024, and even then they are often smaller
+# than advertised. The number below is based on a conservative target of 3.9GB
+# (that's mathematical GB, base 1000), converted to MiB, rounding down.
+MENDER_STORAGE_TOTAL_SIZE_MB=3719
+
+# Use all there is, which gets us almost, but not quite, to 500MiB free space
+# (about 480MiB at the time of writing).
+IMAGE_ROOTFS_SIZE=-1
+IMAGE_ROOTFS_EXTRA_SPACE=0
+IMAGE_OVERHEAD_FACTOR=1.0
+
+# Best compression there is!
+MENDER_COMPRESS_DISK_IMAGE=lzma

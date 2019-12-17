@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Copyright 2019 Northern.tech AS
 #
@@ -14,15 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e
-
-# run conversion, args provided to container (end of docker run ...)
-
-cd /mender-convert
-
-echo "Running mender-convert "$@""
-
-./mender-convert "$@"
-
-# Set owner and group to same as launch directory.
-[ -d deploy ] && chown -R --reference=. deploy
+# Read in the array of config files to process
+read -a configs <<< "${@}"
+for config in "${configs[@]}"; do
+  log_info "Using configuration file: ${config}"
+  source "${config}"
+done

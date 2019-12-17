@@ -1,0 +1,6 @@
+# Binaries generated with the following script:
+#
+#    https://d1b0l86ne08fsf.cloudfront.net/mender-convert/armbian/rockpro64/integration-scripts.tar.gz
+ROCKPRO64_BINARIES="sd-boot-integration-2017.09.tar.gz"
+
+source configs/rockpro64_config
