@@ -48,7 +48,7 @@ function platform_modify() {
 
   # Ubuntu Server images actually use U-boot by default on RPi3 and the
   # layout is slightly different on the boot partition. That is why we need
-  # additional logic here to determinant what we are converting.
+  # additional logic here to determine what we are converting.
   if [ -e work/boot/uboot.bin ] && [ -e work/boot/vmlinuz ]; then
     RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
     RASPBERRYPI_BOOTLOADER_IMAGE="uboot.bin"
@@ -67,7 +67,7 @@ function platform_modify() {
   run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
 
   # Raspberry Pi applications expect to find this on the device and in some
-  # cases parse the options to determinate functionality.
+  # cases parse the options to determine the functionality.
   run_and_log_cmd "sudo ln -fs /uboot/config.txt work/rootfs/boot/config.txt"
   run_and_log_cmd "sudo ln -fs /uboot/overlays work/rootfs/boot/overlays"
   run_and_log_cmd "sudo ln -fs /uboot/cmdline.txt work/rootfs/boot/cmdline.txt"
