@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Copyright 2019 Northern.tech AS
+# Copyright 2020 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ disk_image=""
 while (( "$#" )); do
   case "$1" in
     -o | --overlay)
-      overlays+="${2}"
+      overlays+=("${2}")
       shift 2
       ;;
     -c | --config)
