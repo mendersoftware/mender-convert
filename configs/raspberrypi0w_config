@@ -1,7 +1,4 @@
-# Binaries generated with the following script:
-#
-#    https://github.com/drewmoseley/mender-convert-integration-scripts/blob/master/build-uboot-rpi.sh
-RASPBERRYPI_BINARIES="raspberrypi0w-integration-2019.01.tar.gz"
+RASPBERRYPI_CONFIG="raspberrypi0w"
 RASPBERRYPI_KERNEL_IMAGE="kernel.img"
 MENDER_KERNEL_IMAGETYPE=zImage
 

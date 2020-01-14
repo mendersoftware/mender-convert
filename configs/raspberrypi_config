@@ -1,3 +1,6 @@
+# Binaries generated with the following script:
+#    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi.sh
+
 # Raspberry Pi does not support GRUB bootloader integration, fallback to U-boot.
 MENDER_GRUB_EFI_INTEGRATION=n
 
@@ -7,7 +10,8 @@ MENDER_COPY_BOOT_GAP=n
 # 4MB alignment
 MENDER_PARTITION_ALIGNMENT="4194304"
 
-RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/raspberrypi/${RASPBERRYPI_BINARIES}"
+RASPBERRYPI_BINARIES="${RASPBERRYPI_CONFIG}-2019.01.tar.gz"
+RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi/${RASPBERRYPI_BINARIES}"
 
 function platform_modify() {
   mkdir -p work/rpi/binaries
