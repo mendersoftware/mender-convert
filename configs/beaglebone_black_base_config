@@ -1,7 +1,5 @@
 # Binaries generated with the following script:
-#
-#    https://github.com/drewmoseley/mender-convert-integration-scripts/blob/master/build-uboot-bbb.sh
-#
+#    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-bbb.sh
 
 # There are reported issues with GRUB bootloader integration, fallback to U-boot.
 MENDER_GRUB_EFI_INTEGRATION=n
@@ -12,7 +10,8 @@ MENDER_COPY_BOOT_GAP=n
 # 4MB alignment
 MENDER_PARTITION_ALIGNMENT="4194304"
 
-BEAGLEBONE_BLACK_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/beaglebone/${BEAGLEBONE_BLACK_BINARIES}"
+BEAGLEBONE_BLACK_BINARIES="${BEAGLEBONE_BLACK_CONFIG}-2018.07.004.tar"
+BEAGLEBONE_BLACK_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/beaglebone/${BEAGLEBONE_BLACK_BINARIES}"
 
 function platform_modify() {
   mkdir -p work/bbb/binaries

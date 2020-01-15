@@ -1,10 +1,14 @@
+# Binaries generated with the following script:
+#    https://d1b0l86ne08fsf.cloudfront.net/mender-convert/uboot/rockpro64/integration-scripts.tar.gz
+
 # ROCKPro64 do not support GRUB bootloader integration, fallback to U-boot.
 MENDER_GRUB_EFI_INTEGRATION=n
 
 # We will write a modified bootloader
 MENDER_COPY_BOOT_GAP=n
 
-ROCKPRO64_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/armbian/rockpro64/${ROCKPRO64_BINARIES}"
+ROCKPRO64_BINARIES="${ROCKPRO64_CONFIG}-2017.09.tar.gz"
+ROCKPRO64_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/rockpro64/${ROCKPRO64_BINARIES}"
 
 function platform_modify() {
   mkdir -p work/rockpro64
