@@ -1,6 +1,9 @@
 # Binaries generated with the following script:
 #    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi.sh
 
+# Fix device type to avoid hostname as a source
+MENDER_DEVICE_TYPE="raspberrypi"
+
 # Raspberry Pi does not support GRUB bootloader integration, fallback to U-boot.
 MENDER_GRUB_EFI_INTEGRATION=n
 
