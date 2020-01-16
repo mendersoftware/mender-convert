@@ -84,10 +84,6 @@ run_tests() {
 
   cd ${WORKSPACE}/mender-image-tests
 
-  # This is a trick to make pytest generate different junit reports
-  # for different runs: renaming the tests folder to tests_<testsuite>
-  cp -r tests tests_${device_type}_${artifact_name}
-
   python3 -m pytest --verbose \
     --junit-xml="${MENDER_CONVERT_DIR}/results_${device_type}.xml" \
     ${html_report_args} \
@@ -96,7 +92,7 @@ run_tests() {
     --board-type="${device_type}" \
     --mender-image=${device_type}-${artifact_name}.sdimg \
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
-    tests_${device_type}_${artifact_name} \
+    tests \
     ${pytest_args_extra}
   exitcode=$?
 
