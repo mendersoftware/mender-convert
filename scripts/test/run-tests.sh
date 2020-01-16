@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  echo "$0 [--no-pull] <--all | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
+  echo "$0 [--no-pull] <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
   exit 1
 }
 
@@ -48,58 +48,61 @@ mkdir -p ${WORKSPACE}
 
 get_pytest_files
 
+if ! [ "$1" == "--all" -o "$1" == "--only" -a -n "$2" -o "$1" == "--prebuilt-image" -a -n "$3" ]; then
+  usage
+fi
+
 test_result=0
 
-case "$1" in
-  --prebuilt-image)
-    if [ -z "$3" ]; then
-      echo "Both DEVICE_TYPE and IMAGE_NAME must be specified"
-      exit 1
-    fi
-    test_result=0
-    run_tests "$2" "$3" || test_result=$?
-    exit $test_result
-    ;;
+if [ "$1" == "--prebuilt-image" ]; then
+  run_tests "$2" "$3" || test_result=$?
+  exit $test_result
 
-  --all)
+else
+  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "qemux86_64" ]; then
     convert_and_test "qemux86_64" \
                      "release-1" \
                      "${UBUNTU_IMAGE_URL}" \
                      "${UBUNTU_IMAGE}" \
                      "${UBUNTU_IMAGE}.gz" \
                      "configs/qemux86-64_config" || test_result=$?
+  fi
 
+  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "raspberrypi" ]; then
     convert_and_test "raspberrypi" \
                      "release-1" \
                      "${RASPBIAN_IMAGE_URL}" \
                      "${RASPBIAN_IMAGE}.img" \
                      "${RASPBIAN_IMAGE}.zip" \
                      "configs/raspberrypi3_config" || test_result=$?
+  fi
 
+  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "linaro-alip" ]; then
     # MEN-2809: Disabled due broken download link
     #convert_and_test "linaro-alip" \
     #                 "release-1" \
     #                 "${TINKER_IMAGE_URL}" \
     #                 "${TINKER_IMAGE}.img" \
     #                 "${TINKER_IMAGE}.zip" || test_result=$?
+    true
+  fi
 
+  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then
     convert_and_test "beaglebone" \
                      "release-1" \
                      "${BBB_DEBIAN_IMAGE_URL}" \
                      "${BBB_DEBIAN_IMAGE}" \
                      "${BBB_DEBIAN_IMAGE}.xz" || test_result=$?
+  fi
 
+  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
     convert_and_test "ubuntu" \
                      "release-1" \
                      "${UBUNTU_SERVER_RPI_IMAGE_URL}" \
                      "${UBUNTU_SERVER_RPI_IMAGE}" \
                      "${UBUNTU_SERVER_RPI_IMAGE}.xz" \
                      "configs/raspberrypi3_config" || test_result=$?
+  fi
 
-    exit $test_result
-    ;;
-
-  *)
-    usage
-    ;;
-esac
+  exit $test_result
+fi

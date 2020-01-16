@@ -36,7 +36,7 @@ build:
     paths:
       - image.tar
 
-test_acceptance:
+.template_test_acceptance: &test_acceptance
   stage: test_acceptance
   image: teracy/ubuntu:18.04-dind-18.09.9
   services:
@@ -58,16 +58,8 @@ test_acceptance:
     # Load image under test
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar
-    # Fetch artifacts from temporary S3 bucket
-    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
-    - tar xzf deploy.tar.gz
-    # Extract converted Raspbian artifacts
-    - unxz deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
     # Set submodule to correct version
     - ( cd tests/mender-image-tests && git submodule update --init --remote && git checkout origin/${MENDER_IMAGE_TESTS_REV} )
-  script:
-    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
-    - ./scripts/test/run-tests.sh --no-pull --all
   artifacts:
     expire_in: 2w
     when: always
@@ -76,6 +68,41 @@ test_acceptance:
       - report_*.html
     reports:
       junit: results_*.xml
+
+test_acceptance_prebuilt_raspberrypi:
+  <<: *test_acceptance
+  script:
+    # Fetch artifacts from temporary S3 bucket
+    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
+    - tar xzf deploy.tar.gz
+    # Extract converted Raspbian artifacts
+    - unxz deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
+    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
+
+test_acceptance_qemux86_64:
+  <<: *test_acceptance
+  script:
+    - ./scripts/test/run-tests.sh --no-pull --only qemux86_64
+
+test_acceptance_raspberrypi:
+  <<: *test_acceptance
+  script:
+    - ./scripts/test/run-tests.sh --no-pull --only raspberrypi
+
+test_acceptance_linaro-alip:
+  <<: *test_acceptance
+  script:
+    - ./scripts/test/run-tests.sh --no-pull --only linaro-alip
+
+test_acceptance_beaglebone:
+  <<: *test_acceptance
+  script:
+    - ./scripts/test/run-tests.sh --no-pull --only beaglebone
+
+test_acceptance_ubuntu:
+  <<: *test_acceptance
+  script:
+    - ./scripts/test/run-tests.sh --no-pull --only ubuntu
 
 convert_raspbian:
   stage: convert
