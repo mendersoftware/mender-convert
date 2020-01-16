@@ -30,7 +30,7 @@ probe_arch() {
   done
 
   if [ -z "${file_info}" ]; then
-    log_fatal "Sorry, where not able to determinate target architecture"
+    log_fatal "Sorry, not able to determinate target architecture"
   fi
 
   target_arch="unknown"
