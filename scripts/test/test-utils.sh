@@ -59,7 +59,7 @@ convert_and_test() {
   local ret=0
   run_tests "${device_type}" "${artifact_name}" || ret=$?
 
-  rm -f deploy/${device_type}-${artifact_name}.*
+  rm -f deploy/${device_type}-${artifact_name}*
 
   return $ret
 }
@@ -76,11 +76,17 @@ run_tests() {
 
   # Need to decompress images built with MENDER_COMPRESS_DISK_IMAGE=gzip before
   # running tests.
-  if [ -f deploy/${device_type}-${artifact_name}.sdimg.gz ]; then
+  if [ -f deploy/${device_type}-${artifact_name}-mender.img.gz ]; then
     # sudo is needed because the image is created using docker-mender-convert
     # which sets root permissions on the image
-    sudo gunzip --force deploy/${device_type}-${artifact_name}.sdimg.gz
+    sudo gunzip --force deploy/${device_type}-${artifact_name}-mender.img.gz
   fi
+
+  # MEN-3051: Rename the files back to .sdimg, as the sdimg extension has meaning
+  # in the test-infrastructure.
+  for file in ${MENDER_CONVERT_DIR}/deploy/*.img; do
+      mv $file "${file%-mender.img}.sdimg"
+  done
 
   cd ${WORKSPACE}/mender-image-tests
 
