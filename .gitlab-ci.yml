@@ -76,7 +76,7 @@ test_acceptance_prebuilt_raspberrypi:
     - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
     - tar xzf deploy.tar.gz
     # Extract converted Raspbian artifacts
-    - unxz deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.sdimg.xz
+    - unxz deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}-mender.img.xz
     - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
 
 test_acceptance_qemux86_64:
