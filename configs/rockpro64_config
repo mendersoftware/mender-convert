@@ -27,6 +27,6 @@ function platform_modify() {
 
 function platform_package() {
   log_info "Embedding bootloader in disk image"
-  run_and_log_cmd "dd if=work/rockpro64/rksd_loader.img of=${sdimg_path} \
+  run_and_log_cmd "dd if=work/rockpro64/rksd_loader.img of=${img_path} \
      seek=64 conv=notrunc status=none"
 }
