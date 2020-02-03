@@ -14,7 +14,7 @@ function platform_modify() {
   mkdir -p work/rockpro64
 
   run_and_log_cmd "wget -Nq ${ROCKPRO64_BINARIES_URL} -P work/rockpro64"
-  run_and_log_cmd "tar xvf work/rockpro64/${ROCKPRO64_BINARIES} -C work/rockpro64"
+  run_and_log_cmd "tar xzvf work/rockpro64/${ROCKPRO64_BINARIES} -C work/rockpro64"
 
   run_and_log_cmd "sudo cp work/rockpro64/boot.scr work/boot"
 

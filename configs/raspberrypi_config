@@ -17,7 +17,7 @@ function platform_modify() {
   mkdir -p work/rpi/binaries
 
   run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
-  run_and_log_cmd "tar xvf work/rpi/binaries/${RASPBERRYPI_BINARIES} -C work/rpi/binaries"
+  run_and_log_cmd "tar xzvf work/rpi/binaries/${RASPBERRYPI_BINARIES} -C work/rpi/binaries"
 
   # By default, we modify cmdline.txt.
   #
