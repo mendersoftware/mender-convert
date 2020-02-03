@@ -1,4 +1,4 @@
 BEAGLEBONE_BLACK_CONFIG="beaglebone_black_debian_sdcard"
 source configs/beaglebone_black_base_config
 MENDER_DEVICE_TYPE="beaglebone-sdcard"
-MENDER_STORAGE_DEVICE="/dev/mmcblk0p"
+MENDER_STORAGE_DEVICE_BASE="/dev/mmcblk0p"
