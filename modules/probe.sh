@@ -218,7 +218,7 @@ probe_initrd_in_boot_and_root() {
   for boot in work/rootfs/boot work/boot; do
     initrd_image_path=$(probe_initrd_image ${boot})
     if [ -n "${initrd_image_path}" ] && [ "${boot}" == "work/boot" ]; then
-      sudo cp ${initrd_image_path} ${target_rootfs_dir}/boot
+      sudo cp ${initrd_image_path} work/rootfs/boot
       break;
     elif [ -n "${initrd_image_path}" ]; then
       break;
