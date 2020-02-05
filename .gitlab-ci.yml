@@ -153,7 +153,7 @@ publish:s3:
     - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
         --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
     - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender version to S3"
-    - aws s3 cp deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}-mender.mender
+    - aws s3 cp deploy/raspberrypi-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
         s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
     - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
         --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
