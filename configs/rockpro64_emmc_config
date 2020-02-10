@@ -1,4 +1,4 @@
 ROCKPRO64_CONFIG="rockpro64_emmc"
-MENDER_STORAGE_DEVICE=/dev/mmcblk1p
+MENDER_STORAGE_DEVICE_BASE=/dev/mmcblk1p
 
 source configs/rockpro64_config

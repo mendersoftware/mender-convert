@@ -102,23 +102,23 @@ MENDER_STORAGE_URL="https://d1b0l86ne08fsf.cloudfront.net"
 # Mender GitHub organization URL prefix
 MENDER_GITHUB_ORG="https://github.com/mendersoftware"
 
-# Device file corresponding to the root filesystem partitions, without index.
-MENDER_STORAGE_DEVICE=/dev/mmcblk0p
+# Device file corresponding to the root filesystem partitions, without number.
+MENDER_STORAGE_DEVICE_BASE=/dev/mmcblk0p
 
-# Partition index of boot partition
-MENDER_BOOT_PART_INDEX="1"
+# Partition number of boot partition
+MENDER_BOOT_PART_NUMBER="1"
 
-# Partition index of root filesystem A
-MENDER_ROOTFS_PART_A_INDEX="2"
+# Partition number of root filesystem A
+MENDER_ROOTFS_PART_A_NUMBER="2"
 
-# Partition index of root filesystem B
-MENDER_ROOTFS_PART_B_INDEX="3"
+# Partition number of root filesystem B
+MENDER_ROOTFS_PART_B_NUMBER="3"
 
-# Partition index of persistent data partition
-MENDER_DATA_PART_INDEX="4"
+# Partition number of persistent data partition
+MENDER_DATA_PART_NUMBER="4"
 
 # Basename of DTB that should be loaded by the bootloader.
-MENDER_KERNEL_DEVICETREE=kernel.dtb
+MENDER_DTB_NAME=kernel.dtb
 
 # Generate bmap index files
 #

@@ -119,13 +119,13 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
   fi
 
   cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
-mender_rootfsa_part=${MENDER_ROOTFS_PART_A_INDEX}
-mender_rootfsb_part=${MENDER_ROOTFS_PART_B_INDEX}
-mender_kernel_root_base=${MENDER_STORAGE_DEVICE}
+mender_rootfsa_part=${MENDER_ROOTFS_PART_A_NUMBER}
+mender_rootfsb_part=${MENDER_ROOTFS_PART_B_NUMBER}
+mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
 mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
 kernel_imagetype=${kernel_imagetype}
 initrd_imagetype=${initrd_imagetype}
-kernel_devicetree=${MENDER_KERNEL_DEVICETREE}
+kernel_devicetree=${MENDER_DTB_NAME}
 EOF
 
   if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
@@ -183,8 +183,8 @@ run_and_log_cmd "sudo ln -sf /data/mender work/rootfs/var/lib/mender"
 
 cat <<- EOF > work/mender.conf.data
 {
-  "RootfsPartA": "${MENDER_STORAGE_DEVICE}${MENDER_ROOTFS_PART_A_INDEX}",
-  "RootfsPartB": "${MENDER_STORAGE_DEVICE}${MENDER_ROOTFS_PART_B_INDEX}"
+  "RootfsPartA": "${MENDER_STORAGE_DEVICE_BASE}${MENDER_ROOTFS_PART_A_NUMBER}",
+  "RootfsPartB": "${MENDER_STORAGE_DEVICE_BASE}${MENDER_ROOTFS_PART_B_NUMBER}"
 }
 EOF
 
@@ -225,8 +225,8 @@ sudo bash -c "cat <<- EOF > work/rootfs/etc/fstab
 /dev/root            /                    auto       defaults              1  1
 proc                 /proc                proc       defaults              0  0
 
-${MENDER_STORAGE_DEVICE}${MENDER_BOOT_PART_INDEX}   ${boot_part_mountpoint}          auto       defaults,sync    0  0
-${MENDER_STORAGE_DEVICE}${MENDER_DATA_PART_INDEX}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0
+${MENDER_STORAGE_DEVICE_BASE}${MENDER_BOOT_PART_NUMBER}   ${boot_part_mountpoint}          auto       defaults,sync    0  0
+${MENDER_STORAGE_DEVICE_BASE}${MENDER_DATA_PART_NUMBER}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0
 EOF"
 
 log_info "Performing platform specific modifications (if any)"

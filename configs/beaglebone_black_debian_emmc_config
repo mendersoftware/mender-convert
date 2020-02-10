@@ -5,4 +5,4 @@ BEAGLEBONE_BLACK_CONFIG="beaglebone_black_debian_emmc"
 source configs/beaglebone_black_base_config
 MENDER_STORAGE_TOTAL_SIZE_MB="3648"
 MENDER_DEVICE_TYPE="beaglebone-emmc"
-MENDER_STORAGE_DEVICE="/dev/mmcblk1p"
+MENDER_STORAGE_DEVICE_BASE="/dev/mmcblk1p"
