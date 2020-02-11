@@ -68,8 +68,8 @@ else
                      "configs/qemux86-64_config" || test_result=$?
   fi
 
-  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "raspberrypi" ]; then
-    convert_and_test "raspberrypi" \
+  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "raspberrypi3" ]; then
+    convert_and_test "raspberrypi3" \
                      "release-1" \
                      "${RASPBIAN_IMAGE_URL}" \
                      "${RASPBIAN_IMAGE}.img" \
@@ -96,7 +96,7 @@ else
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
-    convert_and_test "ubuntu" \
+    convert_and_test "raspberrypi3" \
                      "release-1" \
                      "${UBUNTU_SERVER_RPI_IMAGE_URL}" \
                      "${UBUNTU_SERVER_RPI_IMAGE}" \
