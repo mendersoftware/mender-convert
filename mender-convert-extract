@@ -93,9 +93,14 @@ done
 # but we do require it be present and hence we might need to generate
 # a filesystem image here.
 if [ ${nr_of_parts} -eq 1 ]; then
-  log_info "Generating boot partition (required, does not exist in original image)"
-  run_and_log_cmd "dd if=/dev/zero of=work/boot-generated.vfat count=${MENDER_BOOT_PART_SIZE_MB} bs=1M status=none"
-  run_and_log_cmd "${MKFS_VFAT} work/boot-generated.vfat"
+  run_and_log_cmd "mv work/part-1.fs work/part-2.fs"
+  MENDER_SKIP_FIRST_PARTITION=1
+fi
+
+if [ ${MENDER_SKIP_FIRST_PARTITION} -eq 1 ]; then
+  log_info "Generating boot partition"
+  run_and_log_cmd "dd if=/dev/zero of=work/part-1.fs count=${MENDER_BOOT_PART_SIZE_MB} bs=1M status=none"
+  run_and_log_cmd "${MKFS_VFAT} work/part-1.fs"
 fi
 
 # Extract boot gap, that is the area from sector 1 until first part, and
