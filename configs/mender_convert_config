@@ -180,8 +180,9 @@ source configs/mender_grub_config
 mender_create_artifact() {
   local -r device_type="${1}"
   local -r artifact_name="${2}"
+  local -r image_name="${3}"
 
-  mender_artifact=deploy/${device_type}-${artifact_name}.mender
+  mender_artifact=deploy/${image_name}.mender
   log_info "Writing Mender artifact to: ${mender_artifact}"
   log_info "This can take up to 20 minutes depending on which compression method is used"
 

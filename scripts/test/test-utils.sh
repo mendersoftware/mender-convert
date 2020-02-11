@@ -8,27 +8,27 @@ convert_and_test() {
   device_type=$1
   artifact_name=$2
   image_url=$3
-  image_name=$4
-  image_name_compressed=$5
+  image_file=$4
+  image_file_compressed=$5
   config=$6 # Optional
 
   wget --progress=dot:giga -N ${image_url} -P input/
 
-  echo "Extracting: ${image_name_compressed}"
-  case "${image_name_compressed}" in
+  echo "Extracting: ${image_file_compressed}"
+  case "${image_file_compressed}" in
     *.gz)
-      gunzip -f input/${image_name_compressed}
+      gunzip -f input/${image_file_compressed}
       ;;
     *.zip)
       cd input
-      unzip -o ${image_name_compressed}
+      unzip -o ${image_file_compressed}
       cd -
       ;;
     *.xz)
-      xz -d -f input/${image_name_compressed}
+      xz -d -f input/${image_file_compressed}
       ;;
     *)
-      echo "Unknown image type: ${image_name_compressed}"
+      echo "Unknown image type: ${image_file_compressed}"
       exit 1
       ;;
   esac
@@ -53,20 +53,24 @@ convert_and_test() {
   fi
 
   MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
-    --disk-image input/${image_name} \
+    --disk-image input/${image_file} \
     ${MENDER_CONVERT_EXTRA_ARGS}
 
   local ret=0
-  run_tests "${device_type}" "${artifact_name}" || ret=$?
 
-  rm -f deploy/${device_type}-${artifact_name}*
+  # The output image name after conversion
+  image_name="${image_file%.img}-${device_type}-mender"
+
+  run_tests "${device_type}"  "$image_name" || ret=$?
+
+  rm -f deploy/${image_file}*
 
   return $ret
 }
 
 run_tests() {
   device_type=$1
-  artifact_name=$2
+  converted_image_name=$2
   shift 2
   pytest_args_extra=$@
 
@@ -76,30 +80,34 @@ run_tests() {
 
   # Need to decompress images built with MENDER_COMPRESS_DISK_IMAGE=gzip before
   # running tests.
-  if [ -f deploy/${device_type}-${artifact_name}-mender.img.gz ]; then
+  if [ -f "deploy/${converted_image_name}.gz" ]; then
     # sudo is needed because the image is created using docker-mender-convert
     # which sets root permissions on the image
-    sudo gunzip --force deploy/${device_type}-${artifact_name}-mender.img.gz
+    sudo gunzip --force "deploy/${converted_image_name}.gz"
   fi
 
   # MEN-3051: Rename the files back to .sdimg, as the sdimg extension has meaning
   # in the test-infrastructure.
   for file in ${MENDER_CONVERT_DIR}/deploy/*.img; do
-      mv $file "${file%-mender.img}.sdimg"
+      mv $file "${file%.img}.sdimg"
   done
 
   cd ${WORKSPACE}/mender-image-tests
+
+  echo "Converted image name: "
+  echo "$converted_image_name"
 
   python3 -m pytest --verbose \
     --junit-xml="${MENDER_CONVERT_DIR}/results_${device_type}.xml" \
     ${html_report_args} \
     --test-conversion \
-    --test-variables="${MENDER_CONVERT_DIR}/deploy/${device_type}-${artifact_name}.cfg" \
+    --test-variables="${MENDER_CONVERT_DIR}/deploy/${converted_image_name}.cfg" \
     --board-type="${device_type}" \
-    --mender-image=${device_type}-${artifact_name}.sdimg \
+    --mender-image="${converted_image_name}.sdimg" \
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
     tests \
     ${pytest_args_extra}
+
   exitcode=$?
 
   cd -

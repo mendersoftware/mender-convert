@@ -138,7 +138,12 @@ rootfs_part_sectors=$(disk_align_sectors ${rootfs_part_sectors} ${MENDER_PARTITI
 device_type=$(cat work/rootfs/data/mender/device_type | sed 's/[^=]*=//')
 artifact_name=$(cat work/rootfs/etc/mender/artifact_info | sed 's/[^=]*=//')
 
-image_name="${device_type}-${artifact_name}"
+# Get the name from the input disk_image
+temp_img_name=$(basename "$disk_image")
+
+# Strip the image suffix from temp_img_name and set the original image name as
+# the output image name
+image_name="${temp_img_name%.*}-${device_type}-mender"
 
 actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
 
@@ -190,11 +195,11 @@ disk_create_file_system_from_folder "work/rootfs/" "work/rootfs.img" \
 log_info "Copying root filesystem image to deploy directory"
 run_and_log_cmd "cp --sparse=always work/rootfs.img deploy/${image_name}.${image_fs_type}"
 
-mender_create_artifact "${device_type}" "${artifact_name}"
+mender_create_artifact "${device_type}" "${artifact_name}" "${image_name}"
 
 log_info "Creating Mender compatible disk-image"
 
-img_path=deploy/${image_name}-mender.img
+img_path="deploy/${image_name}.img"
 
 log_info "Total disk size: $(disk_sectors_to_mb ${disk_image_total_sectors}) MiB"
 log_info "  Boot partition    $(disk_sectors_to_mb ${boot_part_sectors}) MiB"
