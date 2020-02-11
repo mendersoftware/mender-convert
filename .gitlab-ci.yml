@@ -76,8 +76,8 @@ test_acceptance_prebuilt_raspberrypi:
     - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
     - tar xzf deploy.tar.gz
     # Extract converted Raspbian artifacts
-    - unxz deploy/raspberrypi3-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}-mender.img.xz
-    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi3 ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
+    - unxz deploy/${RASPBIAN_NAME}-raspberrypi3-mender.img.xz
+    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-raspberrypi3-mender
 
 test_acceptance_qemux86_64:
   <<: *test_acceptance
@@ -148,12 +148,12 @@ publish:s3:
     - export AWS_ACCESS_KEY_ID=$PUBLISH_AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$PUBLISH_AWS_SECRET_ACCESS_KEY
     - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz version to S3"
-    - aws s3 cp deploy/raspberrypi3-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}-mender.img.xz
+    - aws s3 cp deploy/${RASPBIAN_NAME}-raspberrypi3-mender.img.xz
         s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
     - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
         --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
     - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender version to S3"
-    - aws s3 cp deploy/raspberrypi3-${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
+    - aws s3 cp deploy/${RASPBIAN_NAME}-raspberrypi3--mender.mender
         s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
     - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
         --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
