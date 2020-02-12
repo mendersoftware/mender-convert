@@ -3,8 +3,8 @@ image: docker:git
 variables:
   DOCKER_REPOSITORY: mendersoftware/mender-convert
   S3_BUCKET_NAME: mender-convert-images
-  MENDER_ARTIFACT_VERSION: master
-  MENDER_CLIENT_VERSION: master
+  MENDER_ARTIFACT_VERSION: 3.3.0b1
+  MENDER_CLIENT_VERSION: 2.2.0b1
   RASPBIAN_URL: http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip
   RASPBIAN_NAME: 2019-09-26-raspbian-buster-lite
   MENDER_IMAGE_TESTS_REV: master
