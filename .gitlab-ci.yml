@@ -5,8 +5,8 @@ variables:
   S3_BUCKET_NAME: mender-convert-images
   MENDER_ARTIFACT_VERSION: 3.3.0b1
   MENDER_CLIENT_VERSION: 2.2.0b1
-  RASPBIAN_URL: http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip
-  RASPBIAN_NAME: 2019-09-26-raspbian-buster-lite
+  RASPBIAN_URL: http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-07/2020-02-05-raspbian-buster-lite.zip
+  RASPBIAN_NAME: 2020-02-05-raspbian-buster-lite
   MENDER_IMAGE_TESTS_REV: master
 
   DEBIAN_FRONTEND: noninteractive
