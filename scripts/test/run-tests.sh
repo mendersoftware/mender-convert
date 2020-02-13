@@ -27,7 +27,7 @@ TINKER_IMAGE_URL="http://dlcdnet.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/${T
 UBUNTU_IMAGE="Ubuntu-Bionic-x86-64.img"
 UBUNTU_IMAGE_URL="https://d1b0l86ne08fsf.cloudfront.net/mender-convert/images/${UBUNTU_IMAGE}.gz"
 
-UBUNTU_SERVER_RPI_IMAGE="ubuntu-18.04.3-preinstalled-server-armhf+raspi3.img"
+UBUNTU_SERVER_RPI_IMAGE="ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img"
 UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/${UBUNTU_SERVER_RPI_IMAGE}.xz"
 
 # Keep common function declarations in separate utils script
