@@ -32,4 +32,4 @@ MENDER_GRUB_KERNEL_IMAGETYPE=""
 # if was not possible to auto-detect
 MENDER_GRUB_INITRD_IMAGETYPE=""
 
-MENDER_GRUB_BINARY_STORAGE_URL="${MENDER_STORAGE_URL}/mender-convert/grub-efi/2.02"
+MENDER_GRUB_BINARY_STORAGE_URL="${MENDER_STORAGE_URL}/mender-convert/grub-efi/2.04"
