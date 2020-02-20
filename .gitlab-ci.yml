@@ -31,7 +31,7 @@ stages:
 build:
   stage: build
   services:
-    - docker:dind
+    - docker:19.03.5-dind
   script:
     - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build --build-arg MENDER_ARTIFACT_VERSION=${MENDER_ARTIFACT_VERSION}
     - docker save $DOCKER_REPOSITORY:pr > image.tar
