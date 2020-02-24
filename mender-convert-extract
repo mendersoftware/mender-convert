@@ -18,6 +18,7 @@ echo "Running $(basename $0): $@"
 
 source modules/bootstrap.sh
 source modules/disk.sh
+source modules/probe.sh
 
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
@@ -106,4 +107,10 @@ if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
   log_info "Extracting boot gap to work/boot-gap.bin"
   disk_extract_part "${disk_image}" \
     1 $(( $(disk_get_part_value ${disk_image} 1 START) - 1)) work/boot-gap.bin
+
+  if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+    # Check for known U-Boot problems in the boot gap (probable boot loader
+    # location).
+    check_for_broken_uboot_uefi_support work/boot-gap.bin
+  fi
 fi
