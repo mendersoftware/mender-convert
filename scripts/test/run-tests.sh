@@ -15,7 +15,7 @@ fi
 
 WORKSPACE=./tests
 
-BBB_DEBIAN_IMAGE="bone-debian-9.5-iot-armhf-2018-10-07-4gb.img"
+BBB_DEBIAN_IMAGE="bone-debian-9.5-iot-armhf-2018-08-30-4gb.img"
 BBB_DEBIAN_IMAGE_URL="http://debian.beagleboard.org/images/${BBB_DEBIAN_IMAGE}.xz"
 
 RASPBIAN_IMAGE="2019-09-26-raspbian-buster-lite"
