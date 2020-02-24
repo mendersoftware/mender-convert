@@ -103,6 +103,9 @@ if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
 fi
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+  # Check for known U-Boot problems in all files on the boot partition.
+  check_for_broken_uboot_uefi_support work/boot
+
   run_and_log_cmd "wget -Nq '${MENDER_GRUBENV_URL}' -P work/"
   run_and_log_cmd "tar xvf work/${MENDER_GRUBENV_VERSION}.tar.gz -C work/"
 
