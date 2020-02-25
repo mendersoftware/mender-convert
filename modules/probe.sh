@@ -191,13 +191,18 @@ probe_kernel_in_boot_and_root() {
     fi
   done
 
-  if [ -n "${kernel_imagetype_path}" ]; then
-    log_info "Found Linux kernel image: \n\n\t${kernel_imagetype_path}\n"
-    kernel_imagetype=$(basename ${kernel_imagetype_path})
-  else
+  if [ -z "${kernel_imagetype_path}" ]; then
     log_warn "Unfortunately we where not able to find the Linux kernel image."
     log_fatal "Please specify the image name using MENDER_GRUB_KERNEL_IMAGETYPE"
   fi
+
+  log_info "Found Linux kernel image: \n\n\t${kernel_imagetype_path}\n"
+  kernel_imagetype=$(basename ${kernel_imagetype_path})
+
+  if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+    check_efi_compatible_kernel ${kernel_imagetype_path}
+  fi
+
   echo "${kernel_imagetype}"
 }
 
@@ -236,4 +241,41 @@ probe_initrd_in_boot_and_root() {
   fi
 
   echo "${initrd_imagetype}"
+}
+
+check_for_broken_uboot_uefi_support() {
+  local path="$1"
+
+  # Broken UEFI support in range v2018.09 - v2019.07 (see MEN-2404)
+  local regex='U-Boot 20(18\.(09|1[0-2])|19\.0[1-7])'
+
+  if egrep -qr "$regex" "$path"; then
+    local log_level=log_fatal
+    if [ "$MENDER_IGNORE_UBOOT_BROKEN_UEFI" = 1 ]; then
+      log_level=log_warn
+    fi
+    $log_level 'Detected a U-Boot version in the range v2018.09 - v2019.07. These U-Boot versions are known to have broken UEFI support, and therefore the MENDER_GRUB_EFI_INTEGRATION feature is unlikely to work. This only affects newly flashed devices using the partition image (extension ending in "img"). The Mender artifact should still work to upgrade an existing, working device. There are two possible workarounds for this issue: 1) Use either an older or a newer image that works, and use a Mender artifact afterwards to up/down-grade it to the version you want. 2) If the device has a non-UEFI U-Boot port in mender-convert, use that (look for a board specific file in `configs`) . If you want to ignore this error and force creation of the image, set the MENDER_IGNORE_UBOOT_BROKEN_UEFI=1 config option.'
+  fi
+}
+
+check_efi_compatible_kernel() {
+  kernel_path="$1"
+
+  case "$(probe_arch)" in
+    arm|aarch64)
+      # On ARM, as of version 2.04, GRUB can only boot kernels which have an EFI
+      # stub in them. See MEN-2404.
+      if ! file -k $kernel_path | fgrep 'EFI application'; then
+          local log_level=log_fatal
+          if [ "$MENDER_IGNORE_MISSING_EFI_STUB" = 1 ]; then
+              log_level=log_warn
+          fi
+          $log_level 'Detected a kernel which does not have an EFI stub. This kernel is not supported when booting with UEFI. Please consider using a U-Boot port if the board has one (look for a board specific file in `configs`), or find a kernel which has the CONFIG_EFI_STUB turned on. To ignore this message and proceed anyway, set the MENDER_IGNORE_MISSING_EFI_STUB=1 config option.'
+      fi
+      ;;
+    *)
+      # Other platforms are fine.
+      :
+      ;;
+  esac
 }

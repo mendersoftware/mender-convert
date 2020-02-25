@@ -32,4 +32,10 @@ MENDER_GRUB_KERNEL_IMAGETYPE=""
 # if was not possible to auto-detect
 MENDER_GRUB_INITRD_IMAGETYPE=""
 
-MENDER_GRUB_BINARY_STORAGE_URL="${MENDER_STORAGE_URL}/mender-convert/grub-efi/2.02"
+MENDER_GRUB_BINARY_STORAGE_URL="${MENDER_STORAGE_URL}/mender-convert/grub-efi/2.04"
+
+# Ignore broken UEFI support in certain U-Boot versions (see MEN-2404)
+MENDER_IGNORE_UBOOT_BROKEN_UEFI="0"
+
+# Ignore missing EFI stub on ARM (see MEN-2404)
+MENDER_IGNORE_MISSING_EFI_STUB="0"
