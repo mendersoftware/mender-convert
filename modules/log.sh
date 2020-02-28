@@ -18,6 +18,14 @@
 # from sub-directories
 log_file="${PWD}/work/convert.log"
 
+
+# Add some colour to the log messages
+
+YELLOW='\033[1;33m' # Warning
+RED='\033[0;31m'    # Error
+IRED='\033[0;91m'   # Fatal Error
+NC='\033[0m'        # No Color
+
 # Log the given message at the given level.
 function log {
   local -r level="$1"
@@ -50,18 +58,18 @@ function log_info {
 # Log the given message at WARN level.
 function log_warn {
   local -r message="$1"
-  log "WARN" "$message"
+  log "${YELLOW}WARN${NC}" "$message"
 }
 
 # Log the given message at ERROR level.
 function log_error {
   local -r message="$1"
-  log "ERROR" "$message"
+  log "${RED}ERROR${NC}" "$message"
 }
 
 # Log the given message at FATAL level.
 function log_fatal {
   local -r message="$1"
-  log "FATAL" "$message"
+  log "${IRED}FATAL${NC}" "$message"
   exit 1
 }
