@@ -19,6 +19,7 @@
 function platform_package() {
   true
 }
+PLATFORM_PACKAGE_HOOKS=(platform_package)
 
 function trap_exit() {
   echo "mender-convert-package has finished. Cleaning up..."
@@ -244,7 +245,10 @@ disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsb_start}"
 disk_write_at_offset "${output_dir}/data.img" "${img_path}" "${data_start}"
 
 log_info "Performing platform specific package operations (if any)"
-platform_package
+for hook in "${PLATFORM_PACKAGE_HOOKS[@]}"; do
+  log_info "Running hook: $hook"
+  eval $hook
+done
 
 # Create bmap index
 if [ "${MENDER_USE_BMAP}" == "y" ]; then
