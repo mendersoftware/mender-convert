@@ -4,5 +4,6 @@
 RASPBERRYPI_BINARIES="raspberrypi4-integration-2019.01.tar.gz"
 RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
 MENDER_KERNEL_IMAGETYPE="zImage"
+MENDER_DEVICE_TYPE="raspberrypi4"
 
 source configs/raspberrypi_config
