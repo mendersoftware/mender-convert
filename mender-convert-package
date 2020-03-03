@@ -119,7 +119,7 @@ if [ ${actual_boot_size} -gt ${boot_part_sectors} ]; then
   log_warn "The allocated boot part size $(disk_sectors_to_mb ${boot_part_sectors}) MiB is too small."
   log_warn "The actual boot part size is $(disk_sectors_to_mb ${actual_boot_size}) MiB"
   log_warn "Will adjust MENDER_BOOT_PART_SIZE_MB automatically"
-  log_warn "Considered adjusting the configuration file to avoid this message"
+  log_warn "Consider adjusting the configuration file to avoid this message"
   boot_part_sectors=${actual_boot_size}
 fi
 
