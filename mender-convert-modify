@@ -19,10 +19,12 @@
 function platform_modify() {
   true
 }
+PLATFORM_MODIFY_HOOKS=(platform_modify)
 
 function user_local_modify() {
   true
 }
+USER_LOCAL_MODIFY_HOOKS=(user_local_modify)
 
 function trap_exit() {
   echo "mender-convert-modify has finished. Cleaning up..."
@@ -233,10 +235,16 @@ ${MENDER_STORAGE_DEVICE_BASE}${MENDER_DATA_PART_NUMBER}   /data          auto   
 EOF"
 
 log_info "Performing platform specific modifications (if any)"
-platform_modify
+for hook in "${PLATFORM_MODIFY_HOOKS[@]}"; do
+  log_info "Running hook: $hook"
+  eval $hook
+done
 
 log_info "Performing user/local specific modifications (if any)"
-user_local_modify
+for hook in "${USER_LOCAL_MODIFY_HOOKS[@]}"; do
+  log_info "Running hook: $hook"
+  eval $hook
+done
 
 for overlay in "${overlays[@]}"; do
   log_info "Applying rootfs overlay: ${overlay}"
