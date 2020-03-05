@@ -42,6 +42,8 @@ RUN apt-get update && apt-get install -y \
     udev \
 # to create bmap index file (MENDER_USE_BMAP)
     bmap-tools \
+# to regenerate the U-Boot boot.scr on platforms that need customization
+    u-boot-tools \
 # needed to run pxz
     libgomp1
 
