@@ -94,7 +94,7 @@ run_and_log_cmd "wget -Nq ${MENDER_STORAGE_URL}/${MENDER_CLIENT_VERSION}/dist-pa
 
 cd work/mender-deb
 run_and_log_cmd "ar -xv ${deb_name}"
-run_and_log_cmd "tar -xf data.tar.xz -C files"
+run_and_log_cmd "tar xJf data.tar.xz -C files"
 cd - > /dev/null 2>&1
 
 run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose work/mender-deb/files/ work/rootfs/"
@@ -109,7 +109,7 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
   check_for_broken_uboot_uefi_support work/boot
 
   run_and_log_cmd "wget -Nq '${MENDER_GRUBENV_URL}' -P work/"
-  run_and_log_cmd "tar xvf work/${MENDER_GRUBENV_VERSION}.tar.gz -C work/"
+  run_and_log_cmd "tar xzvf work/${MENDER_GRUBENV_VERSION}.tar.gz -C work/"
 
   if [ -z "${MENDER_GRUB_KERNEL_IMAGETYPE}" ]; then
     kernel_imagetype=$(probe_kernel_in_boot_and_root)
