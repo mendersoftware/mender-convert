@@ -256,9 +256,13 @@ if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
 fi
 
 # Burn Partitions
+log_info "Writing boot partition image"
 disk_write_at_offset "${boot_part}" "${img_path}" "${boot_part_start}"
+log_info "Writing rootfsa partition image"
 disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsa_start}"
+log_info "Writing rootfsb partition image"
 disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsb_start}"
+log_info "Writing data partition image"
 disk_write_at_offset "${output_dir}/data.img" "${img_path}" "${data_start}"
 
 log_info "Performing platform specific package operations (if any)"
