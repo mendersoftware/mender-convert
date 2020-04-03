@@ -96,7 +96,7 @@ disk_align_sectors() {
 # $2 - destination file
 # $3 - offset in number of 512 sectors
 disk_write_at_offset() {
-  run_and_log_cmd "dd if=${1} of=${2} seek=${3} conv=sparse status=none"
+  run_and_log_cmd "dd if=${1} of=${2} seek=${3} conv=sparse,notrunc status=none"
 }
 
 # Create file system image from directory content
