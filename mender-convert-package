@@ -223,26 +223,9 @@ rootfsb_end=$(( ${rootfsb_start} + ${rootfs_part_sectors} - 1 ))
 data_start=$(disk_align_sectors ${rootfsb_end} ${MENDER_PARTITION_ALIGNMENT} )
 data_end=$(( ${data_start} + ${data_part_sectors} - 1 ))
 
-if [ -n "${MENDER_PARTITION_SCHEME}" ]; then
-  # Force partition scheme to the one from configs
-  partition_scheme="${MENDER_PARTITION_SCHEME}"
-  log_info "Forcing partition scheme defined by MENDER_PARTITION_SCHEME to: ${partition_scheme}"
-else
-  # By default use the partition scheme from the input image
-  partition_scheme=$(disk_get_part_value ${disk_image} 1 SCHEME)
-  log_info "Using input diskimage partition scheme (${partition_scheme})"
-fi
-
-# Create partition table.
-if [ "${partition_scheme}" == "gpt" ]; then
-  log_info "Writing GPT partition table"
-  run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
-  run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
-else
-  log_info "Writing DOS (MBR) partition table"
-  run_and_log_cmd "${PARTED} -s ${img_path} mklabel msdos"
-  run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart primary fat32 ${boot_part_start} ${boot_part_end}"
-fi
+# Create partition table. TODO: GPT support
+run_and_log_cmd "${PARTED} -s ${img_path} mklabel msdos"
+run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart primary fat32 ${boot_part_start} ${boot_part_end}"
 run_and_log_cmd "${PARTED} -s ${img_path} set 1 boot on"
 run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext2 ${rootfsa_start} ${rootfsa_end}"
 run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext2 ${rootfsb_start} ${rootfsb_end}"

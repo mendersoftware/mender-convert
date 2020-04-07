@@ -65,11 +65,6 @@ MENDER_DATA_PART_GROWFS=y
 # input disk image
 MENDER_DEVICE_TYPE=""
 
-# The partition scheme to use for the converted image.
-# To override set this to "gpt" or "dos" (the scheme names used by fdisk and partx).
-# By default mender-convert will use the partition scheme from the input image.
-MENDER_PARTITION_SCHEME=""
-
 # Total size of the physical storage medium that mender partitioned images
 # will be written to, expressed in MiB. The size of rootfs partition will be
 # calculated automatically by subtracting the sizes of boot
