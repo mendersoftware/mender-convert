@@ -40,15 +40,19 @@ disk_get_part_value() {
   echo "$(partx -o ${3} -g -r --nr ${2} ${1})"
 }
 
-# Prints number of partitions found in disk image
+# Prints the partition numbers of all the partitions
 #
 # Example usage:
 #
-#     nr_of_parts=$(disk_get_nr_of_parts ${disk_image_path})
+#     part_nums=$(disk_get_part_nums ${disk_image_path})
 #
 #  $1 - path to disk image
-disk_get_nr_of_parts() {
-  echo "$(partx -l ${1} | wc -l)"
+disk_get_part_nums() {
+  partx --show $1 | tail -n +2 |
+    while read line
+    do
+      echo $line | awk '{printf "%d\n", $1}'
+    done
 }
 
 # Extract a file system image from a disk image
