@@ -1,5 +1,5 @@
 # Build pxz in separate image to avoid big image size
-FROM ubuntu:19.04 AS build
+FROM ubuntu:19.10 AS build
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
 RUN git clone https://github.com/jnovy/pxz.git /root/pxz
 RUN cd /root/pxz && make
 
-FROM ubuntu:19.04
+FROM ubuntu:19.10
 
 ARG MENDER_ARTIFACT_VERSION=3.3.0
 
