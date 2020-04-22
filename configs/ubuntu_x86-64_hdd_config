@@ -1,0 +1,26 @@
+# This configuration can be used to run Ubuntu on a any x86-64 machine.
+#
+# This has been tested on images generated with the following command:
+#
+# Boot live USB and copy the data from internal storage (hdd, eMMC) e.g. for hdd:
+#
+# 	dd if=/dev/sda of=/media/ubuntu/ubuntu.img bs=1M count=10000 status=progress
+#
+# Converted with the following command:
+#
+#	MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
+#		--disk-image input/ubuntu.img \
+#		--config configs/ubuntu_x86-64_hdd_config \
+#		--overlay rootfs_overlay_demo/
+#
+# and image must be then copied back after conversion to internal storage (when booted again from live USB) e.g. for eMMC:
+#
+#	zcat /media/ubuntu/ubuntu-x86_64-mender.img.gz | sudo dd of=/dev/sda bs=1M status=progress
+
+MENDER_STORAGE_DEVICE_BASE=/dev/sda
+MENDER_DEVICE_TYPE="x86_64"
+
+MENDER_STORAGE_TOTAL_SIZE_MB=16000
+
+# Nothing to copy
+MENDER_COPY_BOOT_GAP="n"
