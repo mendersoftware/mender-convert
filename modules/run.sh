@@ -19,10 +19,15 @@
 #  $1 - command to run
 function run_and_log_cmd() {
   local -r cmd="${1}"
-
-  log_debug "Running: \n\r\n\r\t ${cmd}"
-  log_debug "Run result: \n\r"
-
-  result=$(eval ${cmd})
-  log_debug "${result}"
+  local -r position="(${BASH_SOURCE[1]}:${BASH_LINENO[0]}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }"
+  local exit_code=0
+  output="$({ eval ${cmd}; } 2>&1)" || exit_code=$?
+  local log_msg="Running: ${position} \n\r\n\r\t${cmd}"
+  if [[ "${output}" != "" ]]; then
+    log_msg="${log_msg}\n\t${output}\n"
+  fi
+  log_debug "${log_msg}"
+  if [[ ${exit_code} -ne 0 ]]; then
+    exit ${exit_code}
+  fi
 }

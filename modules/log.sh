@@ -68,8 +68,9 @@ function log_error {
 }
 
 # Log the given message at FATAL level.
+FATAL_EXIT_CODE=90
 function log_fatal {
   local -r message="$1"
   log "${IRED}FATAL${NC}" "$message"
-  exit 1
+  exit ${FATAL_EXIT_CODE}
 }

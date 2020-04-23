@@ -44,6 +44,12 @@ function show_version() {
 }
 
 function trap_exit() {
+  EXIT_CODE=$?
+  if [[ ${EXIT_CODE} -ne 0 && ${EXIT_CODE} -ne ${FATAL_EXIT_CODE} ]]; then
+    log_error "mender-convert failed"
+    tac work/convert.log | sed '/DEBUG/q' | tac | sed 's/Running/When running/'
+    log_error "mender-convert exit code: ${EXIT_CODE}"
+  fi
   sudo rm -rf work
 }
 
