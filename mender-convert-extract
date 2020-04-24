@@ -14,6 +14,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+function trap_exit() {
+  echo "mender-convert-extract has finished. Cleaning up..."
+}
+
+function trap_term() {
+  true
+}
+
+trap trap_term INT TERM
+trap trap_exit EXIT
+
 echo "Running $(basename $0): $@"
 
 source modules/bootstrap.sh
