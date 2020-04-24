@@ -74,4 +74,6 @@ ${server_ip} docker.mender.io s3.docker.mender.io
 EOF
 wget -q "https://raw.githubusercontent.com/mendersoftware/mender/master/support/demo.crt" -O ${output_dir}/etc/mender/server.crt
 
+sudo chown -R root.root ${output_dir}
+
 echo "Configuration file for using Demo Mender Server written to: ${output_dir}/etc/mender"
