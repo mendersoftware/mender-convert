@@ -42,6 +42,39 @@ build:
     paths:
       - image.tar
 
+convert_raspbian:
+  stage: convert
+  image: teracy/ubuntu:18.04-dind-18.09.9
+  services:
+    - docker:18-dind
+  tags:
+    - mender-qa-slave
+  dependencies:
+    - build
+  before_script:
+    - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
+
+    - apt update && apt install -yy bash wget unzip awscli
+
+    - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
+    - docker load -i image.tar
+
+    - wget -q ${RASPBIAN_URL}
+    - unzip ${RASPBIAN_NAME}.zip
+
+  script:
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > mender_client_version_config
+    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
+      ./docker-mender-convert -d ${RASPBIAN_NAME}.img
+      -c configs/raspberrypi3_config
+      -c configs/images/raspberrypi3_raspbian_config
+      -c mender_client_version_config
+
+    # Upload to temporary S3 bucket
+    - tar czf deploy.tar.gz deploy
+    - aws s3 cp deploy.tar.gz s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz
+
 .template_test_acceptance: &test_acceptance
   stage: test_acceptance
   image: teracy/ubuntu:18.04-dind-18.09.9
@@ -111,39 +144,6 @@ test_acceptance_ubuntu:
   <<: *test_acceptance
   script:
     - ./scripts/test/run-tests.sh --no-pull --only ubuntu
-
-convert_raspbian:
-  stage: convert
-  image: teracy/ubuntu:18.04-dind-18.09.9
-  services:
-    - docker:18-dind
-  tags:
-    - mender-qa-slave
-  dependencies:
-    - build
-  before_script:
-    - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
-    - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
-
-    - apt update && apt install -yy bash wget unzip awscli
-
-    - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
-    - docker load -i image.tar
-
-    - wget -q ${RASPBIAN_URL}
-    - unzip ${RASPBIAN_NAME}.zip
-
-  script:
-    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > mender_client_version_config
-    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
-      ./docker-mender-convert -d ${RASPBIAN_NAME}.img
-      -c configs/raspberrypi3_config
-      -c configs/images/raspberrypi3_raspbian_config
-      -c mender_client_version_config
-
-    # Upload to temporary S3 bucket
-    - tar czf deploy.tar.gz deploy
-    - aws s3 cp deploy.tar.gz s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz
 
 publish:s3:
   when: manual
