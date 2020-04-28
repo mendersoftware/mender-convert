@@ -64,4 +64,6 @@ cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 }
 EOF
 
+sudo chown -R root.root ${output_dir}
+
 echo "Configuration file for using Hosted Mender written to: ${output_dir}/etc/mender"

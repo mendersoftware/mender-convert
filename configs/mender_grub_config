@@ -22,13 +22,13 @@ MENDER_GRUB_STORAGE_DEVICE=hd0
 
 # Type of kernel (bzImage or zImage)
 #
-# mender-convert will try to determinate this value on its own, only set this
+# mender-convert will try to determine this value on its own, only set this
 # if was not possible to auto-detect
 MENDER_GRUB_KERNEL_IMAGETYPE=""
 
 # Type of initrd image
 #
-# mender-convert will try to determinate this value on its own, only set this
+# mender-convert will try to determine this value on its own, only set this
 # if was not possible to auto-detect
 MENDER_GRUB_INITRD_IMAGETYPE=""
 

@@ -211,6 +211,14 @@ run_and_log_cmd "sudo install -m 0444 work/device_type work/rootfs/data/mender/"
 run_and_log_cmd "sudo echo 'artifact_name=${MENDER_ARTIFACT_NAME}' \
   > work/rootfs/etc/mender/artifact_info"
 
+log_info "Creating state scripts version file."
+case "${MENDER_CLIENT_VERSION}" in
+    1* ) VERSION_STRING='2';;
+    *  ) VERSION_STRING='3';;
+esac
+run_and_log_cmd "sudo mkdir -p work/rootfs/etc/mender/scripts/"
+run_and_log_cmd "echo -n ${VERSION_STRING} | sudo tee work/rootfs/etc/mender/scripts/version"
+
 log_info "Installing a custom /etc/fstab (see work/convert.log for more info)"
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then

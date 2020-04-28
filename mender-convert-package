@@ -181,7 +181,7 @@ elif file ${root_part} | grep -q XFS; then
   image_fs_type="xfs"
 else
   log_warn "$(file work/${root_part})"
-  log_fatal "Could not determinate root file-system type. Aborting..."
+  log_fatal "Could not determine root file-system type. Aborting..."
 fi
 
 disk_create_file_system_from_folder "work/rootfs/data/" "work/data.img" \
