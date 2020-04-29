@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Copyright 2019 Northern.tech AS
 #
@@ -14,24 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e
 
-. modules/git.sh
-
-IMAGE_NAME=${IMAGE_NAME:-mender-convert}
-
-MENDER_CONVERT_DIR="$(pwd)"
-
-#Pass in version in-case we are added as a git submodule
-MENDER_CONVERT_VERSION=$(git_mender_convert_version)
-
-docker run \
-  --rm \
-  -v $MENDER_CONVERT_DIR:/mender-convert \
-  --privileged=true \
-  --cap-add=SYS_MODULE \
-  -v /dev:/dev \
-  -v /lib/modules:/lib/modules:ro \
-  --env MENDER_ARTIFACT_NAME=${MENDER_ARTIFACT_NAME} \
-  --env MENDER_CONVERT_VERSION=${MENDER_CONVERT_VERSION} \
-  $IMAGE_NAME "$@"
+# Print the mender convert version
+#
+git_mender_convert_version() {
+  git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD
+}
