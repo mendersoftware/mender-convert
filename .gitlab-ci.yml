@@ -42,7 +42,7 @@ build:
     paths:
       - image.tar
 
-convert_raspbian:
+.template_convert_raspbian: &convert_raspbian
   stage: convert
   image: teracy/ubuntu:18.04-dind-18.09.9
   services:
@@ -67,13 +67,24 @@ convert_raspbian:
     - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > mender_client_version_config
     - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
       ./docker-mender-convert -d ${RASPBIAN_NAME}.img
-      -c configs/raspberrypi3_config
-      -c configs/images/raspberrypi3_raspbian_config
+      -c configs/${RASPBERRYPI_PLATFORM}_config
+      -c configs/images/raspberrypi_raspbian_config
       -c mender_client_version_config
 
     # Upload to temporary S3 bucket
-    - tar czf deploy.tar.gz deploy
-    - aws s3 cp deploy.tar.gz s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz
+    - mv deploy ${RASPBERRYPI_PLATFORM}
+    - tar czf ${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}
+    - aws s3 cp ${RASPBERRYPI_PLATFORM}.tar.gz s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz
+
+convert_raspbian_raspberrypi3:
+  <<: *convert_raspbian
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi3
+
+convert_raspbian_raspberrypi4:
+  <<: *convert_raspbian
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4
 
 .template_test_acceptance: &test_acceptance
   stage: test_acceptance
@@ -84,7 +95,6 @@ convert_raspbian:
     - mender-qa-slave
   dependencies:
     - build
-    - convert_raspbian
   timeout: 2h
   before_script:
     - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
@@ -110,15 +120,32 @@ convert_raspbian:
     reports:
       junit: results_*.xml
 
-test_acceptance_prebuilt_raspberrypi:
+.template_test_acceptance_prebuilt_raspberrypi: &test_acceptance_prebuilt_raspberrypi
   <<: *test_acceptance
   script:
     # Fetch artifacts from temporary S3 bucket
-    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
-    - tar xzf deploy.tar.gz
+    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
+    - tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
+    - mv ${RASPBERRYPI_PLATFORM} deploy
     # Extract converted Raspbian artifacts
-    - unxz deploy/${RASPBIAN_NAME}-raspberrypi3-mender.img.xz
-    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-raspberrypi3-mender
+    - unxz deploy/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
+    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+
+test_acceptance_prebuilt_raspberrypi3:
+  <<: *test_acceptance_prebuilt_raspberrypi
+  dependencies:
+    - build
+    - convert_raspbian_raspberrypi3
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi3
+
+test_acceptance_prebuilt_raspberrypi4:
+  <<: *test_acceptance_prebuilt_raspberrypi
+  dependencies:
+    - build
+    - convert_raspbian_raspberrypi4
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4
 
 test_acceptance_qemux86_64:
   <<: *test_acceptance
@@ -156,21 +183,30 @@ publish:s3:
     - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
     - apt update && apt install -yyq awscli
     # Fetch artifacts from temporary S3 bucket
-    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/deploy.tar.gz deploy.tar.gz
-    - tar xzf deploy.tar.gz
+    - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
+    -   aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
+    -   tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
+    - done
   script:
     # Prepare high privilege S3 keys (the TMP_STORAGE keys are for the tmp storage only)
     - export AWS_ACCESS_KEY_ID=$PUBLISH_AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$PUBLISH_AWS_SECRET_ACCESS_KEY
-    - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz version to S3"
-    - aws s3 cp deploy/${RASPBIAN_NAME}-raspberrypi3-mender.img.xz
-        s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
-    - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-        --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.img.xz
-    - echo "Publishing ${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender version to S3"
-    - aws s3 cp deploy/${RASPBIAN_NAME}-raspberrypi3-mender.mender
-        s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
-    - aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-        --key ${RASPBIAN_NAME}/arm/${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}.mender
+
+    - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
+    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.img.xz
+    -   echo "Publishing ${PUBLISH_NAME} version to S3"
+    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
+          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+    -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
+          --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+
+    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.mender
+    -   echo "Publishing ${PUBLISH_NAME} version to S3"
+    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.mender
+          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+    -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
+          --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+    - done
+
   only:
     - /^(master|[0-9]+\.[0-9]+\.x)$/
