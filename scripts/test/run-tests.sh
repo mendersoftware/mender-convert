@@ -15,20 +15,15 @@ fi
 
 WORKSPACE=./tests
 
-BBB_DEBIAN_IMAGE="bone-debian-9.5-iot-armhf-2018-08-30-4gb.img"
-BBB_DEBIAN_IMAGE_URL="http://debian.beagleboard.org/images/${BBB_DEBIAN_IMAGE}.xz"
+BBB_DEBIAN_IMAGE_URL="http://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz"
 
-RASPBIAN_IMAGE="2019-09-26-raspbian-buster-lite"
 RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip"
 
-TINKER_IMAGE="20170417-tinker-board-linaro-stretch-alip-v1.8"
-TINKER_IMAGE_URL="http://dlcdnet.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/${TINKER_IMAGE}.zip"
+TINKER_IMAGE_URL="http://dlcdnet.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/20170417-tinker-board-linaro-stretch-alip-v1.8.zip"
 
-UBUNTU_IMAGE="Ubuntu-Bionic-x86-64.img"
-UBUNTU_IMAGE_URL="https://d1b0l86ne08fsf.cloudfront.net/mender-convert/images/${UBUNTU_IMAGE}.gz"
+UBUNTU_IMAGE_URL="https://d1b0l86ne08fsf.cloudfront.net/mender-convert/images/Ubuntu-Bionic-x86-64.img.gz"
 
-UBUNTU_SERVER_RPI_IMAGE="ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img"
-UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/${UBUNTU_SERVER_RPI_IMAGE}.xz"
+UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img.xz"
 
 # Keep common function declarations in separate utils script
 UTILS_PATH=${0/$(basename $0)/test-utils.sh}
@@ -60,21 +55,39 @@ if [ "$1" == "--prebuilt-image" ]; then
 
 else
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "qemux86_64" ]; then
+    wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/
     convert_and_test "qemux86_64" \
                      "release-1" \
-                     "${UBUNTU_IMAGE_URL}" \
-                     "${UBUNTU_IMAGE}" \
-                     "${UBUNTU_IMAGE}.gz" \
-                     "configs/qemux86-64_config" || test_result=$?
+                     "input/Ubuntu-Bionic-x86-64.img.gz" \
+                     "--config configs/qemux86-64_config" || test_result=$?
+
+    echo >&2 "----------------------------------------"
+    echo >&2 "Running the uncompressed test"
+    echo >&2 "----------------------------------------"
+    rm -rf deploy
+    gunzip --force "input/Ubuntu-Bionic-x86-64.img.gz"
+    convert_and_test "qemux86_64" \
+                     "release-1" \
+                     "input/Ubuntu-Bionic-x86-64.img" \
+                     "--config configs/qemux86-64_config" || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "raspberrypi3" ]; then
+    wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "${RASPBIAN_IMAGE_URL}" \
-                     "${RASPBIAN_IMAGE}.img" \
-                     "${RASPBIAN_IMAGE}.zip" \
-                     "configs/raspberrypi3_config" || test_result=$?
+                     "input/2019-09-26-raspbian-buster-lite.zip" \
+                     "--config configs/raspberrypi3_config" || test_result=$?
+
+    echo >&2 "----------------------------------------"
+    echo >&2 "Running the uncompressed test"
+    echo >&2 "----------------------------------------"
+    rm -rf deploy
+    unzip -o "input/2019-09-26-raspbian-buster-lite.zip" -d "./input"
+    convert_and_test "raspberrypi3" \
+                     "release-1" \
+                     "input/2019-09-26-raspbian-buster-lite.img" \
+                     "--config configs/raspberrypi3_config" || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "linaro-alip" ]; then
@@ -88,20 +101,37 @@ else
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then
+    wget --progress=dot:giga -N ${BBB_DEBIAN_IMAGE_URL} -P input/
     convert_and_test "beaglebone" \
                      "release-1" \
-                     "${BBB_DEBIAN_IMAGE_URL}" \
-                     "${BBB_DEBIAN_IMAGE}" \
-                     "${BBB_DEBIAN_IMAGE}.xz" || test_result=$?
+                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz" || test_result=$?
+
+    echo >&2 "----------------------------------------"
+    echo >&2 "Running the uncompressed test"
+    echo >&2 "----------------------------------------"
+    rm -rf deploy
+    unxz --force "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz"
+    convert_and_test "beaglebone" \
+                     "release-1" \
+                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img" || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
+    wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "${UBUNTU_SERVER_RPI_IMAGE_URL}" \
-                     "${UBUNTU_SERVER_RPI_IMAGE}" \
-                     "${UBUNTU_SERVER_RPI_IMAGE}.xz" \
-                     "configs/raspberrypi3_config" || test_result=$?
+                     "input/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img.xz" \
+                     "--config configs/raspberrypi3_config" || test_result=$?
+
+    echo >&2 "----------------------------------------"
+    echo >&2 "Running the uncompressed test"
+    echo >&2 "----------------------------------------"
+    rm -rf deploy
+    unxz --force "input/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img.xz"
+    convert_and_test "raspberrypi3" \
+                     "release-1" \
+                     "input/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img" \
+                     "--config configs/raspberrypi3_config" || test_result=$?
   fi
 
   exit $test_result
