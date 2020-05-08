@@ -130,7 +130,6 @@ mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
 mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
 kernel_imagetype=${kernel_imagetype}
 initrd_imagetype=${initrd_imagetype}
-kernel_devicetree=${MENDER_DTB_NAME}
 EOF
 
   if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
