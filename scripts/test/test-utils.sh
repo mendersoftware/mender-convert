@@ -4,75 +4,93 @@ WORKSPACE=${WORKSPACE:-./tests}
 
 MENDER_CONVERT_DIR=$PWD
 
+#
+# function image_name_after_conversion()
+#
+# Transforms the given input image name to the name given to the output image by
+# mender-convert.
+#
+# That is, an input image 'bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz'
+#
+# T(bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz)
+#          -> bone-debian-9.5-iot-armhf-2018-08-30-4gb-beaglebone-mender
+#
+# $1 - image name, with optional .img and compression endings
+# $2 - the compression used for the image
+# $3 - the device type
+#
+function image_name_after_conversion () {
+  if (( $# < 1 )); then
+    echo "image_name_after_conversion requires one argument. $# given."
+    exit 1
+  fi
+  local converted_image_name="$1"
+  local compression="${2}"
+  local device_type="${3}"
+  # Remove the compression if any
+  if [[ "${compression}" != "img" ]]; then
+    converted_image_name="${converted_image_name%.${compression}}"
+  fi
+  # remove the .img extension if any
+  converted_image_name="${converted_image_name%.img}"
+  # Add the extension which a successful mender-conversion will apply
+  converted_image_name="${converted_image_name}-${device_type}-mender.img"
+  # Add the compression back in
+  if [[ "${compression}" != "img" ]]; then
+    converted_image_name="${converted_image_name}.${compression}"
+  fi
+  echo "$(basename ${converted_image_name})"
+}
+
+function assert () {
+  if (( $# < 2 )); then
+    echo >&2 "assert() requires at least an expected and an actual value"
+  fi
+  if [[ "$1" == "$2" ]]; then
+    return
+  fi
+  # Neither string nor value matched the assertion
+  echo >&2 "Assertion error: $1 not equal to $2"
+  [[ -n "$3" ]] && echo >&2 "$3"
+  exit 1
+}
+
+source modules/decompressinput.sh
+
 convert_and_test() {
   device_type=$1
   artifact_name=$2
-  image_url=$3
-  image_file=$4
-  image_file_compressed=$5
-  config=$6 # Optional
-
-  wget --progress=dot:giga -N ${image_url} -P input/
-
-  echo "Extracting: ${image_file_compressed}"
-  case "${image_file_compressed}" in
-    *.gz)
-      gunzip -f input/${image_file_compressed}
-      ;;
-    *.zip)
-      cd input
-      unzip -o ${image_file_compressed}
-      cd -
-      ;;
-    *.xz)
-      xz -d -f input/${image_file_compressed}
-      ;;
-    *)
-      echo "Unknown image type: ${image_file_compressed}"
-      exit 1
-      ;;
-  esac
+  image_file=$3
+  extra_args=$4 # Optional
 
   rm -f ${WORKSPACE}/test_config
 
-  # Two motives for the following statement
-  #
-  # - speed up tests by avoiding decompression on all images (majority of images
-  #   we test have a platform specific configuration)
-  #
-  # - test providing multiple '--config' options
-  #
-  # - (when no platform configuration is provided) test conversion without
-  #   '--config' and with MENDER_COMPRESS_DISK_IMAGE=gzip. Compressed disk
-  #   images is the default user facing option and we need to ensure that we
-  #   cover this in the tests.
-  if [ -n "${config}" ]; then
-    echo "Will disable MENDER_COMPRESS_DISK_IMAGE for this image"
-    echo "MENDER_COMPRESS_DISK_IMAGE=none" > ${WORKSPACE}/test_config
-    local MENDER_CONVERT_EXTRA_ARGS="--config ${config} --config ${WORKSPACE}/test_config"
-  fi
-
   MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
-    --disk-image input/${image_file} \
-    ${MENDER_CONVERT_EXTRA_ARGS}
+                      --disk-image ${image_file} \
+                      ${extra_args}
 
+  local compression="${image_file##*.}"
   local ret=0
 
-  # The output image name after conversion
-  image_name="${image_file%.img}-${device_type}-mender"
+  image_name=$(image_name_after_conversion "${image_file}" "${compression}" "${device_type}")
 
-  run_tests "${device_type}"  "$image_name" || ret=$?
+  converted_image_file="${MENDER_CONVERT_DIR}/deploy/$(basename ${image_name})"
 
-  rm -f deploy/${image_file}*
+  converted_image_uncompressed="$(decompress_image ${converted_image_file} ${MENDER_CONVERT_DIR}/deploy)"
 
-  return $ret
+  run_tests "${device_type}"  "$(basename ${converted_image_uncompressed})" || ret=$?
+
+  assert "${ret}" "0" "Failed to convert ${image_file}"
+
 }
 
 run_tests() {
   device_type=$1
-  converted_image_name=$2
+  converted_image_file=$2
   shift 2
   pytest_args_extra=$@
+
+  converted_image_name="${converted_image_file%.img}"
 
   if pip3 list | grep -q -e pytest-html; then
     html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"

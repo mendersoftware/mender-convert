@@ -286,6 +286,10 @@ case "${MENDER_COMPRESS_DISK_IMAGE}" in
     log_info "Compressing ${img_path}.gz"
     run_and_log_cmd "pigz --best --force ${img_path}"
     ;;
+  zip)
+    log_info "Compressing ${img_path}.zip"
+    zip -9 "${img_path}.zip" "${img_path}"
+    ;;
   lzma)
     log_info "Compressing ${img_path}.xz"
     run_and_log_cmd "pxz --best --force ${img_path}"

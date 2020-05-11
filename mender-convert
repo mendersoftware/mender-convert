@@ -14,6 +14,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+source modules/bootstrap.sh
+source modules/cliparser.sh
+source modules/decompressinput.sh
+
+###############################################################################
+#                Declaration of important variables for this file             #
+###############################################################################
+declare override_extraargs="" # Override arguments passed to the sub-scripts
+declare compression_type=""   # Detected input file compression, also applied to the output
+declare ocfile="./work/override_compression_config"
+declare disk_image=""         # Needed in parse_cli_options, and is passed to decompress_image()
+declare -a overlays=()        # [Dummy] Needed in parse_cli_options, not here
+declare -a configs=()        # [Dummy] Needed in parse_cli_options, not here
+###############################################################################
+
+MENDER_CONVERT_VERSION=$(git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD)
+
 function show_help() {
   cat << EOF
 mender-convert
@@ -45,9 +62,10 @@ function trap_exit() {
   EXIT_CODE=$?
   if [[ ${EXIT_CODE} -ne 0 && ${EXIT_CODE} -ne ${FATAL_EXIT_CODE} ]]; then
     log_error "mender-convert failed"
-    tac work/convert.log | sed '/DEBUG/q' | tac | sed 's/Running/When running/'
+    [ -e work/convert.log ] && tac work/convert.log | sed '/DEBUG/q' | tac | sed 's/Running/When running/'
     log_error "mender-convert exit code: ${EXIT_CODE}"
   fi
+  mv work/convert.log convert.log
   sudo rm -rf work
 }
 
@@ -95,15 +113,22 @@ if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
   echo -e "\tMENDER_ARTIFACT_NAME=\"release-1\" ./mender-convert"
   exit 1
 fi
-
-source modules/bootstrap.sh
-
 mkdir -p work
 touch work/convert.log
 
-./mender-convert-extract "$@"
-./mender-convert-modify "$@"
-./mender-convert-package "$@"
+parse_cli_options "$@"
+
+uncompressed_disk_image="${disk_image}"
+compression_type=$(compression_type "${disk_image}")
+if [[ ${compression_type} != "none" ]]; then
+  uncompressed_disk_image=$(decompress_image "${disk_image}" "./work")
+  echo "MENDER_COMPRESS_DISK_IMAGE=${compression_type}" > ${ocfile}
+  override_extraargs="--disk-image ${uncompressed_disk_image} --config ${ocfile}"
+fi
+
+./mender-convert-extract "$@" ${override_extraargs}
+./mender-convert-modify  "$@" ${override_extraargs}
+./mender-convert-package "$@" ${override_extraargs}
 
 echo "Output Artifacts and images can be found in the deploy directory:"
 ls -1 deploy/*

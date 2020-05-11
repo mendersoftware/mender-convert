@@ -45,7 +45,10 @@ RUN apt-get update && apt-get install -y \
 # to regenerate the U-Boot boot.scr on platforms that need customization
     u-boot-tools \
 # needed to run pxz
-    libgomp1
+    libgomp1  \
+# zip and unzip archive
+    zip  \
+    unzip
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
