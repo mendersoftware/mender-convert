@@ -29,7 +29,9 @@ declare compression_type=""   # Detected input file compression, also applied to
 declare ocfile="./work/override_compression_config"
 declare disk_image=""         # Needed in parse_cli_options, and is passed to decompress_image()
 declare -a overlays=()        # [Dummy] Needed in parse_cli_options, not here
-declare -a configs=()        # [Dummy] Needed in parse_cli_options, not here
+declare -a configs=()         # [Dummy] Needed in parse_cli_options, not here
+MENDER_ARTIFACT_NAME="${MENDER_ARTIFACT_NAME:-}"     # Required env variable
+MENDER_CONVERT_VERSION="${MENDER_CONVERT_VERSION:-}" # Required env variable
 ###############################################################################
 
 function show_help() {
