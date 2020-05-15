@@ -18,6 +18,9 @@ source modules/bootstrap.sh
 source modules/cliparser.sh
 source modules/decompressinput.sh
 
+mkdir -p work
+touch work/convert.log
+
 ###############################################################################
 #                Declaration of important variables for this file             #
 ###############################################################################
@@ -111,8 +114,6 @@ if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
   echo -e "\tMENDER_ARTIFACT_NAME=\"release-1\" ./mender-convert"
   exit 1
 fi
-mkdir -p work
-touch work/convert.log
 
 parse_cli_options "$@"
 
