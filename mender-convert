@@ -29,8 +29,6 @@ declare -a overlays=()        # [Dummy] Needed in parse_cli_options, not here
 declare -a configs=()        # [Dummy] Needed in parse_cli_options, not here
 ###############################################################################
 
-MENDER_CONVERT_VERSION=$(git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD)
-
 function show_help() {
   cat << EOF
 mender-convert
