@@ -23,6 +23,9 @@ probe_arch() {
   # to busybox
   file_info=""
   for location in bin/ls usr/bin/ls; do
+    if [ -L work/rootfs/${location} ]; then
+        location=$(readlink work/rootfs/${location})
+    fi
     if [ -e work/rootfs/${location} ]; then
       file_info=$(file -b --dereference work/rootfs/${location})
       break
