@@ -18,6 +18,9 @@ source modules/bootstrap.sh
 source modules/cliparser.sh
 source modules/decompressinput.sh
 
+mkdir -p work
+touch work/convert.log
+
 ###############################################################################
 #                Declaration of important variables for this file             #
 ###############################################################################
@@ -26,10 +29,10 @@ declare compression_type=""   # Detected input file compression, also applied to
 declare ocfile="./work/override_compression_config"
 declare disk_image=""         # Needed in parse_cli_options, and is passed to decompress_image()
 declare -a overlays=()        # [Dummy] Needed in parse_cli_options, not here
-declare -a configs=()        # [Dummy] Needed in parse_cli_options, not here
+declare -a configs=()         # [Dummy] Needed in parse_cli_options, not here
+MENDER_ARTIFACT_NAME="${MENDER_ARTIFACT_NAME:-}"     # Required env variable
+MENDER_CONVERT_VERSION="${MENDER_CONVERT_VERSION:-}" # Required env variable
 ###############################################################################
-
-MENDER_CONVERT_VERSION=$(git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD)
 
 function show_help() {
   cat << EOF
@@ -113,8 +116,6 @@ if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
   echo -e "\tMENDER_ARTIFACT_NAME=\"release-1\" ./mender-convert"
   exit 1
 fi
-mkdir -p work
-touch work/convert.log
 
 parse_cli_options "$@"
 

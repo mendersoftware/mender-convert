@@ -81,7 +81,7 @@ function decompress_image () {
       xzcat "${input_image}" > "${disk_image}"
       ;;
     * )
-      log_fatal "Unsupported input image type: ${input_image}"
+      log_fatal "Unsupported input image format: ${input_image}. We support: '.img', '.gz', '.zip', '.xz'."
       ;;
   esac
   echo "${disk_image}"
