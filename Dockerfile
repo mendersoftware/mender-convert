@@ -1,6 +1,6 @@
 # Build pxz in separate image to avoid big image size
-FROM ubuntu:19.10 AS build
-RUN apt-get update && apt-get install -y \
+FROM ubuntu:20.04 AS build
+RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential \
     git \
     liblzma-dev
@@ -9,11 +9,11 @@ RUN apt-get update && apt-get install -y \
 RUN git clone https://github.com/jnovy/pxz.git /root/pxz
 RUN cd /root/pxz && make
 
-FROM ubuntu:19.10
+FROM ubuntu:20.04
 
 ARG MENDER_ARTIFACT_VERSION=3.2.1
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # For 'ar' command to unpack .deb
     binutils \
     xz-utils \
