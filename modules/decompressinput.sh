@@ -28,7 +28,7 @@ function compression_type () {
   fi
   local -r disk_image="${1}"
   case "${disk_image}" in
-    *.img | *.sdimg)
+    *.img | *.sdimg | *.wic | *.rpi-sdimg)
       echo "none"
       ;;
     *.gz)
