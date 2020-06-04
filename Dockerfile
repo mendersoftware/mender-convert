@@ -11,7 +11,7 @@ RUN cd /root/pxz && make
 
 FROM ubuntu:20.04
 
-ARG MENDER_ARTIFACT_VERSION=3.2.1
+ARG MENDER_ARTIFACT_VERSION=3.4.0b1
 
 RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # For 'ar' command to unpack .deb
