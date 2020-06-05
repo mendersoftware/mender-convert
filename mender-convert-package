@@ -23,8 +23,8 @@ PLATFORM_PACKAGE_HOOKS=(platform_package)
 
 function trap_exit() {
   echo "mender-convert-package has finished. Cleaning up..."
-  sudo umount -f work/boot > /dev/null
-  sudo umount -f work/rootfs > /dev/null
+  sudo umount -f work/boot > /dev/null 2>&1 || true
+  sudo umount -f work/rootfs > /dev/null 2>&1 || true
 }
 
 function trap_term() {
@@ -254,6 +254,10 @@ if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
   log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
   disk_write_at_offset "${output_dir}/boot-gap.bin" "${img_path}" "1"
 fi
+
+# Unmount filesystem image files
+run_and_log_cmd "sudo umount -f work/boot"
+run_and_log_cmd "sudo umount -f work/rootfs"
 
 # Burn Partitions
 log_info "Writing boot partition image"
