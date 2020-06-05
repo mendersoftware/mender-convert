@@ -32,7 +32,8 @@ function log {
   local -r message="$2"
   local -r timestamp=$(date +"%Y-%m-%d %H:%M:%S")
   local -r script_name="$(basename "$0")"
-  >&2 echo -e "${timestamp} [${level}] [$script_name] ${message}" | tee -a ${log_file}
+  echo -e "${timestamp} [${level}] [$script_name] ${message}" >> ${log_file}
+  >&2 echo -e "${timestamp} [${level}] [$script_name] ${message}"
 }
 
 function local_log_debug {
