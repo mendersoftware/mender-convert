@@ -94,7 +94,7 @@ run_and_log_cmd "wget -Nq ${MENDER_STORAGE_URL}/${MENDER_CLIENT_VERSION}/dist-pa
 
 cd work/mender-deb
 run_and_log_cmd "ar -xv ${deb_name}"
-run_and_log_cmd "tar xJf data.tar.xz -C files"
+run_and_log_cmd "sudo tar xJf data.tar.xz -C files"
 cd - > /dev/null 2>&1
 
 run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose work/mender-deb/files/ work/rootfs/"
