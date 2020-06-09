@@ -120,7 +120,7 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
   if [ -z "${MENDER_GRUB_INITRD_IMAGETYPE}" ]; then
     initrd_imagetype=$(probe_initrd_in_boot_and_root)
   else
-    kernel_imagetype="${MENDER_GRUB_INITRD_IMAGETYPE}"
+    initrd_imagetype="${MENDER_GRUB_INITRD_IMAGETYPE}"
   fi
 
   cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
