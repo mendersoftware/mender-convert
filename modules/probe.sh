@@ -139,7 +139,20 @@ probe_kernel_image() {
     #    vmlinuz-3.10.0-862.el7.x86_64
     #    vmlinuz-4.15.0-20-generic
     #
-    kernel_image_path=$(sudo find ${1} -name ${image}* ! -name '*-rescue-*')
+    #Search for kernels, resolve symlinks, ignore invalid and select the latest if many
+    kernels=$(sudo find ${1} -name ${image}* ! -name '*-rescue-*' ! -name '*.old' \
+              -exec readlink -f {} \; | awk -F '/' '{print $NF,$0}' | sort -k1rV | uniq)
+    kernel_image_path=$(head -n 1 <<< "$kernels" | cut -f2- -d' ')
+    n=$(wc -l <<< "$kernels")
+
+    if [ "$n" -gt "1" ];then
+      msg=$(awk '{printf "    %s\n", $2}' <<< ${kernels})
+      log_warn "Found multiple kernel images: \n\n${msg}\n"
+      log_warn "Selecting newest kernel image: \n\n    ${kernel_image_path}\n"
+      log_warn "Set MENDER_GRUB_KERNEL_IMAGETYPE to override selected kernel"
+    fi
+
+    #kernel_image_path=$(sudo find ${1} -name ${image}*  ! -name '*-rescue-*' | sort -rV | head -n 1 )
     if [ -n "${kernel_image_path}" ]; then
       break
     fi
@@ -161,7 +174,19 @@ probe_initrd_image() {
     #
     #    initrd.img-4.15.0-20-generic
     #
-    initrd_image_path=$(sudo find ${1} -name ${image}* ! -name '*-rescue-*')
+    #Search for initrd, resolve symlinks, ignore invalid and select the latest if many
+    initrds=$(sudo find ${1} -name ${image}* ! -name '*-rescue-*' ! -name '*.old' \
+              -exec readlink -f {} \; | awk -F '/' '{print $NF,$0}' | sort -k1rV | uniq)
+    initrd_image_path=$(head -n 1 <<< "$initrds" | cut -f2- -d' ')
+    n=$(wc -l <<< "$initrds")
+
+    if [ "$n" -gt "1" ];then
+      msg=$(awk '{printf "    %s\n", $2}' <<< ${initrds})
+      log_warn "Found multiple initrd images: \n\n${msg}\n"
+      log_warn "Selecting newest initrd: \n\n    ${initrd_image_path}\n"
+      log_warn "Set MENDER_GRUB_INITRD_IMAGETYPE to override selected initrd"
+    fi
+
     if [ -n "${initrd_image_path}" ]; then
       break
     fi
