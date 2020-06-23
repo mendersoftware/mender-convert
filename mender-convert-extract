@@ -76,7 +76,8 @@ if [ ! -f ${MKFS_VFAT} ]; then
   MKFS_VFAT="/sbin/mkfs.vfat"
 fi
 
-declare -i nr_of_parts=$(disk_get_nr_of_parts ${disk_image})
+declare -a part_nrs=($(disk_get_part_nums ${disk_image}))
+declare -i nr_of_parts=${#part_nrs[@]}
 
 log_info "Validating disk image"
 
@@ -87,7 +88,7 @@ fi
 log_info "Disk parsed successfully"
 log_info "NUMBER OF PARTS: ${nr_of_parts} TYPE: $(disk_get_part_value ${disk_image} 1 SCHEME)"
 
-for ((n=1;n<=${nr_of_parts};n++)); do
+for n in ${part_nrs[*]} ; do
   part_dst_file="work/part-${n}.fs"
 
   if [ "$(disk_get_part_value ${disk_image} ${n} TYPE)" == "0x8e" ]; then
