@@ -62,6 +62,9 @@ cat <<- EOF > ${output_dir}/etc/mender/mender.conf
   "UpdatePollIntervalSeconds": 5
 }
 EOF
+
+chmod 600 ${output_dir}/etc/mender/mender.conf
+
 cat <<- EOF > ${output_dir}/etc/hosts
 127.0.0.1	localhost
 

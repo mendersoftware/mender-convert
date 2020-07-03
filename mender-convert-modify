@@ -193,6 +193,7 @@ cat <<- EOF > work/mender.conf.data
 EOF
 
 run_and_log_cmd "sudo cp work/mender.conf.data work/rootfs/data/mender/mender.conf"
+run_and_log_cmd "sudo chmod 600 work/rootfs/data/mender/mender.conf"
 
 if [ -z "${MENDER_DEVICE_TYPE}" ]; then
   # Observed systems who do not have this file, e.g images generated with mkosi
