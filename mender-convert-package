@@ -78,6 +78,12 @@ output_dir=work
 boot_part=$(disk_boot_part)
 root_part=$(disk_root_part)
 
+# Sysfs device paths
+boot_part_device=$(disk_boot_part_device)
+data_part_device=$(disk_data_part_device)
+root_part_a_device=$(disk_root_part_a_device)
+root_part_b_device=$(disk_root_part_b_device)
+
 # Final output
 mkdir -p deploy
 
@@ -249,6 +255,27 @@ run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext2 ${rootfs
 run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext2 ${data_start} ${data_end}"
 run_and_log_cmd "${PARTED} -s ${img_path} print"
 
+# Update partition uuids if required
+if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+  boot_partuuid=$(disk_get_partuuid_from_device "${boot_part_device}")
+  rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
+  rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+  data_partuuid=$(disk_get_partuuid_from_device "${data_part_device}")
+
+  if [ "${partition_scheme}" == "gpt" ]; then
+    log_info "Updating GPT partition uuids in image: '${img_path}'"
+    run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
+    run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_A_NUMBER}:${rootfsa_partuuid} '${img_path}'"
+    run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_B_NUMBER}:${rootfsb_partuuid} '${img_path}'"
+    run_and_log_cmd "sgdisk -u ${MENDER_DATA_PART_NUMBER}:${data_partuuid} '${img_path}'"
+  else
+    diskid=$(disk_get_partuuid_dos_diskid_from_device "${root_part_a_device}")
+    log_info "Updating MBR disk identifier for partition uuid support to: '0x${diskid}'"
+    run_and_log_cmd "xxd -r -p <<< '${diskid}' | LC_ALL=C rev | dd of='${img_path}' bs=1 seek=440 count=4 conv=notrunc"
+  fi
+
+fi
+
 # Write boot-gap
 if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
   log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
@@ -324,16 +351,16 @@ fi
 distro_feature="${distro_feature} mender-convert"
 
 cat <<- EOF > deploy/${image_name}.cfg
-MENDER_BOOT_PART="${MENDER_STORAGE_DEVICE_BASE}${MENDER_BOOT_PART_NUMBER}"
-MENDER_ROOTFS_PART_A="${MENDER_STORAGE_DEVICE_BASE}${MENDER_ROOTFS_PART_A_NUMBER}"
-MENDER_ROOTFS_PART_B="${MENDER_STORAGE_DEVICE_BASE}${MENDER_ROOTFS_PART_B_NUMBER}"
+MENDER_BOOT_PART="${boot_part_device}"
+MENDER_ROOTFS_PART_A="${root_part_a_device}"
+MENDER_ROOTFS_PART_B="${root_part_b_device}"
+MENDER_DATA_PART="${data_part_device}"
 MENDER_BOOT_PART_MOUNT_LOCATION="${boot_part_mountpoint}"
 MENDER_BOOT_PART_SIZE_MB="$(disk_sectors_to_mb ${boot_part_sectors})"
 MENDER_DATA_PART_SIZE_MB="${MENDER_DATA_PART_SIZE_MB}"
 MENDER_DEVICE_TYPE="${device_type}"
 MENDER_PARTITIONING_OVERHEAD_KB="$(( (${overhead_sectors} * 512) / 1024 ))"
 MENDER_PARTITION_ALIGNMENT="${MENDER_PARTITION_ALIGNMENT}"
-MENDER_STORAGE_DEVICE_BASE="${MENDER_STORAGE_DEVICE_BASE}"
 MENDER_STORAGE_TOTAL_SIZE_MB="${MENDER_STORAGE_TOTAL_SIZE_MB}"
 MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET="12582912"
 MENDER_ARTIFACT_NAME="${artifact_name}"
@@ -341,6 +368,14 @@ DISTRO_FEATURES="${distro_feature}"
 DEPLOY_DIR_IMAGE="${PWD}/deploy"
 MENDER_MACHINE="${device_type}"
 EOF
+
+
+# Outputting device base only relevant for some configurations
+if [ "${MENDER_ENABLE_PARTUUID}" != "y" ]; then
+    cat <<- EOF >> deploy/${image_name}.cfg
+MENDER_STORAGE_DEVICE_BASE="${MENDER_STORAGE_DEVICE_BASE}"
+EOF
+fi
 
 # Something that the tests expect to be defined (originally from Yocto)
 cat <<- EOF >> deploy/${image_name}.cfg

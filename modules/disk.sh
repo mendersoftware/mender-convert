@@ -178,3 +178,186 @@ disk_root_part() {
   fi
   echo "${root_part}"
 }
+
+
+# Check if supplied argument is valid partuuid device path.
+# Supports both dos and gpt paths
+#
+# $1 - partuuid device path
+disk_is_valid_partuuid_device() {
+  disk_is_valid_partuuid_gpt_device "$1" || disk_is_valid_partuuid_dos_device "$1"
+}
+
+
+# Check if supplied argument is valid gpt partuuid device path.
+#
+# Example: /dev/disk/by-partuuid/26445670-f37c-408b-be2c-3ef419866620
+#
+# $1 - gpt partuuid device path
+disk_is_valid_partuuid_gpt_device() {
+  echo "${1}" | grep -qE '^/dev/disk/by-partuuid/([0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12})$'
+}
+
+
+# Check if supplied argument is valid dos partuuid device path.
+#
+# Example: /dev/disk/by-partuuid/26445670-01
+#
+# $1 - dos partuuid device path
+disk_is_valid_partuuid_dos_device() {
+  echo "${1}" | grep -qE '^/dev/disk/by-partuuid/[0-9a-f]{8}-[0-9a-f]{2}$'
+}
+
+
+# Get partuuid from supplied device path.
+# Supports both dos and gpt paths
+#
+# $1 - partuuid device path
+disk_get_partuuid_from_device() {
+  if ! disk_is_valid_partuuid_device "${1}"; then
+    log_fatal "Invalid partuuid device: '${1}'"
+  fi
+  echo "${1}" | sed "s:/dev/disk/by-partuuid/::"
+}
+
+
+# Get dos disk identifier from supplied device path.
+#
+# $1 - dos compatible partuuid device path
+disk_get_partuuid_dos_diskid_from_device() {
+  if ! disk_is_valid_partuuid_dos_device "${1}"; then
+    log_fatal "Invalid dos partuuid device: '${1}'"
+  fi
+  partuuid=$(disk_get_partuuid_from_device "${1}")
+  echo "$partuuid" | cut -d- -f1
+}
+
+
+# Get dos partuuid number from supplied device path.
+#
+# $1 - dos compatible partuuid device path
+disk_get_partuuid_dos_part_number() {
+  if ! disk_is_valid_partuuid_dos_device "${1}"; then
+    log_fatal "Invalid dos partuuid device: '${1}'"
+  fi
+  partuuid=$(disk_get_partuuid_from_device "${1}")
+  echo "$partuuid" | cut -d- -f2
+}
+
+# Get correct device path for current configuration.
+# Unrecognized or unsupported device paths will generate an error
+#
+# $1 - partition number to use if fine grained variable not set
+# $2 - fine grained device part variable name
+disk_get_part_device() {
+  part="${!2}"
+  if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+      if ! disk_is_valid_partuuid_device "${part}"; then
+        log_fatal "Invalid partuuid device for ${2}: '${part}'"
+      fi
+  else
+    part="${MENDER_STORAGE_DEVICE_BASE}${1}"
+  fi
+  echo "${part}"
+}
+
+disk_boot_part_device() {
+  disk_get_part_device "${MENDER_BOOT_PART_NUMBER}" "MENDER_BOOT_PART"
+}
+
+disk_data_part_device() {
+  disk_get_part_device "${MENDER_DATA_PART_NUMBER}" "MENDER_DATA_PART"
+}
+
+disk_root_part_a_device() {
+  disk_get_part_device "${MENDER_ROOTFS_PART_A_NUMBER}" "MENDER_ROOTFS_PART_A"
+}
+
+disk_root_part_b_device() {
+  disk_get_part_device "${MENDER_ROOTFS_PART_B_NUMBER}" "MENDER_ROOTFS_PART_B"
+}
+
+
+# Get device partition number from device path.
+# Unrecognized or unsupported device paths will generate an error
+#
+# $1 - device path
+disk_get_device_part_number() {
+    dev_part="unknown"
+    case "$1" in
+        /dev/nvme*n*p* )
+            dev_part=$(echo $1 | cut -dp -f2)
+            ;;
+        /dev/mmcblk*p* )
+            dev_part=$(echo $1 | cut -dp -f2)
+            ;;
+        /dev/[sh]d[a-z][1-9]* )
+            dev_part=${1##*d[a-z]}
+            ;;
+        ubi*_* )
+            dev_part=$(echo $1 | cut -d_ -f2)
+            ;;
+        /dev/disk/by-partuuid/* )
+            if disk_is_valid_partuuid_dos_device "$1";then
+              dev_part=$(disk_get_partuuid_dos_part_number "$1")
+              dev_part=$((16#${dev_part}))
+            else
+              log_fatal "partition number does not exist for GPT partuuid: '$1'"
+            fi
+            ;;
+    esac
+    part=$(printf "%d" $dev_part 2>/dev/null)
+    if [ $? = 1 ]; then
+        log_fatal "Could not determine partition number from '${1}'"
+    else
+        echo "$part"
+    fi
+}
+
+# Get device base path without partition number from argument.
+# Unrecognized or unsupported device paths will generate an error
+#
+# $1 - device path
+disk_get_device_base() {
+    dev_base=""
+    case "$1" in
+        /dev/nvme*n*p* )
+            dev_base=$(echo $1 | cut -dp -f1)
+            ;;
+        /dev/mmcblk*p* )
+            dev_base=$(echo $1 | cut -dp -f1)
+            ;;
+        /dev/[sh]d[a-z][1-9]* )
+            dev_base=${1%%[1-9]*}
+            ;;
+        ubi*_* )
+            dev_base=$(echo $1 | cut -d_ -f1)
+            ;;
+        /dev/disk/by-partuuid/* )
+            log_fatal "device base does not exist for GPT partuuid: '$1'"
+            ;;
+    esac
+    if [ -z "$dev_base" ]; then
+        log_fatal "Could not determine device base from '${1}'"
+    else
+        echo $dev_base
+    fi
+}
+
+
+# Conditionally redefine partition number/device if fine grained variable set.
+#
+# $1 - variable name
+# $2 - variable value
+disk_override_partition_variable() {
+  if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+      if disk_is_valid_partuuid_dos_device "${2}";then
+        eval "${1}"=$(disk_get_device_part_number "${2}")
+      fi
+  else
+      if [ -n "${2}" ];then
+        eval "${1}"=$(disk_get_device_part_number "${2}")
+        MENDER_STORAGE_DEVICE_BASE=$(disk_get_device_base "${2}")
+      fi
+  fi
+}

@@ -20,3 +20,10 @@ for config in "${configs[@]}"; do
   log_info "Using configuration file: ${config}"
   source "${config}"
 done
+
+
+# Fine grained partition variables override device/number variables where applicable
+disk_override_partition_variable "MENDER_BOOT_PART_NUMBER" "${MENDER_BOOT_PART}"
+disk_override_partition_variable "MENDER_ROOTFS_PART_A_NUMBER" "${MENDER_ROOTFS_PART_A}"
+disk_override_partition_variable "MENDER_ROOTFS_PART_B_NUMBER" "${MENDER_ROOTFS_PART_B}"
+disk_override_partition_variable "MENDER_DATA_PART_NUMBER" "${MENDER_DATA_PART}"

@@ -77,6 +77,12 @@ source modules/config.sh $(printf "%q " "${configs[@]}")
 boot_part=$(disk_boot_part)
 root_part=$(disk_root_part)
 
+# Sysfs device paths
+boot_part_device=$(disk_boot_part_device)
+data_part_device=$(disk_data_part_device)
+root_part_a_device=$(disk_root_part_a_device)
+root_part_b_device=$(disk_root_part_b_device)
+
 # Create mount points
 mkdir -p work/boot
 mkdir -p work/rootfs
@@ -126,11 +132,26 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
   cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_rootfsa_part=${MENDER_ROOTFS_PART_A_NUMBER}
 mender_rootfsb_part=${MENDER_ROOTFS_PART_B_NUMBER}
-mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
 mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
 kernel_imagetype=${kernel_imagetype}
 initrd_imagetype=${initrd_imagetype}
 EOF
+
+# For partuuid support grub.cfg expects dedicated variables to be added
+if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+   rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
+   rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+   log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
+   log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
+   cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+mender_rootfsa_uuid=${rootfsa_partuuid}
+mender_rootfsb_uuid=${rootfsb_partuuid}
+EOF
+else
+  cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
+EOF
+fi
 
   if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
     cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/11_bootargs_grub.cfg
@@ -185,10 +206,13 @@ fi
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender"
 run_and_log_cmd "sudo ln -sf /data/mender work/rootfs/var/lib/mender"
 
+log_info "Using root device A in mender.conf: $root_part_a_device"
+log_info "Using root device B in mender.conf: $root_part_b_device"
+
 cat <<- EOF > work/mender.conf.data
 {
-  "RootfsPartA": "${MENDER_STORAGE_DEVICE_BASE}${MENDER_ROOTFS_PART_A_NUMBER}",
-  "RootfsPartB": "${MENDER_STORAGE_DEVICE_BASE}${MENDER_ROOTFS_PART_B_NUMBER}"
+  "RootfsPartA": "${root_part_a_device}",
+  "RootfsPartB": "${root_part_b_device}"
 }
 EOF
 
@@ -232,13 +256,17 @@ if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
   MENDER_DATA_PART_FSTAB_OPTS="${MENDER_DATA_PART_FSTAB_OPTS},x-systemd.growfs"
 fi
 
+
+log_info "Using boot partition device in fstab: $boot_part_device"
+log_info "Using data partition device in fstab: $data_part_device"
+
 sudo bash -c "cat <<- EOF > work/rootfs/etc/fstab
 # stock fstab - you probably want to override this with a machine specific one
 /dev/root            /                    auto       defaults              1  1
 proc                 /proc                proc       defaults              0  0
 
-${MENDER_STORAGE_DEVICE_BASE}${MENDER_BOOT_PART_NUMBER}   ${boot_part_mountpoint}          auto       defaults,sync    0  0
-${MENDER_STORAGE_DEVICE_BASE}${MENDER_DATA_PART_NUMBER}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0
+${boot_part_device}   ${boot_part_mountpoint}          auto       defaults,sync    0  0
+${data_part_device}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0
 EOF"
 
 log_info "Performing platform specific modifications (if any)"

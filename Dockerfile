@@ -21,8 +21,9 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     file \
 # to copy files between rootfs directories
     rsync \
-# to generate partition table
+# to generate partition table and alter partitions
     parted \
+    gdisk \
 # mkfs.ext4 and family
     e2fsprogs \
 # mkfs.xfs and family
@@ -48,7 +49,9 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     libgomp1  \
 # zip and unzip archive
     zip  \
-    unzip
+    unzip \
+# manipulate binary and hex
+    xxd
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
