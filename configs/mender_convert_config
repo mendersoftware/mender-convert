@@ -122,6 +122,21 @@ MENDER_ROOTFS_PART_B_NUMBER="3"
 # Partition number of persistent data partition
 MENDER_DATA_PART_NUMBER="4"
 
+# Use partition uuids rather than device and partition numbers
+MENDER_ENABLE_PARTUUID="n"
+
+# Partition used as the boot partition.
+MENDER_BOOT_PART=""
+
+# Partition used as the first (A) rootfs partition.
+MENDER_ROOTFS_PART_A=""
+
+# Partition used as the first (B) rootfs partition.
+MENDER_ROOTFS_PART_B=""
+
+# Partition used as the persistent data partition.
+MENDER_DATA_PART=""
+
 # Basename of DTB that should be loaded by the bootloader.
 MENDER_DTB_NAME=kernel.dtb
 
