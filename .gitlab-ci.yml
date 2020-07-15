@@ -207,6 +207,3 @@ publish:s3:
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
     - done
-
-  only:
-    - /^(master|[0-9]+\.[0-9]+\.x)$/
