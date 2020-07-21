@@ -71,8 +71,12 @@ function platform_modify() {
     RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
   fi
 
-  # Extract Linux kernel and install to /boot directory on rootfs
-  run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
+  # Extract Linux kernel and install to /boot directory on rootfs if it doesn't already exist.
+  # If it already exists, the input image is likely already converted so we just want to use
+  # the existing kernel image.
+  if [ ! -f "work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}" ]; then
+    run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
+  fi
 
   # Replace kernel with U-boot and add boot script
   run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
