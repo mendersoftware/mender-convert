@@ -270,6 +270,19 @@ ${boot_part_device}   ${boot_part_mountpoint}          auto       defaults,sync 
 ${data_part_device}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0
 EOF"
 
+#
+# Make sure to re-label rootfs when selinux is in enforcing mode
+# e.g. CentOS8 after conversion cannot start login shell due selinux
+# inspired by: https://forums.centos.org/viewtopic.php?t=48714
+#
+if [ -f work/rootfs/etc/selinux/config ]; then
+  grep -r 'SELINUX=Enforcing' work/rootfs/etc/selinux/config || true
+  if [ $? -eq 0 ]; then
+    log_info "Selinux is in enforcing mode. Enable autorelabel"
+    touch work/rootfs/.autorelabel
+  fi
+fi
+
 log_info "Performing platform specific modifications (if any)"
 for hook in "${PLATFORM_MODIFY_HOOKS[@]}"; do
   log_info "Running hook: $hook"
