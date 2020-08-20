@@ -23,7 +23,7 @@ TINKER_IMAGE_URL="http://dlcdnet.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/201
 
 UBUNTU_IMAGE_URL="https://d1b0l86ne08fsf.cloudfront.net/mender-convert/images/Ubuntu-Bionic-x86-64.img.gz"
 
-UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img.xz"
+UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img.xz"
 
 # Keep common function declarations in separate utils script
 UTILS_PATH=${0/$(basename $0)/test-utils.sh}
@@ -120,17 +120,17 @@ else
     wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "input/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img.xz" \
+                     "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img.xz" \
                      "--config configs/raspberrypi3_config" || test_result=$?
 
     echo >&2 "----------------------------------------"
     echo >&2 "Running the uncompressed test"
     echo >&2 "----------------------------------------"
     rm -rf deploy
-    unxz --force "input/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img.xz"
+    unxz --force "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img.xz"
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "input/ubuntu-18.04.4-preinstalled-server-armhf+raspi3.img" \
+                     "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img" \
                      "--config configs/raspberrypi3_config" || test_result=$?
   fi
 
