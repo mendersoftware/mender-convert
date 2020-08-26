@@ -114,13 +114,19 @@ disk_create_file_system_from_folder() {
 
   run_and_log_cmd "dd if=/dev/zero of=${2} seek=${3} count=0 bs=512 status=none"
 
+  case ${1} in
+      *data/ ) EXTRA_OPTS="${MENDER_DATA_PART_MKFS_OPTS}";;
+      *rootfs/ ) EXTRA_OPTS="${MENDER_ROOT_PART_MKFS_OPTS}";;
+      * ) EXTRA_OPTS="";;
+  esac
+
   case "$4" in
     "ext4")
       MKFS_EXT4="/usr/bin/mkfs.ext4"
       if [ ! -f ${MKFS_EXT4} ]; then
         MKFS_EXT4="/sbin/mkfs.ext4"
       fi
-      run_and_log_cmd "${MKFS_EXT4} -q -F ${2}"
+      run_and_log_cmd "${MKFS_EXT4} -q -F ${2} ${EXTRA_OPTS}"
       ;;
 
     "xfs")
@@ -128,7 +134,7 @@ disk_create_file_system_from_folder() {
       if [ ! -f ${MKFS_XFS} ]; then
         MKFS_XFS="/sbin/mkfs.xfs"
       fi
-      run_and_log_cmd "${MKFS_XFS} -q -f ${2}"
+      run_and_log_cmd "${MKFS_XFS} -q -f ${2} ${EXTRA_OPTS}"
       ;;
     *)
       log_fatal "Unknown file system type specified: ${4}"

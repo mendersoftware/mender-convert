@@ -32,8 +32,15 @@ MENDER_ARTIFACT_COMPRESSION="gzip"
 # this.
 MENDER_ENABLE_SYSTEMD=y
 
+
+# Custom mkfs options for creating the rootfs partition
+MENDER_ROOT_PART_MKFS_OPTS=""
+
 # Set the fstab options for mounting the data partition
 MENDER_DATA_PART_FSTAB_OPTS="defaults"
+
+# Custom mkfs options for creating the data partition
+MENDER_DATA_PART_MKFS_OPTS=""
 
 # The file system will be grown to occupy the full block device. If the file
 # system is already at maximum size, no action will be performed.
