@@ -57,7 +57,7 @@ if [ -z "${server_url}" ]; then
   exit 1
 fi
 
-sudo chown -R $(id -u).$(id -g) ${output_dir}
+[ -e ${output_dir} ] && sudo chown -R $(id -u).$(id -g) ${output_dir}
 mkdir -p ${output_dir}/etc/mender
 cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {

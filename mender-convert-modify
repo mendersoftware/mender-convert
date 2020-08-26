@@ -169,10 +169,14 @@ EOF
   # functionality, but lets get rid of them to avoid confusion.
   #
   # There is no Mender integration for EFI boot or systemd-boot.
-  sudo rm -rf work/boot/loader
+  sudo rm -rf work/boot/loader work/rootfs/boot/loader
   sudo rm -rf work/boot/EFI/Linux
   sudo rm -rf work/boot/EFI/systemd
   sudo rm -rf work/boot/NvVars
+  for empty_dir in $(cd work/boot; find . -maxdepth 1 -type d -empty); do
+      sudo rmdir work/boot/$empty_dir
+      sudo rm work/rootfs/boot/$empty_dir
+  done
 
   log_info "Installing GRUB"
 
