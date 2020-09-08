@@ -110,7 +110,7 @@ MENDER_PARTITION_ALIGNMENT="8388608"
 # Mender client version
 #
 # This is used to fetch the correct binaries
-MENDER_CLIENT_VERSION="master"
+MENDER_CLIENT_VERSION="2.4.0-build2"
 
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.
