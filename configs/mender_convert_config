@@ -38,7 +38,8 @@ MENDER_ROOT_PART_MKFS_OPTS=""
 
 # Set the fstab options for mounting the root partition
 MENDER_ROOT_PART_FSTAB_OPTS="defaults"
-# Set to 0 to disable fsck; needed for read-only rootfs support
+
+# Set to 0 to disable fsck; recommended for read-only rootfs
 MENDER_ROOT_PART_FS_PASSNO="1"
 
 # Set the fstab options for mounting the data partition

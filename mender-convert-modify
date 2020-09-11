@@ -261,6 +261,14 @@ if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
   MENDER_DATA_PART_FSTAB_OPTS="${MENDER_DATA_PART_FSTAB_OPTS},x-systemd.growfs"
 fi
 
+if echo ${MENDER_ROOT_PART_FSTAB_OPTS} | tr ',' '\n' | egrep -q "^ro$"; then
+  if ! echo "${MENDER_ROOT_PART_MKFS_OPTS}" | fgrep -q -- "-O ^64bit"; then
+    log_warn "EXT4 64bits feature is known to create unstable checksums on read-only file systems, add \"-O ^64bit\" to MENDER_ROOT_PART_MKFS_OPTS to remove it"
+  fi
+  if ! echo "${MENDER_ROOT_PART_MKFS_OPTS}" | fgrep -q -- "-O ^has_journal"; then
+    log_warn "EXT4 journal feature is known to create unstable checksums on read-only file systems, add \"-O ^has_journal\" to MENDER_ROOT_PART_MKFS_OPTS to remove it"
+  fi
+fi
 
 log_info "Using boot partition device in fstab: $boot_part_device"
 log_info "Using data partition device in fstab: $data_part_device"
