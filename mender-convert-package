@@ -250,9 +250,9 @@ else
   run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart primary fat32 ${boot_part_start} ${boot_part_end}"
 fi
 run_and_log_cmd "${PARTED} -s ${img_path} set 1 boot on"
-run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext2 ${rootfsa_start} ${rootfsa_end}"
-run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext2 ${rootfsb_start} ${rootfsb_end}"
-run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext2 ${data_start} ${data_end}"
+run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsa_start} ${rootfsa_end}"
+run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsb_start} ${rootfsb_end}"
+run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${data_start} ${data_end}"
 run_and_log_cmd "${PARTED} -s ${img_path} print"
 
 # Update partition uuids if required

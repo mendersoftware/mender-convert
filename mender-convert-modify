@@ -275,7 +275,7 @@ log_info "Using data partition device in fstab: $data_part_device"
 
 sudo bash -c "cat <<- EOF > work/rootfs/etc/fstab
 # stock fstab - you probably want to override this with a machine specific one
-/dev/root            /                    ext2       ${MENDER_ROOT_PART_FSTAB_OPTS} 1  ${MENDER_ROOT_PART_FS_PASSNO}
+/dev/root            /                    auto       ${MENDER_ROOT_PART_FSTAB_OPTS} 1  ${MENDER_ROOT_PART_FS_PASSNO}
 proc                 /proc                proc       defaults              0  0
 
 ${boot_part_device}   ${boot_part_mountpoint}          auto       defaults,sync    0  0
