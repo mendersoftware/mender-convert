@@ -92,7 +92,7 @@ run_tests() {
 
   converted_image_name="${converted_image_file%.img}"
 
-  if pip3 list | grep -q -e pytest-html; then
+  if pip3 list --format=columns | grep pytest-html; then
     html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
   fi
 
