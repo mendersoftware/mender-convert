@@ -137,21 +137,21 @@ kernel_imagetype=${kernel_imagetype}
 initrd_imagetype=${initrd_imagetype}
 EOF
 
-# For partuuid support grub.cfg expects dedicated variables to be added
-if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
-   rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
-   rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
-   log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
-   log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
-   cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+  # For partuuid support grub.cfg expects dedicated variables to be added
+  if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+    rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
+    rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+    log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
+    log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
+    cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_rootfsa_uuid=${rootfsa_partuuid}
 mender_rootfsb_uuid=${rootfsb_partuuid}
 EOF
-else
-  cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+  else
+    cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
 EOF
-fi
+  fi
 
   if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
     cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/11_bootargs_grub.cfg
@@ -174,8 +174,8 @@ EOF
   sudo rm -rf work/boot/EFI/systemd
   sudo rm -rf work/boot/NvVars
   for empty_dir in $(cd work/boot; find . -maxdepth 1 -type d -empty); do
-      sudo rmdir work/boot/$empty_dir
-      sudo rm work/rootfs/boot/$empty_dir
+    sudo rmdir work/boot/$empty_dir
+    sudo rm work/rootfs/boot/$empty_dir
   done
 
   log_info "Installing GRUB"
