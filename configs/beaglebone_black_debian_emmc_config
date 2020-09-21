@@ -1,7 +1,3 @@
-# Binaries generated with the following script:
-#    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-bbb.sh
-
-BEAGLEBONE_BLACK_CONFIG="beaglebone_black_debian_emmc"
 source configs/beaglebone_black_base_config
 MENDER_STORAGE_TOTAL_SIZE_MB="3648"
 MENDER_DEVICE_TYPE="beaglebone-emmc"
