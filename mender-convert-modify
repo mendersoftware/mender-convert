@@ -196,18 +196,18 @@ EOF
 
   run_and_log_cmd "sudo mkdir -p work/boot/EFI/BOOT"
   run_and_log_cmd "sudo cp work/${efi_name} -P work/boot/EFI/BOOT/${efi_target_name}"
+fi
 
-  # Copy dtb directory to the boot partition for use by the bootloader.
-  if [ -d work/rootfs/boot/dtbs ]; then
-    # Look for the first directory that has dtb files. First check the base
-    # folder, then any subfolders in versioned order.
-    for candidate in work/rootfs/boot/dtbs $(find work/rootfs/boot/dtbs/ -maxdepth 1 -type d | sort -V -r); do
-      if [ $(find $candidate -maxdepth 1 -name '*.dtb' | wc -l) -gt 0 ]; then
-        run_and_log_cmd "sudo cp -r $candidate work/boot/dtb"
-        break
-      fi
-    done
-  fi
+# Copy dtb directory to the boot partition for use by the bootloader.
+if [ -d work/rootfs/boot/dtbs ]; then
+  # Look for the first directory that has dtb files. First check the base
+  # folder, then any subfolders in versioned order.
+  for candidate in work/rootfs/boot/dtbs $(find work/rootfs/boot/dtbs/ -maxdepth 1 -type d | sort -V -r); do
+    if [ $(find $candidate -maxdepth 1 -name '*.dtb' | wc -l) -gt 0 ]; then
+      run_and_log_cmd "sudo cp -r $candidate work/boot/dtb"
+      break
+    fi
+  done
 fi
 
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender"
