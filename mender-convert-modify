@@ -133,9 +133,12 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
 mender_rootfsa_part=${MENDER_ROOTFS_PART_A_NUMBER}
 mender_rootfsb_part=${MENDER_ROOTFS_PART_B_NUMBER}
 mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
-kernel_imagetype=${kernel_imagetype}
-initrd_imagetype=${initrd_imagetype}
+kernel_imagetype=kernel
+initrd_imagetype=initrd
 EOF
+
+  run_and_log_cmd "ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
+  run_and_log_cmd "ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
 
   # For partuuid support grub.cfg expects dedicated variables to be added
   if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
