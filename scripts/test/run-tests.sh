@@ -102,18 +102,20 @@ else
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then
     wget --progress=dot:giga -N ${BBB_DEBIAN_IMAGE_URL} -P input/
-    convert_and_test "beaglebone" \
+    convert_and_test "beaglebone-sdcard" \
                      "release-1" \
-                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz" || test_result=$?
+                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz" \
+                     "--config configs/beaglebone_black_debian_sdcard_config" || test_result=$?
 
     echo >&2 "----------------------------------------"
     echo >&2 "Running the uncompressed test"
     echo >&2 "----------------------------------------"
     rm -rf deploy
     unxz --force "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz"
-    convert_and_test "beaglebone" \
+    convert_and_test "beaglebone-emmc" \
                      "release-1" \
-                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img" || test_result=$?
+                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img" \
+                     "--config configs/beaglebone_black_debian_emmc_config" || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
