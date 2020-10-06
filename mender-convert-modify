@@ -133,25 +133,28 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
 mender_rootfsa_part=${MENDER_ROOTFS_PART_A_NUMBER}
 mender_rootfsb_part=${MENDER_ROOTFS_PART_B_NUMBER}
 mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
-kernel_imagetype=${kernel_imagetype}
-initrd_imagetype=${initrd_imagetype}
+kernel_imagetype=kernel
+initrd_imagetype=initrd
 EOF
 
-# For partuuid support grub.cfg expects dedicated variables to be added
-if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
-   rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
-   rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
-   log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
-   log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
-   cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+  run_and_log_cmd "ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
+  run_and_log_cmd "ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
+
+  # For partuuid support grub.cfg expects dedicated variables to be added
+  if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+    rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
+    rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+    log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
+    log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
+    cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_rootfsa_uuid=${rootfsa_partuuid}
 mender_rootfsb_uuid=${rootfsb_partuuid}
 EOF
-else
-  cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+  else
+    cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
 EOF
-fi
+  fi
 
   if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
     cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/11_bootargs_grub.cfg
@@ -174,8 +177,8 @@ EOF
   sudo rm -rf work/boot/EFI/systemd
   sudo rm -rf work/boot/NvVars
   for empty_dir in $(cd work/boot; find . -maxdepth 1 -type d -empty); do
-      sudo rmdir work/boot/$empty_dir
-      sudo rm work/rootfs/boot/$empty_dir
+    sudo rmdir work/boot/$empty_dir
+    sudo rm work/rootfs/boot/$empty_dir
   done
 
   log_info "Installing GRUB"
@@ -193,18 +196,18 @@ EOF
 
   run_and_log_cmd "sudo mkdir -p work/boot/EFI/BOOT"
   run_and_log_cmd "sudo cp work/${efi_name} -P work/boot/EFI/BOOT/${efi_target_name}"
+fi
 
-  # Copy dtb directory to the boot partition for use by the bootloader.
-  if [ -d work/rootfs/boot/dtbs ]; then
-    # Look for the first directory that has dtb files. First check the base
-    # folder, then any subfolders in versioned order.
-    for candidate in work/rootfs/boot/dtbs $(find work/rootfs/boot/dtbs/ -maxdepth 1 -type d | sort -V -r); do
-      if [ $(find $candidate -maxdepth 1 -name '*.dtb' | wc -l) -gt 0 ]; then
-        run_and_log_cmd "sudo cp -r $candidate work/boot/dtb"
-        break
-      fi
-    done
-  fi
+# Copy dtb directory to the boot partition for use by the bootloader.
+if [ -d work/rootfs/boot/dtbs ]; then
+  # Look for the first directory that has dtb files. First check the base
+  # folder, then any subfolders in versioned order.
+  for candidate in work/rootfs/boot/dtbs $(find work/rootfs/boot/dtbs/ -maxdepth 1 -type d | sort -V -r); do
+    if [ $(find $candidate -maxdepth 1 -name '*.dtb' | wc -l) -gt 0 ]; then
+      run_and_log_cmd "sudo cp -r $candidate work/boot/dtb"
+      break
+    fi
+  done
 fi
 
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender"

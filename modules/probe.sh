@@ -272,12 +272,7 @@ probe_initrd_in_boot_and_root() {
 }
 
 check_for_broken_uboot_uefi_support() {
-  local path="$1"
-
-  # Broken UEFI support in range v2018.09 - v2019.07 (see MEN-2404)
-  local regex='U-Boot 20(18\.(09|1[0-2])|19\.0[1-7])'
-
-  if egrep -qr "$regex" "$path"; then
+  if ! is_uboot_with_uefi_support "$@"; then
     local log_level=log_fatal
     if [ "$MENDER_IGNORE_UBOOT_BROKEN_UEFI" = 1 ]; then
       log_level=log_warn
@@ -286,19 +281,37 @@ check_for_broken_uboot_uefi_support() {
   fi
 }
 
+is_uboot_with_uefi_support() {
+  local path="$1"
+
+  # Broken UEFI support in range v2018.09 - v2019.07 (see MEN-2404)
+  local regex='U-Boot 20(18\.(09|1[0-2])|19\.0[1-7])'
+
+  if egrep -qr "$regex" "$path"; then
+    return 1
+  fi
+  return 0
+}
+
 check_efi_compatible_kernel() {
+  if ! is_efi_compatible_kernel "$@"; then
+    local log_level=log_fatal
+    if [ "$MENDER_IGNORE_MISSING_EFI_STUB" = 1 ]; then
+      log_level=log_warn
+    fi
+    $log_level 'Detected a kernel which does not have an EFI stub. This kernel is not supported when booting with UEFI. Please consider using a U-Boot port if the board has one (look for a board specific file in `configs`), or find a kernel which has the CONFIG_EFI_STUB turned on. To ignore this message and proceed anyway, set the MENDER_IGNORE_MISSING_EFI_STUB=1 config option.'
+  fi
+}
+
+is_efi_compatible_kernel() {
   kernel_path="$1"
 
   case "$(probe_arch)" in
     arm|aarch64)
       # On ARM, as of version 2.04, GRUB can only boot kernels which have an EFI
       # stub in them. See MEN-2404.
-      if ! file -k $kernel_path | fgrep 'EFI application'; then
-          local log_level=log_fatal
-          if [ "$MENDER_IGNORE_MISSING_EFI_STUB" = 1 ]; then
-              log_level=log_warn
-          fi
-          $log_level 'Detected a kernel which does not have an EFI stub. This kernel is not supported when booting with UEFI. Please consider using a U-Boot port if the board has one (look for a board specific file in `configs`), or find a kernel which has the CONFIG_EFI_STUB turned on. To ignore this message and proceed anyway, set the MENDER_IGNORE_MISSING_EFI_STUB=1 config option.'
+      if ! file -k $kernel_path | fgrep -q 'EFI application'; then
+        return 1
       fi
       ;;
     *)
@@ -306,4 +319,5 @@ check_efi_compatible_kernel() {
       :
       ;;
   esac
+  return 0
 }

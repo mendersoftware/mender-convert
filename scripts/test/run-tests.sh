@@ -15,7 +15,9 @@ fi
 
 WORKSPACE=./tests
 
-BBB_DEBIAN_IMAGE_URL="http://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz"
+BBB_DEBIAN_SDCARD_IMAGE_URL="https://debian.beagleboard.org/images/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz"
+# Not on official home page, but found via https://elinux.org/Beagleboard:BeagleBoneBlack_Debian:
+BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2020-09-21/buster-console/bone-debian-10.5-console-armhf-2020-09-21-1gb.img.xz"
 
 RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip"
 
@@ -101,19 +103,22 @@ else
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then
-    wget --progress=dot:giga -N ${BBB_DEBIAN_IMAGE_URL} -P input/
-    convert_and_test "beaglebone" \
+    wget --progress=dot:giga -N ${BBB_DEBIAN_SDCARD_IMAGE_URL} -P input/
+    convert_and_test "beaglebone-sdcard" \
                      "release-1" \
-                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz" || test_result=$?
+                     "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz" \
+                     "--config configs/beaglebone_black_debian_sdcard_config" || test_result=$?
 
     echo >&2 "----------------------------------------"
     echo >&2 "Running the uncompressed test"
     echo >&2 "----------------------------------------"
     rm -rf deploy
-    unxz --force "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img.xz"
-    convert_and_test "beaglebone" \
+    wget --progress=dot:giga -N ${BBB_DEBIAN_EMMC_IMAGE_URL} -P input/
+    unxz --force "input/bone-debian-10.5-console-armhf-2020-09-21-1gb.img.xz"
+    convert_and_test "beaglebone-emmc" \
                      "release-1" \
-                     "input/bone-debian-9.5-iot-armhf-2018-08-30-4gb.img" || test_result=$?
+                     "input/bone-debian-10.5-console-armhf-2020-09-21-1gb.img" \
+                     "--config configs/beaglebone_black_debian_emmc_config" || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
