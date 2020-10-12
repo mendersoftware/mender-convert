@@ -26,6 +26,11 @@ function user_local_modify() {
 }
 USER_LOCAL_MODIFY_HOOKS=(user_local_modify)
 
+function overlay_modify() {
+  true
+}
+OVERLAY_MODIFY_HOOKS=(overlay_modify)
+
 function trap_exit() {
   echo "mender-convert-modify has finished. Cleaning up..."
   sudo umount -f work/boot
@@ -313,4 +318,10 @@ done
 for overlay in "${overlays[@]}"; do
   log_info "Applying rootfs overlay: ${overlay}"
   run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${overlay}/ work/rootfs/"
+done
+
+log_info "Performing overlay specific modifications (if any)"
+for hook in "${OVERLAY_MODIFY_HOOKS[@]}"; do
+  log_info "Running hook: $hook"
+  eval $hook
 done
