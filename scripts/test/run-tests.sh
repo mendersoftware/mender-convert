@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  echo "$0 [--no-pull] <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
+  echo "$0 <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
   exit 1
 }
 
@@ -33,13 +33,6 @@ source $UTILS_PATH
 
 # Some distros do not have /sbin in path for "normal users"
 export PATH="${PATH}:/sbin"
-
-if [ "$1" = "--no-pull" ]; then
-  shift
-else
-  echo "Automatically pulling submodules. Use --no-pull to disable"
-  git submodule update --init --remote
-fi
 
 mkdir -p ${WORKSPACE}
 
