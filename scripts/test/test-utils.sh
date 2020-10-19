@@ -136,6 +136,7 @@ run_tests() {
 get_pytest_files() {
   wget -N ${MENDER_ACCEPTANCE_URL}/pytest.ini -P $WORKSPACE/mender-image-tests
   wget -N ${MENDER_ACCEPTANCE_URL}/common.py -P $WORKSPACE/mender-image-tests
+  wget -N ${MENDER_ACCEPTANCE_URL}/helpers.py -P $WORKSPACE/mender-image-tests
   wget -N ${MENDER_ACCEPTANCE_URL}/conftest.py -P $WORKSPACE/mender-image-tests
   wget -N ${MENDER_ACCEPTANCE_URL}/fixtures.py -P $WORKSPACE/mender-image-tests
 }

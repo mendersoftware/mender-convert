@@ -10,7 +10,6 @@ variables:
   # this.
   RASPBIAN_URL: http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-05-28/2020-05-27-raspios-buster-lite-armhf.zip
   RASPBIAN_NAME: 2020-05-27-raspios-buster-lite-armhf
-  MENDER_IMAGE_TESTS_REV: master
 
   DEBIAN_FRONTEND: noninteractive
 
@@ -109,8 +108,8 @@ convert_raspbian_raspberrypi4:
     # Load image under test
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar
-    # Set submodule to correct version
-    - ( cd tests/mender-image-tests && git submodule update --init --remote && git checkout origin/${MENDER_IMAGE_TESTS_REV} )
+    # Set mender-image-tests submodule to correct version
+    - git submodule update --init --recursive
   artifacts:
     expire_in: 2w
     when: always
@@ -129,7 +128,7 @@ convert_raspbian_raspberrypi4:
     - mv ${RASPBERRYPI_PLATFORM} deploy
     # Extract converted Raspbian artifacts
     - unxz deploy/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
-    - ./scripts/test/run-tests.sh --no-pull --prebuilt-image raspberrypi ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+    - ./scripts/test/run-tests.sh --prebuilt-image raspberrypi ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
 
 test_acceptance_prebuilt_raspberrypi3:
   <<: *test_acceptance_prebuilt_raspberrypi
@@ -150,27 +149,27 @@ test_acceptance_prebuilt_raspberrypi4:
 test_acceptance_qemux86_64:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --no-pull --only qemux86_64
+    - ./scripts/test/run-tests.sh --only qemux86_64
 
 test_acceptance_raspberrypi:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --no-pull --only raspberrypi3
+    - ./scripts/test/run-tests.sh --only raspberrypi3
 
 test_acceptance_linaro-alip:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --no-pull --only linaro-alip
+    - ./scripts/test/run-tests.sh --only linaro-alip
 
 test_acceptance_beaglebone:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --no-pull --only beaglebone
+    - ./scripts/test/run-tests.sh --only beaglebone
 
 test_acceptance_ubuntu:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --no-pull --only ubuntu
+    - ./scripts/test/run-tests.sh --only ubuntu
 
 publish:s3:
   when: manual
