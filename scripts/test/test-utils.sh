@@ -63,8 +63,6 @@ convert_and_test() {
   image_file=$3
   extra_args=$4 # Optional
 
-  rm -f ${WORKSPACE}/test_config
-
   MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
                       --disk-image ${image_file} \
                       ${extra_args}
