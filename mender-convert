@@ -123,10 +123,10 @@ parse_cli_options "$@"
 compression_type=$(compression_type "${disk_image}")
 if [[ ${compression_type} != "none" ]]; then
   uncompressed_disk_image=$(decompress_image "${disk_image}" "./work")
-  echo "MENDER_COMPRESS_DISK_IMAGE=${compression_type}" > ${ocfile}
-  prepend_extraargs="--config ${ocfile}"
   append_extraargs="--disk-image ${uncompressed_disk_image}"
 fi
+echo "MENDER_COMPRESS_DISK_IMAGE=${compression_type}" > ${ocfile}
+prepend_extraargs="--config ${ocfile}"
 
 ./mender-convert-extract ${prepend_extraargs} "$@" ${append_extraargs}
 ./mender-convert-modify  ${prepend_extraargs} "$@" ${append_extraargs}

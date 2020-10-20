@@ -61,10 +61,12 @@ else
     echo >&2 "----------------------------------------"
     rm -rf deploy
     gunzip --force "input/Ubuntu-Bionic-x86-64.img.gz"
-    convert_and_test "qemux86_64" \
-                     "release-1" \
-                     "input/Ubuntu-Bionic-x86-64.img" \
-                     "--config configs/qemux86-64_config" || test_result=$?
+    run_convert "release-2" \
+                "input/Ubuntu-Bionic-x86-64.img" \
+                "--config configs/qemux86-64_config" || test_result=$?
+    ret=0
+    test -f deploy/Ubuntu-Bionic-x86-64-qemux86_64-mender.img || ret=$?
+    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Bionic-x86-64-qemux86_64-mender.img"
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "raspberrypi3" ]; then
@@ -72,16 +74,6 @@ else
     convert_and_test "raspberrypi3" \
                      "release-1" \
                      "input/2019-09-26-raspbian-buster-lite.zip" \
-                     "--config configs/raspberrypi3_config" || test_result=$?
-
-    echo >&2 "----------------------------------------"
-    echo >&2 "Running the uncompressed test"
-    echo >&2 "----------------------------------------"
-    rm -rf deploy
-    unzip -o "input/2019-09-26-raspbian-buster-lite.zip" -d "./input"
-    convert_and_test "raspberrypi3" \
-                     "release-1" \
-                     "input/2019-09-26-raspbian-buster-lite.img" \
                      "--config configs/raspberrypi3_config" || test_result=$?
   fi
 
@@ -101,17 +93,6 @@ else
                      "release-1" \
                      "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz" \
                      "--config configs/beaglebone_black_debian_sdcard_config" || test_result=$?
-
-    echo >&2 "----------------------------------------"
-    echo >&2 "Running the uncompressed test"
-    echo >&2 "----------------------------------------"
-    rm -rf deploy
-    wget --progress=dot:giga -N ${BBB_DEBIAN_EMMC_IMAGE_URL} -P input/
-    unxz --force "input/bone-debian-10.5-console-armhf-2020-09-21-1gb.img.xz"
-    convert_and_test "beaglebone-emmc" \
-                     "release-1" \
-                     "input/bone-debian-10.5-console-armhf-2020-09-21-1gb.img" \
-                     "--config configs/beaglebone_black_debian_emmc_config" || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
@@ -119,16 +100,6 @@ else
     convert_and_test "raspberrypi3" \
                      "release-1" \
                      "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img.xz" \
-                     "--config configs/raspberrypi3_config" || test_result=$?
-
-    echo >&2 "----------------------------------------"
-    echo >&2 "Running the uncompressed test"
-    echo >&2 "----------------------------------------"
-    rm -rf deploy
-    unxz --force "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img.xz"
-    convert_and_test "raspberrypi3" \
-                     "release-1" \
-                     "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img" \
                      "--config configs/raspberrypi3_config" || test_result=$?
   fi
 

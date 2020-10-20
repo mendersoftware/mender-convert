@@ -105,14 +105,6 @@ run_tests() {
     html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
   fi
 
-  # Need to decompress images built with MENDER_COMPRESS_DISK_IMAGE=gzip before
-  # running tests.
-  if [ -f "deploy/${converted_image_name}.img.gz" ]; then
-    # sudo is needed because the image is created using docker-mender-convert
-    # which sets root permissions on the image
-    sudo gunzip --force "deploy/${converted_image_name}.img.gz"
-  fi
-
   # MEN-3051: Rename the files back to .sdimg, as the sdimg extension has meaning
   # in the test-infrastructure.
   for file in ${MENDER_CONVERT_DIR}/deploy/*.img; do
