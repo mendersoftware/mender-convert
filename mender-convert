@@ -24,7 +24,8 @@ touch work/convert.log
 ###############################################################################
 #                Declaration of important variables for this file             #
 ###############################################################################
-declare override_extraargs="" # Override arguments passed to the sub-scripts
+declare prepend_extraargs=""  # Default arguments passed to the sub-scripts
+declare append_extraargs=""   # Override arguments passed to the sub-scripts
 declare compression_type=""   # Detected input file compression, also applied to the output
 declare ocfile="./work/override_compression_config"
 declare disk_image=""         # Needed in parse_cli_options, and is passed to decompress_image()
@@ -119,17 +120,17 @@ fi
 
 parse_cli_options "$@"
 
-uncompressed_disk_image="${disk_image}"
 compression_type=$(compression_type "${disk_image}")
 if [[ ${compression_type} != "none" ]]; then
   uncompressed_disk_image=$(decompress_image "${disk_image}" "./work")
   echo "MENDER_COMPRESS_DISK_IMAGE=${compression_type}" > ${ocfile}
-  override_extraargs="--disk-image ${uncompressed_disk_image} --config ${ocfile}"
+  prepend_extraargs="--config ${ocfile}"
+  append_extraargs="--disk-image ${uncompressed_disk_image}"
 fi
 
-./mender-convert-extract "$@" ${override_extraargs}
-./mender-convert-modify  "$@" ${override_extraargs}
-./mender-convert-package "$@" ${override_extraargs}
+./mender-convert-extract ${prepend_extraargs} "$@" ${append_extraargs}
+./mender-convert-modify  ${prepend_extraargs} "$@" ${append_extraargs}
+./mender-convert-package ${prepend_extraargs} "$@" ${append_extraargs}
 
 echo "Output Artifacts and images can be found in the deploy directory:"
 ls -1 deploy/*
