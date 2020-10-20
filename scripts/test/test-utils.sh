@@ -61,11 +61,10 @@ convert_and_test() {
   device_type=$1
   artifact_name=$2
   image_file=$3
-  extra_args=$4 # Optional
+  shift 3
+  extra_args=$@ # Optional
 
-  MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
-                      --disk-image ${image_file} \
-                      ${extra_args}
+  run_convert ${artifact_name} ${image_file} ${extra_args}
 
   local compression="${image_file##*.}"
   local ret=0
@@ -79,6 +78,18 @@ convert_and_test() {
   run_tests "${device_type}"  "$(basename ${converted_image_uncompressed})" || ret=$?
 
   assert "${ret}" "0" "Failed to convert ${image_file}"
+
+}
+
+run_convert() {
+  artifact_name=$1
+  image_file=$2
+  shift 2
+  extra_args=$@ # Optional
+
+  MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
+                      --disk-image ${image_file} \
+                      ${extra_args}
 
 }
 
