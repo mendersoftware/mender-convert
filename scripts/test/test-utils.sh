@@ -61,13 +61,10 @@ convert_and_test() {
   device_type=$1
   artifact_name=$2
   image_file=$3
-  extra_args=$4 # Optional
+  shift 3
+  extra_args=$@ # Optional
 
-  rm -f ${WORKSPACE}/test_config
-
-  MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
-                      --disk-image ${image_file} \
-                      ${extra_args}
+  run_convert ${artifact_name} ${image_file} ${extra_args}
 
   local compression="${image_file##*.}"
   local ret=0
@@ -84,6 +81,18 @@ convert_and_test() {
 
 }
 
+run_convert() {
+  artifact_name=$1
+  image_file=$2
+  shift 2
+  extra_args=$@ # Optional
+
+  MENDER_ARTIFACT_NAME=${artifact_name} ./docker-mender-convert \
+                      --disk-image ${image_file} \
+                      ${extra_args}
+
+}
+
 run_tests() {
   device_type=$1
   converted_image_file=$2
@@ -94,14 +103,6 @@ run_tests() {
 
   if pip3 list --format=columns | grep pytest-html; then
     html_report_args="--html=${MENDER_CONVERT_DIR}/report_${device_type}.html --self-contained-html"
-  fi
-
-  # Need to decompress images built with MENDER_COMPRESS_DISK_IMAGE=gzip before
-  # running tests.
-  if [ -f "deploy/${converted_image_name}.img.gz" ]; then
-    # sudo is needed because the image is created using docker-mender-convert
-    # which sets root permissions on the image
-    sudo gunzip --force "deploy/${converted_image_name}.img.gz"
   fi
 
   # MEN-3051: Rename the files back to .sdimg, as the sdimg extension has meaning
