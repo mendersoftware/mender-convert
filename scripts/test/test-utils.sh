@@ -138,6 +138,8 @@ run_tests() {
     --board-type="${device_type}" \
     --mender-image="${converted_image_name}.sdimg" \
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
+    --ssh-priv-key="../ssh-priv-key/key" \
+    --qemu-wrapper="../../scripts/test/mender-convert-qemu" \
     tests \
     ${pytest_extra_args}
 
@@ -154,5 +156,27 @@ get_pytest_files() {
   wget -N ${MENDER_ACCEPTANCE_URL}/helpers.py -P $WORKSPACE/mender-image-tests
   wget -N ${MENDER_ACCEPTANCE_URL}/conftest.py -P $WORKSPACE/mender-image-tests
   wget -N ${MENDER_ACCEPTANCE_URL}/fixtures.py -P $WORKSPACE/mender-image-tests
+  mkdir -p $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-EC.pem -P $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-RSA.pem -P $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-EC.pem -P $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-RSA.pem -P $WORKSPACE/mender-image-tests/files
 }
 
+prepare_ssh_keys() {
+  if [ "$(stat -c %U tests/ssh-public-key-overlay/root)" != "root" ]; then
+    sudo chown -R root:root tests/ssh-public-key-overlay/root
+  fi
+  if [ "$(stat -c %a tests/ssh-public-key-overlay/root)" != "755" ]; then
+    chmod 755 tests/ssh-public-key-overlay/root
+  fi
+  if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh)" != "755" ]; then
+    chmod 700 tests/ssh-public-key-overlay/root/.ssh
+  fi
+  if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh/authorized_keys)" != "755" ]; then
+    chmod 600 tests/ssh-public-key-overlay/root/.ssh/authorized_keys
+  fi
+  if [ "$(stat -c %a tests/ssh-priv-key/key)" != "600" ]; then
+    chmod 600 tests/ssh-priv-key/key
+  fi
+}

@@ -38,6 +38,8 @@ mkdir -p ${WORKSPACE}
 
 get_pytest_files
 
+prepare_ssh_keys
+
 if ! [ "$1" == "--all" -o "$1" == "--only" -a -n "$2" -o "$1" == "--prebuilt-image" -a -n "$3" ]; then
   usage
 fi
@@ -45,7 +47,9 @@ fi
 test_result=0
 
 if [ "$1" == "--prebuilt-image" ]; then
-  run_tests "$2" "$3" || test_result=$?
+  run_tests "$2" "$3" \
+            "-k" "'not test_update'" \
+            || test_result=$?
   exit $test_result
 
 else
@@ -54,7 +58,9 @@ else
     convert_and_test "qemux86_64" \
                      "release-1" \
                      "input/Ubuntu-Bionic-x86-64.img.gz" \
-                     "--config configs/qemux86-64_config" || test_result=$?
+                     "--overlay tests/ssh-public-key-overlay" \
+                     "--config configs/qemux86-64_config" \
+                     || test_result=$?
 
     echo >&2 "----------------------------------------"
     echo >&2 "Running the uncompressed test"
@@ -74,7 +80,10 @@ else
     convert_and_test "raspberrypi3" \
                      "release-1" \
                      "input/2019-09-26-raspbian-buster-lite.zip" \
-                     "--config configs/raspberrypi3_config" || test_result=$?
+                     "--config configs/raspberrypi3_config" \
+                     -- \
+                     "-k" "'not test_update'" \
+                     || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "linaro-alip" ]; then
@@ -83,7 +92,10 @@ else
     #                 "release-1" \
     #                 "${TINKER_IMAGE_URL}" \
     #                 "${TINKER_IMAGE}.img" \
-    #                 "${TINKER_IMAGE}.zip" || test_result=$?
+    #                 "${TINKER_IMAGE}.zip" \
+    #                 -- \
+    #                 "-k" "'not test_update'" \
+    #                 || test_result=$?
     true
   fi
 
@@ -92,7 +104,10 @@ else
     convert_and_test "beaglebone-sdcard" \
                      "release-1" \
                      "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz" \
-                     "--config configs/beaglebone_black_debian_sdcard_config" || test_result=$?
+                     "--config configs/beaglebone_black_debian_sdcard_config" \
+                     -- \
+                     "-k" "'not test_update'" \
+                     || test_result=$?
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
@@ -100,7 +115,10 @@ else
     convert_and_test "raspberrypi3" \
                      "release-1" \
                      "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img.xz" \
-                     "--config configs/raspberrypi3_config" || test_result=$?
+                     "--config configs/raspberrypi3_config" \
+                     -- \
+                     "-k" "'not test_update'" \
+                     || test_result=$?
   fi
 
   exit $test_result
