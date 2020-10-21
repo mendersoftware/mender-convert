@@ -62,7 +62,20 @@ convert_and_test() {
   artifact_name=$2
   image_file=$3
   shift 3
-  extra_args=$@ # Optional
+  extra_args="" # Optional
+  while (( "$#" )); do
+    case "$1" in
+      --)
+        shift
+        break
+        ;;
+      *)
+        extra_args="${extra_args} $1"
+        shift
+        ;;
+    esac
+  done
+  pytest_extra_args=$@ # Optional
 
   run_convert ${artifact_name} ${image_file} ${extra_args}
 
@@ -75,7 +88,7 @@ convert_and_test() {
 
   converted_image_uncompressed="$(decompress_image ${converted_image_file} ${MENDER_CONVERT_DIR}/deploy)"
 
-  run_tests "${device_type}"  "$(basename ${converted_image_uncompressed})" || ret=$?
+  run_tests "${device_type}" "$(basename ${converted_image_uncompressed})" ${pytest_extra_args} || ret=$?
 
   assert "${ret}" "0" "Failed to convert ${image_file}"
 
@@ -97,7 +110,7 @@ run_tests() {
   device_type=$1
   converted_image_file=$2
   shift 2
-  pytest_args_extra=$@
+  pytest_extra_args=$@ # Optional
 
   converted_image_name="${converted_image_file%.img}"
 
@@ -116,7 +129,8 @@ run_tests() {
   echo "Converted image name: "
   echo "$converted_image_name"
 
-  python3 -m pytest --verbose \
+  eval python3 -m pytest \
+    --verbose \
     --junit-xml="${MENDER_CONVERT_DIR}/results_${device_type}.xml" \
     ${html_report_args} \
     --test-conversion \
@@ -125,7 +139,7 @@ run_tests() {
     --mender-image="${converted_image_name}.sdimg" \
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
     tests \
-    ${pytest_args_extra}
+    ${pytest_extra_args}
 
   exitcode=$?
 
