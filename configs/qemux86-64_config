@@ -2,7 +2,7 @@
 #
 # This has been tested on images generated with the following command:
 #
-#    mkosi -d ubuntu -r bionic -t gpt_ext4 -b --checksum --password password -o image.raw
+#    mkosi -d ubuntu -r bionic -t gpt_ext4 -b --checksum --password password --package=openssh-server,dhcpcd5 -o image.raw
 #
 # Converted with the following command:
 #
