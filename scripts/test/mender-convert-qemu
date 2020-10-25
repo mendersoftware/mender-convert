@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+if [ -z "$DISK_IMG" ]; then
+    echo "ERROR: DISK_IMG is not set"
+    exit 1
+fi
+
+# Look for OVMF_CODE.fd in /usr/share
+ovmf_file=$(find /usr/share -type f -and -name OVMF_CODE.fd 2>/dev/null | head -1)
+if [ -z "${ovmf_file}" ]; then
+    echo "ERROR: could not find OVMF file"
+    exit 1
+fi
+
+qemu-system-x86_64 \
+    -enable-kvm \
+    -nographic \
+    -m 256 \
+    -net user,hostfwd=tcp::8822-:22 \
+    -net nic,macaddr=52:54:00$(od -txC -An -N3 /dev/urandom|tr \  :) \
+    -bios ${ovmf_file} \
+    -drive format=raw,file=${DISK_IMG} &
+
+qemu_pid=$!
+
+trap qemu_cleanup HUP KILL TERM
+
+qemu_cleanup() {
+    kill -s TERM $qemu_pid
+}
+
+echo "QEMU started with PID $qemu_pid"
+wait $qemu_pid

@@ -102,7 +102,7 @@ convert_raspbian_raspberrypi4:
     - apt update
     - apt install -qyy bash wget git util-linux mtools python3 python3-pip
       gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
-      awscli unzip
+      awscli unzip qemu-system-x86 ovmf
     # Python3 dependencies
     - pip3 install -r https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance/requirements_py3.txt
     # Load image under test
@@ -110,6 +110,10 @@ convert_raspbian_raspberrypi4:
     - docker load -i image.tar
     # Set mender-image-tests submodule to correct version
     - git submodule update --init --recursive
+    # Get mender-artifact for the tests
+    - curl -f -O https://mender.s3.amazonaws.com/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact
+    - chmod ugo+x mender-artifact
+    - mv mender-artifact /usr/bin/
   artifacts:
     expire_in: 2w
     when: always

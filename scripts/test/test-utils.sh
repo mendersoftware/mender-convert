@@ -62,7 +62,20 @@ convert_and_test() {
   artifact_name=$2
   image_file=$3
   shift 3
-  extra_args=$@ # Optional
+  extra_args="" # Optional
+  while (( "$#" )); do
+    case "$1" in
+      --)
+        shift
+        break
+        ;;
+      *)
+        extra_args="${extra_args} $1"
+        shift
+        ;;
+    esac
+  done
+  pytest_extra_args=$@ # Optional
 
   run_convert ${artifact_name} ${image_file} ${extra_args}
 
@@ -75,7 +88,7 @@ convert_and_test() {
 
   converted_image_uncompressed="$(decompress_image ${converted_image_file} ${MENDER_CONVERT_DIR}/deploy)"
 
-  run_tests "${device_type}"  "$(basename ${converted_image_uncompressed})" || ret=$?
+  run_tests "${device_type}" "$(basename ${converted_image_uncompressed})" ${pytest_extra_args} || ret=$?
 
   assert "${ret}" "0" "Failed to convert ${image_file}"
 
@@ -97,7 +110,7 @@ run_tests() {
   device_type=$1
   converted_image_file=$2
   shift 2
-  pytest_args_extra=$@
+  pytest_extra_args=$@ # Optional
 
   converted_image_name="${converted_image_file%.img}"
 
@@ -116,7 +129,8 @@ run_tests() {
   echo "Converted image name: "
   echo "$converted_image_name"
 
-  python3 -m pytest --verbose \
+  eval python3 -m pytest \
+    --verbose \
     --junit-xml="${MENDER_CONVERT_DIR}/results_${device_type}.xml" \
     ${html_report_args} \
     --test-conversion \
@@ -124,8 +138,10 @@ run_tests() {
     --board-type="${device_type}" \
     --mender-image="${converted_image_name}.sdimg" \
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
+    --ssh-priv-key="../ssh-priv-key/key" \
+    --qemu-wrapper="../../scripts/test/mender-convert-qemu" \
     tests \
-    ${pytest_args_extra}
+    ${pytest_extra_args}
 
   exitcode=$?
 
@@ -140,5 +156,27 @@ get_pytest_files() {
   wget -N ${MENDER_ACCEPTANCE_URL}/helpers.py -P $WORKSPACE/mender-image-tests
   wget -N ${MENDER_ACCEPTANCE_URL}/conftest.py -P $WORKSPACE/mender-image-tests
   wget -N ${MENDER_ACCEPTANCE_URL}/fixtures.py -P $WORKSPACE/mender-image-tests
+  mkdir -p $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-EC.pem -P $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-RSA.pem -P $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-EC.pem -P $WORKSPACE/mender-image-tests/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-RSA.pem -P $WORKSPACE/mender-image-tests/files
 }
 
+prepare_ssh_keys() {
+  if [ "$(stat -c %U tests/ssh-public-key-overlay/root)" != "root" ]; then
+    sudo chown -R root:root tests/ssh-public-key-overlay/root
+  fi
+  if [ "$(stat -c %a tests/ssh-public-key-overlay/root)" != "755" ]; then
+    chmod 755 tests/ssh-public-key-overlay/root
+  fi
+  if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh)" != "755" ]; then
+    chmod 700 tests/ssh-public-key-overlay/root/.ssh
+  fi
+  if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh/authorized_keys)" != "755" ]; then
+    chmod 600 tests/ssh-public-key-overlay/root/.ssh/authorized_keys
+  fi
+  if [ "$(stat -c %a tests/ssh-priv-key/key)" != "600" ]; then
+    chmod 600 tests/ssh-priv-key/key
+  fi
+}
