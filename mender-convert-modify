@@ -138,7 +138,9 @@ initrd_imagetype=initrd
 EOF
 
   run_and_log_cmd "ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
-  run_and_log_cmd "ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
+  if [ "${initrd_imagetype}" != "" ]; then
+    run_and_log_cmd "ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
+  fi
 
   # For partuuid support grub.cfg expects dedicated variables to be added
   if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
