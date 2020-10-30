@@ -30,6 +30,7 @@ stages:
 
 build:
   stage: build
+  needs: []
   image: docker:git
   services:
     - docker:19.03.5-dind
@@ -43,13 +44,14 @@ build:
 
 .template_convert_raspbian: &convert_raspbian
   stage: convert
+  needs:
+    - job: build
+      artifacts: true
   image: teracy/ubuntu:18.04-dind-18.09.9
   services:
     - docker:18-dind
   tags:
     - mender-qa-slave
-  dependencies:
-    - build
   before_script:
     - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
@@ -87,13 +89,14 @@ convert_raspbian_raspberrypi4:
 
 .template_test_acceptance: &test_acceptance
   stage: test_acceptance
+  needs:
+    - job: build
+      artifacts: true
   image: teracy/ubuntu:18.04-dind-18.09.9
   services:
     - docker:18-dind
   tags:
     - mender-qa-slave
-  dependencies:
-    - build
   timeout: 2h
   before_script:
     - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
@@ -136,17 +139,21 @@ convert_raspbian_raspberrypi4:
 
 test_acceptance_prebuilt_raspberrypi3:
   <<: *test_acceptance_prebuilt_raspberrypi
-  dependencies:
-    - build
-    - convert_raspbian_raspberrypi3
+  needs:
+    - job: build
+      artifacts: true
+    - job: convert_raspbian_raspberrypi3
+      artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: raspberrypi3
 
 test_acceptance_prebuilt_raspberrypi4:
   <<: *test_acceptance_prebuilt_raspberrypi
-  dependencies:
-    - build
-    - convert_raspbian_raspberrypi4
+  needs:
+    - job: build
+      artifacts: true
+    - job: convert_raspbian_raspberrypi4
+      artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: raspberrypi4
 
