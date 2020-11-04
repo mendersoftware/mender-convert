@@ -95,7 +95,11 @@ mkdir -p work/mender-deb/files
 log_info "Installing Mender client and related files"
 
 deb_arch=$(probe_debian_arch_name)
-deb_name="mender-client_${MENDER_CLIENT_VERSION}-1_${deb_arch}.deb"
+DEBIAN_REVISION="-1"
+if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
+  DEBIAN_REVISION=""
+fi
+deb_name="mender-client_${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}_${deb_arch}.deb"
 run_and_log_cmd "wget -Nq ${MENDER_STORAGE_URL}/${MENDER_CLIENT_VERSION}/dist-packages/debian/${deb_arch}/${deb_name} -P work/mender-deb"
 
 cd work/mender-deb
