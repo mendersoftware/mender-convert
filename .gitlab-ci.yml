@@ -5,7 +5,7 @@ variables:
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION: master
-  MENDER_CLIENT_VERSION: master
+  MENDER_CLIENT_VERSION: latest
   # Make sure to update the link in mender-docs to the new one when changing
   # this.
   RASPBIAN_URL: http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-05-28/2020-05-27-raspios-buster-lite-armhf.zip
