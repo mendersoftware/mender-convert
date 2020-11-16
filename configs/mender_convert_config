@@ -115,7 +115,7 @@ MENDER_CLIENT_VERSION="latest"
 
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.
-MENDER_STORAGE_URL="https://d1b0l86ne08fsf.cloudfront.net"
+MENDER_STORAGE_URL="https://downloads.mender.io"
 
 # Mender GitHub organization URL prefix
 MENDER_GITHUB_ORG="https://github.com/mendersoftware"

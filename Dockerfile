@@ -65,7 +65,7 @@ RUN chmod 0440 /etc/sudoers.d/secure_path_override
 # removed.
 RUN sed -i -e 's/,metadata_csum//' /etc/mke2fs.conf
 
-RUN wget -q -O /usr/bin/mender-artifact https://d1b0l86ne08fsf.cloudfront.net/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
+RUN wget -q -O /usr/bin/mender-artifact https://downloads.mender.io/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
     && chmod +x /usr/bin/mender-artifact
 
 WORKDIR /
