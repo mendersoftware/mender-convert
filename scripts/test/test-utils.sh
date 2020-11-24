@@ -124,7 +124,7 @@ run_tests() {
       mv $file "${file%.img}.sdimg"
   done
 
-  cd ${WORKSPACE}/mender-image-tests
+  cd ${WORKSPACE}
 
   echo "Converted image name: "
   echo "$converted_image_name"
@@ -138,9 +138,9 @@ run_tests() {
     --board-type="${device_type}" \
     --mender-image="${converted_image_name}.sdimg" \
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
-    --ssh-priv-key="../ssh-priv-key/key" \
-    --qemu-wrapper="../../scripts/test/mender-convert-qemu" \
-    tests \
+    --ssh-priv-key="./ssh-priv-key/key" \
+    --qemu-wrapper="../scripts/test/mender-convert-qemu" \
+    mender-image-tests \
     ${pytest_extra_args}
 
   exitcode=$?
@@ -151,16 +151,11 @@ run_tests() {
 }
 
 get_pytest_files() {
-  wget -N ${MENDER_ACCEPTANCE_URL}/pytest.ini -P $WORKSPACE/mender-image-tests
-  wget -N ${MENDER_ACCEPTANCE_URL}/common.py -P $WORKSPACE/mender-image-tests
-  wget -N ${MENDER_ACCEPTANCE_URL}/helpers.py -P $WORKSPACE/mender-image-tests
-  wget -N ${MENDER_ACCEPTANCE_URL}/conftest.py -P $WORKSPACE/mender-image-tests
-  wget -N ${MENDER_ACCEPTANCE_URL}/fixtures.py -P $WORKSPACE/mender-image-tests
-  mkdir -p $WORKSPACE/mender-image-tests/files
-  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-EC.pem -P $WORKSPACE/mender-image-tests/files
-  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-RSA.pem -P $WORKSPACE/mender-image-tests/files
-  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-EC.pem -P $WORKSPACE/mender-image-tests/files
-  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-RSA.pem -P $WORKSPACE/mender-image-tests/files
+  mkdir -p ${WORKSPACE}/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-EC.pem -P ${WORKSPACE}/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-private-RSA.pem -P ${WORKSPACE}/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-EC.pem -P ${WORKSPACE}/files
+  wget -N ${MENDER_ACCEPTANCE_URL}/files/test-public-RSA.pem -P ${WORKSPACE}/files
 }
 
 prepare_ssh_keys() {
