@@ -123,6 +123,31 @@ if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
         work/rootfs/etc/systemd/system/multi-user.target.wants/mender-client.service"
 fi
 
+if [ "${MENDER_ADDON_SHELL_INSTALL}" = "y" ]; then
+
+  mkdir -p work/mender-shell-deb/files
+  log_info "Installing Mender Shell addon"
+
+  if [ "${MENDER_ADDON_SHELL_VERSION}" = "latest" ]; then
+    deb_name=$(deb_from_repo_get "work/mender-shell-deb" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-shell" "latest")
+  elif [ "${MENDER_ADDON_SHELL_VERSION}" = "master" ]; then
+    deb_name=$(deb_from_repo_get "work/mender-shell-deb" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-shell" "latest")
+  else
+    DEBIAN_REVISION="-1"
+    deb_name=$(deb_from_repo_get "work/mender-shell-deb" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-shell" "${MENDER_ADDON_SHELL_VERSION}${DEBIAN_REVISION}")
+  fi
+
+  cd work/mender-shell-deb
+  run_and_log_cmd "ar -xv ${deb_name}"
+  run_and_log_cmd "sudo tar xJf data.tar.xz -C files"
+  cd - > /dev/null 2>&1
+
+  run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose work/mender-shell-deb/files/ work/rootfs/"
+
+  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-shell.service \
+        work/rootfs/etc/systemd/system/multi-user.target.wants/mender-shell.service"
+fi
+
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
   # Check for known U-Boot problems in all files on the boot partition.
   check_for_broken_uboot_uefi_support work/boot

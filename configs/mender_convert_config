@@ -115,6 +115,16 @@ MENDER_PARTITION_ALIGNMENT="8388608"
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_CLIENT_VERSION="latest"
 
+# Install Mender Shell addon
+#
+MENDER_ADDON_SHELL_INSTALL="n"
+
+# Mender Shell addon version
+#
+# Valid values are "latest" (default), "master" or a specific version
+# MENDER_ADDON_SHELL_VERSION="latest"
+MENDER_ADDON_SHELL_VERSION="master"
+
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.
 MENDER_STORAGE_URL="https://downloads.mender.io"
