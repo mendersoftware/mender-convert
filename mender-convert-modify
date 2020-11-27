@@ -49,6 +49,7 @@ echo "Running $(basename $0): $@"
 source modules/bootstrap.sh
 source modules/disk.sh
 source modules/probe.sh
+source modules/deb.sh
 
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
@@ -95,24 +96,27 @@ mkdir -p work/rootfs
 sudo mount ${boot_part} work/boot
 sudo mount ${root_part} work/rootfs
 
-mkdir -p work/mender-deb/files
+mkdir -p work/mender-client-deb/files
 
 log_info "Installing Mender client and related files"
 
 deb_arch=$(probe_debian_arch_name)
-DEBIAN_REVISION="-1"
-if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
-  DEBIAN_REVISION=""
-fi
-deb_name="mender-client_${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}_${deb_arch}.deb"
-run_and_log_cmd "wget -Nq ${MENDER_STORAGE_URL}/${MENDER_CLIENT_VERSION}/dist-packages/debian/${deb_arch}/${deb_name} -P work/mender-deb"
 
-cd work/mender-deb
+if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
+  deb_name=$(deb_from_repo_get "work/mender-client-deb" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client" "latest")
+elif [ "${MENDER_CLIENT_VERSION}" = "master" ]; then
+  deb_name=$(deb_from_repo_get "work/mender-client-deb" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client" "latest")
+else
+  DEBIAN_REVISION="-1"
+  deb_name=$(deb_from_repo_get "work/mender-client-deb" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
+fi
+
+cd work/mender-client-deb
 run_and_log_cmd "ar -xv ${deb_name}"
 run_and_log_cmd "sudo tar xJf data.tar.xz -C files"
 cd - > /dev/null 2>&1
 
-run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose work/mender-deb/files/ work/rootfs/"
+run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose work/mender-client-deb/files/ work/rootfs/"
 
 if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
   run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \

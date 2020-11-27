@@ -111,11 +111,17 @@ MENDER_PARTITION_ALIGNMENT="8388608"
 # Mender client version
 #
 # This is used to fetch the correct binaries
+#
+# Valid values are "latest" (default), "master" or a specific version
 MENDER_CLIENT_VERSION="latest"
 
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.
 MENDER_STORAGE_URL="https://downloads.mender.io"
+
+# Mender APT repo, containing binary files, do not modify this unless you know
+# what you are doing.
+MENDER_APT_REPO_URL="${MENDER_STORAGE_URL}/repos/debian"
 
 # Mender GitHub organization URL prefix
 MENDER_GITHUB_ORG="https://github.com/mendersoftware"
