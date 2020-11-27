@@ -62,3 +62,27 @@ function deb_from_repo_get () {
   log_info "Successfully downloaded ${filename}"
   echo ${filename}
 }
+
+# Extract the binary files of a deb package into a directory
+#
+#  $1 - Deb package
+#  $2 - Dest directory
+#
+function deb_extract_package () {
+  if [[ $# -ne 2 ]]; then
+    log_fatal "deb_extract_package() requires 2 arguments"
+  fi
+  local -r deb_package="$(pwd)/${1}"
+  local -r dest_dir="$(pwd)/${2}"
+
+  local -r extract_dir=$(mktemp -d)
+  cd ${extract_dir}
+  run_and_log_cmd "ar -xv ${deb_package}"
+  mkdir -p files
+  run_and_log_cmd "sudo tar xJf data.tar.xz -C files"
+  cd - > /dev/null 2>&1
+
+  run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir}/files/ ${dest_dir}"
+
+  log_info "Successfully installed $(basename ${filename})"
+}
