@@ -103,12 +103,12 @@ log_info "Installing Mender client and related files"
 deb_arch=$(probe_debian_arch_name)
 
 if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
-  deb_name=$(deb_from_repo_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client" "latest")
+  deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
 elif [ "${MENDER_CLIENT_VERSION}" = "master" ]; then
-  deb_name=$(deb_from_repo_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client" "latest")
+  deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client")
 else
   DEBIAN_REVISION="-1"
-  deb_name=$(deb_from_repo_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
+  deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
 fi
 
 deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
@@ -123,12 +123,12 @@ if [ "${MENDER_ADDON_SHELL_INSTALL}" = "y" ]; then
   log_info "Installing Mender Shell addon"
 
   if [ "${MENDER_ADDON_SHELL_VERSION}" = "latest" ]; then
-    deb_name=$(deb_from_repo_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-shell" "latest")
+    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-shell")
   elif [ "${MENDER_ADDON_SHELL_VERSION}" = "master" ]; then
-    deb_name=$(deb_from_repo_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-shell" "latest")
+    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-shell")
   else
     DEBIAN_REVISION="-1"
-    deb_name=$(deb_from_repo_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-shell" "${MENDER_ADDON_SHELL_VERSION}${DEBIAN_REVISION}")
+    deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-shell" "${MENDER_ADDON_SHELL_VERSION}${DEBIAN_REVISION}")
   fi
 
   deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"

@@ -15,45 +15,69 @@
 
 source modules/log.sh
 
-# Direct download of a deb package from an APT repository
+# Download of latest deb package for the given distribution of an APT repository
 #
 #  $1 - Download directory
 #  $2 - APT repository url
 #  $3 - Debian architecture
 #  $4 - Debian Distribution
 #  $5 - Package name
-#  $6 - Package version (optional, default "latest")
-#  $7 - Component (optional, default "main")
+#  $6 - Component (optional, default "main")
 #
 # @return - Filename of the downloaded package
 #
-function deb_from_repo_get () {
+function deb_from_repo_dist_get () {
   if [[ $# -lt 5 || $# -gt 7 ]]; then
-    log_fatal "deb_from_repo_get() requires 5 or 6 arguments"
+    log_fatal "deb_from_repo_dist_get() requires 5 arguments"
   fi
   local -r download_dir="${1}"
   local -r repo_url="${2}"
   local -r architecture="${3}"
   local -r distribution="${4}"
   local -r package="${5}"
-  local -r version="${6:-latest}"
-  local -r component="${7:-main}"
+  local -r component="${6:-main}"
 
-  local deb_package_path=""
-  if [ "${version}" = "latest" ]; then
-    # If latest, fetch and parse the packages list of the given distribution to find the latest version
-    local -r packages_url="${repo_url}/dists/${distribution}/${component}/binary-${architecture}/Packages"
-    run_and_log_cmd "wget -Nq ${packages_url} -P /tmp"
+  # Fetch and parse the packages list of the given distribution to find the latest version
+  local -r packages_url="${repo_url}/dists/${distribution}/${component}/binary-${architecture}/Packages"
+  run_and_log_cmd "wget -Nq ${packages_url} -P /tmp"
 
-    deb_package_path=$(grep Filename /tmp/Packages | grep ${package}_ | grep ${architecture} | tail -n1 | sed 's/Filename: //')
-    if [ -z "${deb_package_path}" ]; then
-      log_fatal "Couldn't fine package ${package} in ${packages_url}"
-    fi
-  else
-    # Else, try to download the specified version (ignoring distribution)
-    local -l initial="$(echo $package | head -c 1)"
-    deb_package_path="pool/${component}/${initial}/${package}/${package}_${version}_${architecture}.deb"
+  local -r deb_package_path=$(grep Filename /tmp/Packages | grep ${package}_ | grep ${architecture} | tail -n1 | sed 's/Filename: //')
+  if [ -z "${deb_package_path}" ]; then
+    log_fatal "Couldn't find package ${package} in ${packages_url}"
   fi
+
+  local -r filename=$(basename $deb_package_path)
+  run_and_log_cmd "wget -Nq ${repo_url}/${deb_package_path} -P ${download_dir}"
+
+  rm -f /tmp/Packages
+  log_info "Successfully downloaded ${filename}"
+  echo ${filename}
+}
+
+# Download a deb package direcrly from the pool of an APT repository
+#
+#  $1 - Download directory
+#  $2 - APT repository url
+#  $3 - Debian architecture
+#  $4 - Package name
+#  $5 - Package version
+#  $6 - Component (optional, default "main")
+#
+# @return - Filename of the downloaded package
+#
+function deb_from_repo_pool_get () {
+  if [[ $# -ne 5 ]]; then
+    log_fatal "deb_from_repo_pool_get() requires 5 arguments"
+  fi
+  local -r download_dir="${1}"
+  local -r repo_url="${2}"
+  local -r architecture="${3}"
+  local -r package="${4}"
+  local -r version="${5}"
+  local -r component="${6:-main}"
+
+  local -r initial="$(echo $package | head -c 1)"
+  local -r deb_package_path="pool/${component}/${initial}/${package}/${package}_${version}_${architecture}.deb"
 
   local -r filename=$(basename $deb_package_path)
   run_and_log_cmd "wget -Nq ${repo_url}/${deb_package_path} -P ${download_dir}"
