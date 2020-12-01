@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Northern.tech AS
+# Copyright 2020 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ while (( "$#" )); do
       ;;
     *)
       echo "Sorry but the provided option is not supported: $1"
-      echo "Usage:  $(basename $0) --output-dir ./rootfs_overlay_demo --server-ip <your server IP address>"
+      echo "Usage:  $(basename $0) --output-dir <rootfs overlay dir> --server-ip <your server IP address>"
       exit 1
       ;;
   esac
@@ -68,6 +68,16 @@ cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 EOF
 
 chmod 600 ${output_dir}/etc/mender/mender.conf
+
+cat <<- EOF > ${output_dir}/etc/mender/mender-shell.conf
+{
+  "ServerURL": "https://docker.mender.io",
+  "ShellCommand": "/bin/sh",
+  "User": "root"
+}
+EOF
+
+chmod 600 ${output_dir}/etc/mender/mender-shell.conf
 
 cat <<- EOF > ${output_dir}/etc/hosts
 127.0.0.1	localhost

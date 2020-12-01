@@ -33,7 +33,7 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     sudo \
 # mkfs.vfat (required for boot partition)
     dosfstools \
-# to download mender-artifact
+# to download Mender binaries
     wget \
 # to download mender-grub-env
     git \
