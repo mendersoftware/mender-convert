@@ -57,7 +57,10 @@ if [ -z "${server_url}" ]; then
   exit 1
 fi
 
-[ -e ${output_dir} ] && sudo chown -R $(id -u).$(id -g) ${output_dir}
+if [ -e ${output_dir} ]; then
+    sudo chown -R $(id -u) ${output_dir}
+    sudo chgrp -R $(id -g) ${output_dir}
+fi
 mkdir -p ${output_dir}/etc/mender
 cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
@@ -80,6 +83,7 @@ EOF
 
 chmod 600 ${output_dir}/etc/mender/mender.conf
 
-sudo chown -R root.root ${output_dir}
+sudo chown -R root ${output_dir}
+sudo chgrp -R root ${output_dir}
 
 echo "Configuration file for using Production Mender Server written to: ${output_dir}/etc/mender"
