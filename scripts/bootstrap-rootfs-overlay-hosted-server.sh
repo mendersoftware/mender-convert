@@ -70,7 +70,7 @@ EOF
 
 chmod 600 ${output_dir}/etc/mender/mender.conf
 
-sudo chown -R root ${output_dir}
-sudo chgrp -R root ${output_dir}
+sudo chown -R 0 ${output_dir}
+sudo chgrp -R 0 ${output_dir}
 
 echo "Configuration file for using Hosted Mender written to: ${output_dir}/etc/mender"
