@@ -1,4 +1,4 @@
-MENDER_ACCEPTANCE_URL="https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance"
+MENDER_ACCEPTANCE_URL="https://raw.githubusercontent.com/mendersoftware/meta-mender/c791015fb14f27b7b79143494ee50e42f70c4661/tests/acceptance"
 
 WORKSPACE=${WORKSPACE:-./tests}
 
