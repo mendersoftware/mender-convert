@@ -52,7 +52,10 @@ if [ -z "${server_ip}" ]; then
   exit 1
 fi
 
-[ -e ${output_dir} ] && sudo chown -R $(id -u).$(id -g) ${output_dir}
+if [ -e ${output_dir} ]; then
+     sudo chown -R $(id -u) ${output_dir}
+     sudo chgrp -R $(id -g) ${output_dir}
+fi
 mkdir -p ${output_dir}/etc/mender
 cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
@@ -78,6 +81,7 @@ ${server_ip} docker.mender.io s3.docker.mender.io
 EOF
 wget -q "https://raw.githubusercontent.com/mendersoftware/mender/master/support/demo.crt" -O ${output_dir}/etc/mender/server.crt
 
-sudo chown -R root.root ${output_dir}
+sudo chown -R root ${output_dir}
+sudo chgrp -R root ${output_dir}
 
 echo "Configuration file for using Demo Mender Server written to: ${output_dir}/etc/mender"
