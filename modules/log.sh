@@ -16,7 +16,7 @@
 
 # This must be an absolute path, as users might call the log functions
 # from sub-directories
-log_file="${PWD}/work/convert.log"
+log_file="${MENDER_CONVERT_LOG_FILE:-${PWD}/work/convert.log}"
 
 
 # Add some colour to the log messages

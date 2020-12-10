@@ -18,8 +18,9 @@ source modules/bootstrap.sh
 source modules/cliparser.sh
 source modules/decompressinput.sh
 
-mkdir -p work
-touch work/convert.log
+export MENDER_CONVERT_LOG_FILE=$(pwd)/${MENDER_CONVERT_LOG_FILE:-logs/convert.log}
+touch ${MENDER_CONVERT_LOG_FILE}
+chown -R --reference=. ${MENDER_CONVERT_LOG_FILE}
 
 ###############################################################################
 #                Declaration of important variables for this file             #
@@ -66,11 +67,10 @@ function trap_exit() {
   EXIT_CODE=$?
   if [[ ${EXIT_CODE} -ne 0 && ${EXIT_CODE} -ne ${FATAL_EXIT_CODE} ]]; then
     log_error "mender-convert failed"
-    [ -e work/convert.log ] && tac work/convert.log | sed '/DEBUG/q' | tac | sed 's/Running/When running/'
+    [ -e ${MENDER_CONVERT_LOG_FILE} ] && tac ${MENDER_CONVERT_LOG_FILE} | sed '/DEBUG/q' | tac | sed 's/Running/When running/'
     log_error "mender-convert exit code: ${EXIT_CODE}"
   fi
-  mv work/convert.log convert.log
-  sudo rm -rf work
+  sudo rm -rf work/*
 }
 
 function trap_term() {
