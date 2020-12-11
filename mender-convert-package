@@ -340,15 +340,15 @@ log_info "Conversion has completed! \o/"
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
   boot_part_mountpoint="/boot/efi"
 
-  # This is the name of the DISTRO_FEATURES in Yocto
-  distro_feature="mender-grub"
+  # This is the name of the MENDER_FEATURES in Yocto
+  bootloader_feature="mender-grub"
 else
   boot_part_mountpoint="/uboot"
 
-  # This is the name of the DISTRO_FEATURES in Yocto
-  distro_feature="mender-uboot"
+  # This is the name of the MENDER_FEATURES in Yocto
+  bootloader_feature="mender-uboot"
 fi
-distro_feature="${distro_feature} mender-convert"
+mender_features="${bootloader_feature} mender-convert"
 
 cat <<- EOF > deploy/${image_name}.cfg
 MENDER_BOOT_PART="${boot_part_device}"
@@ -364,7 +364,7 @@ MENDER_PARTITION_ALIGNMENT="${MENDER_PARTITION_ALIGNMENT}"
 MENDER_STORAGE_TOTAL_SIZE_MB="${MENDER_STORAGE_TOTAL_SIZE_MB}"
 MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET="12582912"
 MENDER_ARTIFACT_NAME="${artifact_name}"
-DISTRO_FEATURES="${distro_feature}"
+MENDER_FEATURES="${mender_features}"
 DEPLOY_DIR_IMAGE="${PWD}/deploy"
 MENDER_MACHINE="${device_type}"
 EOF
