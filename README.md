@@ -116,7 +116,7 @@ MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
 ```
 
 Conversion will take 10-30 minutes, depending on image size and resources
-available. You can watch `work/convert.log` for progress and diagnostics
+available. You can watch `WORKDIR/convert.log` for progress and diagnostics
 information.
 
 After it finishes, you can find your images in the `deploy` directory on your

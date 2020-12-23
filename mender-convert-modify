@@ -164,9 +164,9 @@ kernel_imagetype=kernel
 initrd_imagetype=initrd
 EOF
 
-  run_and_log_cmd "ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
+  run_and_log_cmd "sudo ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
   if [ "${initrd_imagetype}" != "" ]; then
-    run_and_log_cmd "ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
+    run_and_log_cmd "sudo ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
   fi
 
   # For partuuid support grub.cfg expects dedicated variables to be added
@@ -278,7 +278,7 @@ esac
 run_and_log_cmd "sudo mkdir -p work/rootfs/etc/mender/scripts/"
 run_and_log_cmd "echo -n ${VERSION_STRING} | sudo tee work/rootfs/etc/mender/scripts/version"
 
-log_info "Installing a custom /etc/fstab (see work/convert.log for more info)"
+log_info "Installing a custom /etc/fstab (see ${MENDER_CONVERT_LOG_FILE} for more info)"
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
   boot_part_mountpoint="/boot/efi"

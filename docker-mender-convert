@@ -25,13 +25,23 @@ MENDER_CONVERT_DIR="$(pwd)"
 #Pass in version in-case we are added as a git submodule
 MENDER_CONVERT_VERSION=$(git_mender_convert_version)
 
+# Create a unique work directory so we can run multiple containers in parallel
+WORK_DIR=$(mktemp -d -p $(pwd) -t work.XXXX)
+WORK_SUFFIX=$(echo $WORK_DIR | awk -F. '{print $NF}')
+LOG_FILE="convert.log.${WORK_SUFFIX}"
+
+set +e
 docker run \
   --rm \
   -v $MENDER_CONVERT_DIR:/mender-convert \
+  -v $WORK_DIR:/mender-convert/work \
   --privileged=true \
   --cap-add=SYS_MODULE \
   -v /dev:/dev \
   -v /lib/modules:/lib/modules:ro \
   --env MENDER_ARTIFACT_NAME=${MENDER_ARTIFACT_NAME} \
   --env MENDER_CONVERT_VERSION=${MENDER_CONVERT_VERSION} \
+  --env MENDER_CONVERT_LOG_FILE=logs/${LOG_FILE} \
   $IMAGE_NAME "$@"
+
+[ $? -eq 0 ] && rmdir ${WORK_DIR}
