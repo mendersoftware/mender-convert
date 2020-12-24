@@ -118,23 +118,23 @@ if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
         work/rootfs/etc/systemd/system/multi-user.target.wants/mender-client.service"
 fi
 
-if [ "${MENDER_ADDON_SHELL_INSTALL}" = "y" ]; then
+if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
 
-  log_info "Installing Mender Shell addon"
+  log_info "Installing Mender Connect addon"
 
-  if [ "${MENDER_ADDON_SHELL_VERSION}" = "latest" ]; then
-    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-shell")
-  elif [ "${MENDER_ADDON_SHELL_VERSION}" = "master" ]; then
-    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-shell")
+  if [ "${MENDER_ADDON_CONNECT_VERSION}" = "latest" ]; then
+    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-connect")
+  elif [ "${MENDER_ADDON_CONNECT_VERSION}" = "master" ]; then
+    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-connect")
   else
     DEBIAN_REVISION="-1"
-    deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-shell" "${MENDER_ADDON_SHELL_VERSION}${DEBIAN_REVISION}")
+    deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-connect" "${MENDER_ADDON_CONNECT_VERSION}${DEBIAN_REVISION}")
   fi
 
   deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
 
-  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-shell.service \
-        work/rootfs/etc/systemd/system/multi-user.target.wants/mender-shell.service"
+  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-connect.service \
+        work/rootfs/etc/systemd/system/multi-user.target.wants/mender-connect.service"
 fi
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
