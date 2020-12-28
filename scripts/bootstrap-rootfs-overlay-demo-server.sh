@@ -69,7 +69,7 @@ EOF
 
 chmod 600 ${output_dir}/etc/mender/mender.conf
 
-cat <<- EOF > ${output_dir}/etc/mender/mender-shell.conf
+cat <<- EOF > ${output_dir}/etc/mender/mender-connect.conf
 {
   "ServerURL": "https://docker.mender.io",
   "ShellCommand": "/bin/sh",
@@ -77,7 +77,7 @@ cat <<- EOF > ${output_dir}/etc/mender/mender-shell.conf
 }
 EOF
 
-chmod 600 ${output_dir}/etc/mender/mender-shell.conf
+chmod 600 ${output_dir}/etc/mender/mender-connect.conf
 
 cat <<- EOF > ${output_dir}/etc/hosts
 127.0.0.1	localhost
