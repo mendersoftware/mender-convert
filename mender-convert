@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Copyright 2019 Northern.tech AS
+# Copyright 2021 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 source modules/bootstrap.sh
 source modules/cliparser.sh
 source modules/decompressinput.sh
+source modules/testscfg.sh
 
 export MENDER_CONVERT_LOG_FILE=$(pwd)/${MENDER_CONVERT_LOG_FILE:-logs/convert.log}
 touch ${MENDER_CONVERT_LOG_FILE}
@@ -117,6 +118,8 @@ if [ -z "${MENDER_ARTIFACT_NAME}" ]; then
   echo -e "\tMENDER_ARTIFACT_NAME=\"release-1\" ./mender-convert"
   exit 1
 fi
+
+testscfg_init
 
 parse_cli_options "$@"
 

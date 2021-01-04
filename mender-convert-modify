@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Copyright 2020 Northern.tech AS
+# Copyright 2021 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ source modules/bootstrap.sh
 source modules/disk.sh
 source modules/probe.sh
 source modules/deb.sh
+source modules/testscfg.sh
 
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
@@ -112,6 +113,9 @@ else
 fi
 
 deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
+
+# Save installed client version for tests in Yocto variable format
+testscfg_add "PREFERRED_VERSION_mender-client" "$(echo ${deb_name} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
 
 if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
   run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \

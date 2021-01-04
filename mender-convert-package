@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Copyright 2020 Northern.tech AS
+# Copyright 2021 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ echo "Running $(basename $0): $@"
 
 source modules/bootstrap.sh
 source modules/disk.sh
+source modules/testscfg.sh
 
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
@@ -350,35 +351,31 @@ else
 fi
 mender_features="${bootloader_feature} mender-convert"
 
-cat <<- EOF > deploy/${image_name}.cfg
-MENDER_BOOT_PART="${boot_part_device}"
-MENDER_ROOTFS_PART_A="${root_part_a_device}"
-MENDER_ROOTFS_PART_B="${root_part_b_device}"
-MENDER_DATA_PART="${data_part_device}"
-MENDER_BOOT_PART_MOUNT_LOCATION="${boot_part_mountpoint}"
-MENDER_BOOT_PART_SIZE_MB="$(disk_sectors_to_mb ${boot_part_sectors})"
-MENDER_DATA_PART_SIZE_MB="${MENDER_DATA_PART_SIZE_MB}"
-MENDER_DEVICE_TYPE="${device_type}"
-MENDER_PARTITIONING_OVERHEAD_KB="$(( (${overhead_sectors} * 512) / 1024 ))"
-MENDER_PARTITION_ALIGNMENT="${MENDER_PARTITION_ALIGNMENT}"
-MENDER_STORAGE_TOTAL_SIZE_MB="${MENDER_STORAGE_TOTAL_SIZE_MB}"
-MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET="12582912"
-MENDER_ARTIFACT_NAME="${artifact_name}"
-MENDER_FEATURES="${mender_features}"
-DEPLOY_DIR_IMAGE="${PWD}/deploy"
-MENDER_MACHINE="${device_type}"
-EOF
-
+testscfg_add "MENDER_BOOT_PART" "${boot_part_device}"
+testscfg_add "MENDER_ROOTFS_PART_A" "${root_part_a_device}"
+testscfg_add "MENDER_ROOTFS_PART_B" "${root_part_b_device}"
+testscfg_add "MENDER_DATA_PART" "${data_part_device}"
+testscfg_add "MENDER_BOOT_PART_MOUNT_LOCATION" "${boot_part_mountpoint}"
+testscfg_add "MENDER_BOOT_PART_SIZE_MB" "$(disk_sectors_to_mb ${boot_part_sectors})"
+testscfg_add "MENDER_DATA_PART_SIZE_MB" "${MENDER_DATA_PART_SIZE_MB}"
+testscfg_add "MENDER_DEVICE_TYPE" "${device_type}"
+testscfg_add "MENDER_PARTITIONING_OVERHEAD_KB" "$(( (${overhead_sectors} * 512) / 1024 ))"
+testscfg_add "MENDER_PARTITION_ALIGNMENT" "${MENDER_PARTITION_ALIGNMENT}"
+testscfg_add "MENDER_STORAGE_TOTAL_SIZE_MB" "${MENDER_STORAGE_TOTAL_SIZE_MB}"
+testscfg_add "MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET" "12582912"
+testscfg_add "MENDER_ARTIFACT_NAME" "${artifact_name}"
+testscfg_add "MENDER_FEATURES" "${mender_features}"
+testscfg_add "DEPLOY_DIR_IMAGE" "${PWD}/deploy"
+testscfg_add "MENDER_MACHINE" "${device_type}"
 
 # Outputting device base only relevant for some configurations
 if [ "${MENDER_ENABLE_PARTUUID}" != "y" ]; then
-    cat <<- EOF >> deploy/${image_name}.cfg
-MENDER_STORAGE_DEVICE_BASE="${MENDER_STORAGE_DEVICE_BASE}"
-EOF
+  testscfg_add "MENDER_STORAGE_DEVICE_BASE" "${MENDER_STORAGE_DEVICE_BASE}"
 fi
 
 # Something that the tests expect to be defined (originally from Yocto)
-cat <<- EOF >> deploy/${image_name}.cfg
-IMAGE_FSTYPES="${image_fs_type} mender sdimg"
-ARTIFACTIMG_FSTYPE="${image_fs_type}"
-EOF
+testscfg_add "IMAGE_FSTYPES" "${image_fs_type} mender sdimg"
+testscfg_add "ARTIFACTIMG_FSTYPE" "${image_fs_type}"
+
+# Save configuration file for tests
+testscfg_save deploy/${image_name}.cfg
