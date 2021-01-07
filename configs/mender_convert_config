@@ -227,9 +227,10 @@ source configs/mender_grub_config
 # You might want to override this to e.g provide state-scripts or providing
 # a private key to sign your artifact.
 mender_create_artifact() {
-  local -r device_type="${1}"
+  local -r device_types="${1}"
   local -r artifact_name="${2}"
   local -r image_name="${3}"
+  local -r all_device_types="$(for device_type in $device_types; do echo " --device-type $device_type"; done)"
 
   mender_artifact=deploy/${image_name}.mender
   log_info "Writing Mender artifact to: ${mender_artifact}"
@@ -240,5 +241,5 @@ mender_create_artifact() {
       --file work/rootfs.img \
       --output-path ${mender_artifact} \
       --artifact-name ${artifact_name} \
-      --device-type ${device_type}"
+      ${all_device_types}"
 }

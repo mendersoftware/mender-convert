@@ -151,7 +151,10 @@ temp_img_name=$(basename "$disk_image")
 
 # Strip the image suffix from temp_img_name and set the original image name as
 # the output image name
-image_name="${temp_img_name%.*}-${device_type}-mender"
+image_name="${temp_img_name%.*}"
+
+#Adds device types to the filename and replaces whitespace with + to seperate device types. 
+image_name="${image_name}-$(sed 's| |+|g' <<< $device_type)-mender"
 
 actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
 
