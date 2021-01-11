@@ -78,6 +78,12 @@ MENDER_DATA_PART_GROWFS=y
 # input disk image
 MENDER_DEVICE_TYPE=""
 
+# A string that defines the filenames of the deployed files.This is optional.
+# If no DEPLOY_IMAGE_NAME is defined the filenames will be a combination off
+# the date and the names of all DEVICE_TYPES.
+# These will be seperated with a +.
+DEPLOY_IMAGE_NAME=""
+
 # The partition scheme to use for the converted image.
 # To override set this to "gpt" or "dos" (the scheme names used by fdisk and partx).
 # By default mender-convert will use the partition scheme from the input image.
