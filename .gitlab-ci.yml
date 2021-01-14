@@ -6,6 +6,8 @@ variables:
   # search for and change them too.
   MENDER_ARTIFACT_VERSION: master
   MENDER_CLIENT_VERSION: latest
+  # MENDER_ADDON_CONNECT_VERSION: latest
+  MENDER_ADDON_CONNECT_VERSION: master
   # Make sure to update the link in mender-docs to the new one when changing
   # this.
   RASPBIAN_URL: http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-05-28/2020-05-27-raspios-buster-lite-armhf.zip
@@ -74,12 +76,13 @@ build:
     - unzip ${RASPBIAN_NAME}.zip
 
   script:
-    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > mender_client_version_config
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > versions_override_config
+    - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> versions_override_config
     - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
       ./docker-mender-convert -d ${RASPBIAN_NAME}.img
       -c configs/${RASPBERRYPI_PLATFORM}_config
       -c configs/images/raspberrypi_raspbian_config
-      -c mender_client_version_config
+      -c versions_override_config
 
     # Upload to temporary S3 bucket
     - mv deploy ${RASPBERRYPI_PLATFORM}
