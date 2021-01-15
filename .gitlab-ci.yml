@@ -10,8 +10,8 @@ variables:
   MENDER_ADDON_CONNECT_VERSION: master
   # Make sure to update the link in mender-docs to the new one when changing
   # this.
-  RASPBIAN_URL: http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-05-28/2020-05-27-raspios-buster-lite-armhf.zip
-  RASPBIAN_NAME: 2020-05-27-raspios-buster-lite-armhf
+  RASPBIAN_URL: https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip
+  RASPBIAN_NAME: 2021-01-11-raspios-buster-armhf-lite
 
   DEBIAN_FRONTEND: noninteractive
 
