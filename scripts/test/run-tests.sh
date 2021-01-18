@@ -101,10 +101,23 @@ else
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then
     wget --progress=dot:giga -N ${BBB_DEBIAN_SDCARD_IMAGE_URL} -P input/
+    # Convert uncompressed images to speed up this job
+    unxz --force "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz"
     convert_and_test "beaglebone-sdcard" \
                      "release-1" \
-                     "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz" \
+                     "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img" \
                      "--config configs/beaglebone_black_debian_sdcard_config" \
+                     -- \
+                     "-k" "'not test_update'" \
+                     || test_result=$?
+
+    rm -rf deploy
+    wget --progress=dot:giga -N ${BBB_DEBIAN_EMMC_IMAGE_URL} -P input/
+    unxz --force "input/bone-debian-10.5-console-armhf-2020-09-21-1gb.img.xz"
+    convert_and_test "beaglebone-emmc" \
+                     "release-1" \
+                     "input/bone-debian-10.5-console-armhf-2020-09-21-1gb.img" \
+                     "--config configs/beaglebone_black_debian_emmc_config" \
                      -- \
                      "-k" "'not test_update'" \
                      || test_result=$?
