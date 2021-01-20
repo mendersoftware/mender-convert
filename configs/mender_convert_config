@@ -128,8 +128,7 @@ MENDER_ADDON_CONNECT_INSTALL="n"
 # Mender Connect addon version
 #
 # Valid values are "latest" (default), "master" or a specific version
-# MENDER_ADDON_CONNECT_VERSION="latest"
-MENDER_ADDON_CONNECT_VERSION="master"
+MENDER_ADDON_CONNECT_VERSION="latest"
 
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.
