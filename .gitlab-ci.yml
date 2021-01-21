@@ -52,6 +52,25 @@ build:
     paths:
       - image.tar
 
+test:format:
+  stage: test
+  needs: []
+  image: python:3
+  before_script:
+    - pip install beautysh
+  script:
+    # Core script
+    - beautysh --indent-size 2 mender-convert*
+    # Other files
+    - find modules configs scripts -type f
+        -not -name "*.md"
+        -not -wholename "scripts/test/*" |
+        xargs beautysh --indent-size 2
+    # Print diff
+    - git diff HEAD
+    # Actual test: exits with non zero status if diff
+    - git diff-index --quiet HEAD
+
 .template_convert_raspbian: &convert_raspbian
   stage: convert
   needs:
