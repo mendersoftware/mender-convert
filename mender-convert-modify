@@ -276,8 +276,8 @@ run_and_log_cmd "echo 'artifact_name=${MENDER_ARTIFACT_NAME}' \
 
 log_info "Creating state scripts version file."
 case "${MENDER_CLIENT_VERSION}" in
-    1* ) VERSION_STRING='2';;
-    *  ) VERSION_STRING='3';;
+  1* ) VERSION_STRING='2' ;;
+  *  ) VERSION_STRING='3' ;;
 esac
 run_and_log_cmd "sudo mkdir -p work/rootfs/etc/mender/scripts/"
 run_and_log_cmd "echo -n ${VERSION_STRING} | sudo tee work/rootfs/etc/mender/scripts/version"

@@ -49,10 +49,10 @@ disk_get_part_value() {
 #  $1 - path to disk image
 disk_get_part_nums() {
   partx --show $1 | tail -n +2 |
-    while read line
-    do
-      echo $line | awk '{printf "%d\n", $1}'
-    done
+  while read line
+  do
+    echo $line | awk '{printf "%d\n", $1}'
+  done
 }
 
 # Extract a file system image from a disk image
@@ -115,9 +115,9 @@ disk_create_file_system_from_folder() {
   run_and_log_cmd "dd if=/dev/zero of=${2} seek=${3} count=0 bs=512 status=none"
 
   case ${1} in
-      *data/ ) EXTRA_OPTS="${MENDER_DATA_PART_MKFS_OPTS}";;
-      *rootfs/ ) EXTRA_OPTS="${MENDER_ROOT_PART_MKFS_OPTS}";;
-      * ) EXTRA_OPTS="";;
+    *data/ ) EXTRA_OPTS="${MENDER_DATA_PART_MKFS_OPTS}" ;;
+    *rootfs/ ) EXTRA_OPTS="${MENDER_ROOT_PART_MKFS_OPTS}" ;;
+    * ) EXTRA_OPTS="" ;;
   esac
 
   case "$4" in
@@ -258,9 +258,9 @@ disk_get_partuuid_dos_part_number() {
 disk_get_part_device() {
   part="${!2}"
   if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
-      if ! disk_is_valid_partuuid_device "${part}"; then
-        log_fatal "Invalid partuuid device for ${2}: '${part}'"
-      fi
+    if ! disk_is_valid_partuuid_device "${part}"; then
+      log_fatal "Invalid partuuid device for ${2}: '${part}'"
+    fi
   else
     part="${MENDER_STORAGE_DEVICE_BASE}${1}"
   fi
@@ -289,35 +289,35 @@ disk_root_part_b_device() {
 #
 # $1 - device path
 disk_get_device_part_number() {
-    dev_part="unknown"
-    case "$1" in
-        /dev/nvme*n*p* )
-            dev_part=$(echo $1 | cut -dp -f2)
-            ;;
-        /dev/mmcblk*p* )
-            dev_part=$(echo $1 | cut -dp -f2)
-            ;;
-        /dev/[sh]d[a-z][1-9]* )
-            dev_part=${1##*d[a-z]}
-            ;;
-        ubi*_* )
-            dev_part=$(echo $1 | cut -d_ -f2)
-            ;;
-        /dev/disk/by-partuuid/* )
-            if disk_is_valid_partuuid_dos_device "$1";then
-              dev_part=$(disk_get_partuuid_dos_part_number "$1")
-              dev_part=$((16#${dev_part}))
-            else
-              log_fatal "partition number does not exist for GPT partuuid: '$1'"
-            fi
-            ;;
-    esac
-    part=$(printf "%d" $dev_part 2>/dev/null)
-    if [ $? = 1 ]; then
-        log_fatal "Could not determine partition number from '${1}'"
-    else
-        echo "$part"
-    fi
+  dev_part="unknown"
+  case "$1" in
+    /dev/nvme*n*p* )
+      dev_part=$(echo $1 | cut -dp -f2)
+      ;;
+    /dev/mmcblk*p* )
+      dev_part=$(echo $1 | cut -dp -f2)
+      ;;
+    /dev/[sh]d[a-z][1-9]* )
+      dev_part=${1##*d[a-z]}
+      ;;
+    ubi*_* )
+      dev_part=$(echo $1 | cut -d_ -f2)
+      ;;
+    /dev/disk/by-partuuid/* )
+      if disk_is_valid_partuuid_dos_device "$1";then
+        dev_part=$(disk_get_partuuid_dos_part_number "$1")
+        dev_part=$((16#${dev_part}))
+      else
+        log_fatal "partition number does not exist for GPT partuuid: '$1'"
+      fi
+      ;;
+  esac
+  part=$(printf "%d" $dev_part 2>/dev/null)
+  if [ $? = 1 ]; then
+    log_fatal "Could not determine partition number from '${1}'"
+  else
+    echo "$part"
+  fi
 }
 
 # Get device base path without partition number from argument.
@@ -325,29 +325,29 @@ disk_get_device_part_number() {
 #
 # $1 - device path
 disk_get_device_base() {
-    dev_base=""
-    case "$1" in
-        /dev/nvme*n*p* )
-            dev_base=$(echo $1 | cut -dp -f1)
-            ;;
-        /dev/mmcblk*p* )
-            dev_base=$(echo $1 | cut -dp -f1)
-            ;;
-        /dev/[sh]d[a-z][1-9]* )
-            dev_base=${1%%[1-9]*}
-            ;;
-        ubi*_* )
-            dev_base=$(echo $1 | cut -d_ -f1)
-            ;;
-        /dev/disk/by-partuuid/* )
-            log_fatal "device base does not exist for GPT partuuid: '$1'"
-            ;;
-    esac
-    if [ -z "$dev_base" ]; then
-        log_fatal "Could not determine device base from '${1}'"
-    else
-        echo $dev_base
-    fi
+  dev_base=""
+  case "$1" in
+    /dev/nvme*n*p* )
+      dev_base=$(echo $1 | cut -dp -f1)
+      ;;
+    /dev/mmcblk*p* )
+      dev_base=$(echo $1 | cut -dp -f1)
+      ;;
+    /dev/[sh]d[a-z][1-9]* )
+      dev_base=${1%%[1-9]*}
+      ;;
+    ubi*_* )
+      dev_base=$(echo $1 | cut -d_ -f1)
+      ;;
+    /dev/disk/by-partuuid/* )
+      log_fatal "device base does not exist for GPT partuuid: '$1'"
+      ;;
+  esac
+  if [ -z "$dev_base" ]; then
+    log_fatal "Could not determine device base from '${1}'"
+  else
+    echo $dev_base
+  fi
 }
 
 
@@ -357,13 +357,13 @@ disk_get_device_base() {
 # $2 - variable value
 disk_override_partition_variable() {
   if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
-      if disk_is_valid_partuuid_dos_device "${2}";then
-        eval "${1}"=$(disk_get_device_part_number "${2}")
-      fi
+    if disk_is_valid_partuuid_dos_device "${2}";then
+      eval "${1}"=$(disk_get_device_part_number "${2}")
+    fi
   else
-      if [ -n "${2}" ];then
-        eval "${1}"=$(disk_get_device_part_number "${2}")
-        MENDER_STORAGE_DEVICE_BASE=$(disk_get_device_base "${2}")
-      fi
+    if [ -n "${2}" ];then
+      eval "${1}"=$(disk_get_device_part_number "${2}")
+      MENDER_STORAGE_DEVICE_BASE=$(disk_get_device_base "${2}")
+    fi
   fi
 }

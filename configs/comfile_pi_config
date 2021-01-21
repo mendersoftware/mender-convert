@@ -3,7 +3,7 @@ MENDER_STORAGE_TOTAL_SIZE_MB="14000"
 # default: MENDER_BOOT_PART_SIZE_MB="40"
 
 function enable_lcd_backlight_comfile_pi() {
-    cat <<- 'EOF' > work/boot/boot.cmd
+  cat <<- 'EOF' > work/boot/boot.cmd
 #
 # Customized boot script for COMFILE PI.
 #
@@ -18,8 +18,8 @@ load ${mender_uboot_root} ${kernel_addr_r} /boot/zImage
 bootz ${kernel_addr_r} - ${fdt_addr}
 run mender_try_to_recover
 EOF
-    mkimage -C none -A arm -T script -d work/boot/boot.cmd work/boot/boot.scr
-    rm -f work/boot/boot.cmd
+  mkimage -C none -A arm -T script -d work/boot/boot.cmd work/boot/boot.scr
+  rm -f work/boot/boot.cmd
 }
 PLATFORM_MODIFY_HOOKS+=(enable_lcd_backlight_comfile_pi)
 

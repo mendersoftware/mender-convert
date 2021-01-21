@@ -40,12 +40,12 @@ MENDER_STORAGE_TOTAL_SIZE_MB=16000
 MENDER_COPY_BOOT_GAP="n"
 
 function platform_modify() {
-    #
-    # Make sure /lib64 exists since the Mender binary requires it.
-    # Some systems put everything under /lib (ie Yocto) and a simple
-    # symlink is enough to find everything Mender needs.
-    #
-    if [ ! -e work/rootfs/lib64 ]; then
-        run_and_log_cmd "ln -s /lib work/rootfs/lib64"
-    fi
+  #
+  # Make sure /lib64 exists since the Mender binary requires it.
+  # Some systems put everything under /lib (ie Yocto) and a simple
+  # symlink is enough to find everything Mender needs.
+  #
+  if [ ! -e work/rootfs/lib64 ]; then
+    run_and_log_cmd "ln -s /lib work/rootfs/lib64"
+  fi
 }

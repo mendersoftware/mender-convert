@@ -53,8 +53,8 @@ if [ -z "${server_ip}" ]; then
 fi
 
 if [ -e ${output_dir} ]; then
-     sudo chown -R $(id -u) ${output_dir}
-     sudo chgrp -R $(id -g) ${output_dir}
+  sudo chown -R $(id -u) ${output_dir}
+  sudo chgrp -R $(id -g) ${output_dir}
 fi
 mkdir -p ${output_dir}/etc/mender
 cat <<- EOF > ${output_dir}/etc/mender/mender.conf

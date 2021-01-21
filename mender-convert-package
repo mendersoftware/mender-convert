@@ -151,11 +151,11 @@ temp_img_name=$(basename "$disk_image")
 
 # Check if user has chooses custom filename
 if [ -z "${DEPLOY_IMAGE_NAME}" ]; then
-# Strip the image suffix from temp_img_name and set the original image name as
-# the output image name
+  # Strip the image suffix from temp_img_name and set the original image name as
+  # the output image name
   image_name="${temp_img_name%.*}"
 
-# Add device types to the filename and replaces whitespace with + to seperate device types. 
+  # Add device types to the filename and replaces whitespace with + to seperate device types.
   image_name="${image_name}-$(sed 's| |+|g' <<< $device_type)-mender"
 else
   # User has choosen custom filename in config file

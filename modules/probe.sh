@@ -24,7 +24,7 @@ probe_arch() {
   file_info=""
   for location in bin/ls usr/bin/ls; do
     if [ -L work/rootfs/${location} ]; then
-        location=$(readlink work/rootfs/${location})
+      location=$(readlink work/rootfs/${location})
     fi
     if [ -e work/rootfs/${location} ]; then
       file_info=$(file -b --dereference work/rootfs/${location})
@@ -141,7 +141,7 @@ probe_kernel_image() {
     #
     #Search for kernels, resolve symlinks, ignore invalid and select the latest if many
     kernels=$(sudo find ${1} -name ${image}* ! -name '*-rescue-*' ! -name '*.old' \
-              -exec readlink -f {} \; | awk -F '/' '{print $NF,$0}' | sort -k1rV | uniq)
+      -exec readlink -f {} \; | awk -F '/' '{print $NF,$0}' | sort -k1rV | uniq)
     kernel_image_path=$(head -n 1 <<< "$kernels" | cut -f2- -d' ')
     n=$(wc -l <<< "$kernels")
 
@@ -176,7 +176,7 @@ probe_initrd_image() {
     #
     #Search for initrd, resolve symlinks, ignore invalid and select the latest if many
     initrds=$(sudo find ${1} -name ${image}* ! -name '*-rescue-*' ! -name '*.old' \
-              -exec readlink -f {} \; | awk -F '/' '{print $NF,$0}' | sort -k1rV | uniq)
+      -exec readlink -f {} \; | awk -F '/' '{print $NF,$0}' | sort -k1rV | uniq)
     initrd_image_path=$(head -n 1 <<< "$initrds" | cut -f2- -d' ')
     n=$(wc -l <<< "$initrds")
 
