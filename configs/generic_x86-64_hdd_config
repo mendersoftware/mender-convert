@@ -1,3 +1,4 @@
+# @formatter:off
 # This configuration can be used to run any distribution on a any x86-64 machine.
 # As example is used CentOS distribution but can be applied to others also.
 #
@@ -30,6 +31,7 @@
 # after copy run again (to fix GPT partition table):
 #	sgdisk -e /dev/sda
 #
+# @formatter:on
 
 MENDER_STORAGE_DEVICE_BASE=/dev/sda
 MENDER_DEVICE_TYPE="x86_64"
