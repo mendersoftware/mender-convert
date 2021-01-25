@@ -17,39 +17,39 @@
 # Exit if any command exits with a non-zero exit status.
 set -o errexit
 
-root_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )/../" && pwd )
+root_dir=$( cd "$( dirname "${BASH_SOURCE[0]}")/../"  && pwd)
 if [ "${root_dir}" != "${PWD}" ]; then
-  echo "You must execute $(basename $0) from the root directory: ${root_dir}"
-  exit 1
+    echo "You must execute $(basename $0) from the root directory: ${root_dir}"
+    exit 1
 fi
 
 server_ip=""
 output_dir=""
-while (( "$#" )); do
-  case "$1" in
-    -o | --output-dir)
-      output_dir="${2}"
-      shift 2
-      ;;
-    -s | --server-ip)
-      server_ip="${2}"
-      shift 2
-      ;;
-    *)
-      echo "Sorry but the provided option is not supported: $1"
-      echo "Usage:  $(basename $0) --output-dir <rootfs overlay dir> --server-ip <your server IP address>"
-      exit 1
-      ;;
-  esac
+while (("$#")); do
+    case "$1" in
+        -o | --output-dir)
+            output_dir="${2}"
+            shift 2
+            ;;
+        -s | --server-ip)
+            server_ip="${2}"
+            shift 2
+            ;;
+        *)
+            echo "Sorry but the provided option is not supported: $1"
+            echo "Usage:  $(basename $0) --output-dir <rootfs overlay dir> --server-ip <your server IP address>"
+            exit 1
+            ;;
+    esac
 done
 
 if [ -z "${output_dir}" ]; then
-  echo "Sorry, but you need to provide an output directory using the '-o/--output-dir' option"
-  exit 1
+    echo "Sorry, but you need to provide an output directory using the '-o/--output-dir' option"
+    exit 1
 fi
 if [ -z "${server_ip}" ]; then
-  echo "Sorry, but you need to provide a server IP address using the '-s/--server-ip' option"
-  exit 1
+    echo "Sorry, but you need to provide a server IP address using the '-s/--server-ip' option"
+    exit 1
 fi
 
 if [ -e ${output_dir} ]; then

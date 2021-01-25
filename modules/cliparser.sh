@@ -13,35 +13,35 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-function parse_cli_options () {
-  while (( "$#" )); do
-    case "$1" in
-      -o | --overlay)
-        overlays+=("${2}")
-        shift 2
-        ;;
-      -c | --config)
-        configs+=("${2}")
-        shift 2
-        ;;
-      -d | --disk-image)
-        disk_image="${2}"
-        shift 2
-        ;;
-      *)
-        log_fatal "Sorry but the provided option is not supported: $1"
-        ;;
-    esac
-  done
+function parse_cli_options()  {
+    while (("$#")); do
+        case "$1" in
+            -o | --overlay)
+                overlays+=("${2}")
+                shift 2
+                ;;
+            -c | --config)
+                configs+=("${2}")
+                shift 2
+                ;;
+            -d | --disk-image)
+                disk_image="${2}"
+                shift 2
+                ;;
+            *)
+                log_fatal "Sorry but the provided option is not supported: $1"
+                ;;
+        esac
+    done
 
-  if [ -z "${disk_image}" ]; then
-    log_warn "Sorry, but '--disk-image' is a mandatory option"
-    log_warn "See ./mender-convert --help for more information"
-    exit 1
-  fi
+    if [ -z "${disk_image}" ]; then
+        log_warn "Sorry, but '--disk-image' is a mandatory option"
+        log_warn "See ./mender-convert --help for more information"
+        exit 1
+    fi
 
-  if [ ! -e ${disk_image} ]; then
-    log_fatal "File not found: ${disk_image}"
-  fi
+    if [ ! -e ${disk_image} ]; then
+        log_fatal "File not found: ${disk_image}"
+    fi
 
 }

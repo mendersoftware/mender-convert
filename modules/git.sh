@@ -14,9 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 # Print the mender convert version
 #
 git_mender_convert_version() {
-  git describe --tags --dirty --exact-match 2>/dev/null || git rev-parse --short HEAD
+    git describe --tags --dirty --exact-match 2> /dev/null || git rev-parse --short HEAD
 }
