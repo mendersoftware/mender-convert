@@ -14,89 +14,89 @@ RASPBERRYPI_BINARIES="${RASPBERRYPI_CONFIG}-2019.01.tar.gz"
 RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi/${RASPBERRYPI_BINARIES}"
 
 function platform_modify() {
-  mkdir -p work/rpi/binaries
+    mkdir -p work/rpi/binaries
 
-  run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
-  run_and_log_cmd "tar xzvf work/rpi/binaries/${RASPBERRYPI_BINARIES} -C work/rpi/binaries"
+    run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
+    run_and_log_cmd "tar xzvf work/rpi/binaries/${RASPBERRYPI_BINARIES} -C work/rpi/binaries"
 
-  # By default, we modify cmdline.txt.
-  #
-  # In Ubuntu, the file is called btcmd.txt; if this file exists, use it instead
-  CMDLINE="cmdline.txt"
-  if [ -f work/boot/btcmd.txt ]; then
-    CMDLINE="btcmd.txt"
-  fi
+    # By default, we modify cmdline.txt.
+    #
+    # In Ubuntu, the file is called btcmd.txt; if this file exists, use it instead
+    CMDLINE="cmdline.txt"
+    if [ -f work/boot/btcmd.txt ]; then
+        CMDLINE="btcmd.txt"
+    fi
 
-  # Make a copy of Linux kernel arguments and modify.
-  run_and_log_cmd "cp work/boot/$CMDLINE work/rpi/$CMDLINE"
+    # Make a copy of Linux kernel arguments and modify.
+    run_and_log_cmd "cp work/boot/$CMDLINE work/rpi/$CMDLINE"
 
-  # Set a dynamic rootfs part (required for Mender A/B update strategy)
-  run_and_log_cmd "sed -i 's/\b[ ]root=[^ ]*/ root=\${mender_kernel_root}/' work/rpi/$CMDLINE"
+    # Set a dynamic rootfs part (required for Mender A/B update strategy)
+    run_and_log_cmd "sed -i 's/\b[ ]root=[^ ]*/ root=\${mender_kernel_root}/' work/rpi/$CMDLINE"
 
-  # Root filesystem can not be resized when the disk is partition according
-  # to Mender layout, where the rootfs partition is the not last one which
-  # is a requirement to be able to do an "online" resize.
-  #
-  # This disables resize of rootfs on boot but applies the changes to
-  # cmdline.txt that are performed in the init_resize.sh script.
-  #
-  # Extracted from /usr/lib/raspi-config/init_resize.sh
-  run_and_log_cmd "sed -i 's| init=/usr/lib/raspi-config/init_resize\.sh||' work/rpi/$CMDLINE"
-  run_and_log_cmd "sed -i 's| sdhci\.debug_quirks2=4||' work/rpi/$CMDLINE"
-  if ! grep -q splash work/rpi/$CMDLINE; then
-    run_and_log_cmd "sed -i 's/ quiet//g' work/rpi/$CMDLINE"
-  fi
+    # Root filesystem can not be resized when the disk is partition according
+    # to Mender layout, where the rootfs partition is the not last one which
+    # is a requirement to be able to do an "online" resize.
+    #
+    # This disables resize of rootfs on boot but applies the changes to
+    # cmdline.txt that are performed in the init_resize.sh script.
+    #
+    # Extracted from /usr/lib/raspi-config/init_resize.sh
+    run_and_log_cmd "sed -i 's| init=/usr/lib/raspi-config/init_resize\.sh||' work/rpi/$CMDLINE"
+    run_and_log_cmd "sed -i 's| sdhci\.debug_quirks2=4||' work/rpi/$CMDLINE"
+    if ! grep -q splash work/rpi/$CMDLINE; then
+        run_and_log_cmd "sed -i 's/ quiet//g' work/rpi/$CMDLINE"
+    fi
 
-  # Update Linux kernel command arguments with our custom configuration
-  run_and_log_cmd "sudo cp work/rpi/$CMDLINE work/boot/"
+    # Update Linux kernel command arguments with our custom configuration
+    run_and_log_cmd "sudo cp work/rpi/$CMDLINE work/boot/"
 
-  # Mask udisks2.service, otherwise it will mount the inactive part and we
-  # might write an update while it is mounted which often result in
-  # corruptions.
-  #
-  # TODO: Find a way to only blacklist mmcblk0pX devices instead of masking
-  # the service.
-  run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
+    # Mask udisks2.service, otherwise it will mount the inactive part and we
+    # might write an update while it is mounted which often result in
+    # corruptions.
+    #
+    # TODO: Find a way to only blacklist mmcblk0pX devices instead of masking
+    # the service.
+    run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
 
-  # Ubuntu Server images actually use U-boot by default on RPi3 and the
-  # layout is slightly different on the boot partition. That is why we need
-  # additional logic here to determine what we are converting.
-  if [ -e work/boot/uboot_rpi_4_32b.bin ] && [ -e work/boot/vmlinuz ]; then
-    RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
-    RASPBERRYPI_BOOTLOADER_IMAGE="uboot_rpi_4_32b.bin"
-  elif [ -e work/boot/uboot.bin ] && [ -e work/boot/vmlinuz ]; then
-    RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
-    RASPBERRYPI_BOOTLOADER_IMAGE="uboot.bin"
-  else
-    RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
-  fi
+    # Ubuntu Server images actually use U-boot by default on RPi3 and the
+    # layout is slightly different on the boot partition. That is why we need
+    # additional logic here to determine what we are converting.
+    if [ -e work/boot/uboot_rpi_4_32b.bin ] && [ -e work/boot/vmlinuz ]; then
+        RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
+        RASPBERRYPI_BOOTLOADER_IMAGE="uboot_rpi_4_32b.bin"
+    elif [ -e work/boot/uboot.bin ] && [ -e work/boot/vmlinuz ]; then
+        RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
+        RASPBERRYPI_BOOTLOADER_IMAGE="uboot.bin"
+    else
+        RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
+    fi
 
-  # Extract Linux kernel and install to /boot directory on rootfs if it doesn't already exist.
-  # If it already exists, the input image is likely already converted so we just want to use
-  # the existing kernel image.
-  if [ ! -f "work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}" ]; then
-    run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
-  fi
+    # Extract Linux kernel and install to /boot directory on rootfs if it doesn't already exist.
+    # If it already exists, the input image is likely already converted so we just want to use
+    # the existing kernel image.
+    if [ ! -f "work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}" ]; then
+        run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
+    fi
 
-  # Replace kernel with U-boot and add boot script
-  run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
-  run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
-  run_and_log_cmd "sudo cp work/rpi/binaries/boot.scr work/boot"
-  run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
-  run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
+    # Replace kernel with U-boot and add boot script
+    run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
+    run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
+    run_and_log_cmd "sudo cp work/rpi/binaries/boot.scr work/boot"
+    run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
+    run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
 
-  # Raspberry Pi applications expect to find this on the device and in some
-  # cases parse the options to determine the functionality.
-  run_and_log_cmd "sudo ln -fs /uboot/config.txt work/rootfs/boot/config.txt"
-  run_and_log_cmd "sudo ln -fs /uboot/overlays work/rootfs/boot/overlays"
-  run_and_log_cmd "sudo ln -fs /uboot/$CMDLINE work/rootfs/boot/$CMDLINE"
+    # Raspberry Pi applications expect to find this on the device and in some
+    # cases parse the options to determine the functionality.
+    run_and_log_cmd "sudo ln -fs /uboot/config.txt work/rootfs/boot/config.txt"
+    run_and_log_cmd "sudo ln -fs /uboot/overlays work/rootfs/boot/overlays"
+    run_and_log_cmd "sudo ln -fs /uboot/$CMDLINE work/rootfs/boot/$CMDLINE"
 
-  run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
-  run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+    run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
+    run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
 
-  # Remove original 'resize2fs_once' script and its symbolic link.
-  if [ -L work/rootfs/etc/rc3.d/S01resize2fs_once ]; then
-    run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
-  fi
-  run_and_log_cmd "sudo rm -f work/rootfs/etc/init.d/resize2fs_once"
+    # Remove original 'resize2fs_once' script and its symbolic link.
+    if [ -L work/rootfs/etc/rc3.d/S01resize2fs_once ]; then
+        run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
+    fi
+    run_and_log_cmd "sudo rm -f work/rootfs/etc/init.d/resize2fs_once"
 }

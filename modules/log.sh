@@ -18,7 +18,6 @@
 # from sub-directories
 log_file="${MENDER_CONVERT_LOG_FILE:-${PWD}/work/convert.log}"
 
-
 # Add some colour to the log messages
 
 YELLOW='\033[1;33m' # Warning
@@ -28,50 +27,50 @@ NC='\033[0m'        # No Color
 
 # Log the given message at the given level.
 function log {
-  local -r level="$1"
-  local -r message="$2"
-  local -r timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-  local -r script_name="$(basename "$0")"
-  echo -e "${timestamp} [${level}] [$script_name] ${message}" >> ${log_file}
-  >&2 echo -e "${timestamp} [${level}] [$script_name] ${message}"
+    local -r level="$1"
+    local -r message="$2"
+    local -r timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    local -r script_name="$(basename "$0")"
+    echo -e "${timestamp} [${level}] [$script_name] ${message}" >> ${log_file}
+      echo >&2 -e "${timestamp} [${level}] [$script_name] ${message}"
 }
 
 function local_log_debug {
-  local -r level="DEBUG"
-  local -r message="$1"
-  local -r timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-  local -r script_name="$(basename "$0")"
-  echo -e "${timestamp} [${level}] [$script_name] ${message}" >> ${log_file}
+    local -r level="DEBUG"
+    local -r message="$1"
+    local -r timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    local -r script_name="$(basename "$0")"
+    echo -e "${timestamp} [${level}] [$script_name] ${message}" >> ${log_file}
 }
 
 # Log the given message at DEBUG level.
 function log_debug {
-  local -r message="$1"
-  local_log_debug "$message"
+    local -r message="$1"
+    local_log_debug "$message"
 }
 
 # Log the given message at INFO level.
 function log_info {
-  local -r message="$1"
-  log "INFO" "$message"
+    local -r message="$1"
+    log "INFO" "$message"
 }
 
 # Log the given message at WARN level.
 function log_warn {
-  local -r message="$1"
-  log "${YELLOW}WARN${NC}" "$message"
+    local -r message="$1"
+    log "${YELLOW}WARN${NC}" "$message"
 }
 
 # Log the given message at ERROR level.
 function log_error {
-  local -r message="$1"
-  log "${RED}ERROR${NC}" "$message"
+    local -r message="$1"
+    log "${RED}ERROR${NC}" "$message"
 }
 
 # Log the given message at FATAL level.
 FATAL_EXIT_CODE=90
 function log_fatal {
-  local -r message="$1"
-  log "${IRED}FATAL${NC}" "$message"
-  exit ${FATAL_EXIT_CODE}
+    local -r message="$1"
+    log "${IRED}FATAL${NC}" "$message"
+    exit ${FATAL_EXIT_CODE}
 }

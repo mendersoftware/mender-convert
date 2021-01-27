@@ -17,10 +17,9 @@
 # Read in the array of config files to process
 read -a configs <<< "${@}"
 for config in "${configs[@]}"; do
-  log_info "Using configuration file: ${config}"
-  source "${config}"
+    log_info "Using configuration file: ${config}"
+    source "${config}"
 done
-
 
 # Fine grained partition variables override device/number variables where applicable
 disk_override_partition_variable "MENDER_BOOT_PART_NUMBER" "${MENDER_BOOT_PART}"

@@ -15,9 +15,9 @@
 
 # Init tests configuration file
 #
-function testscfg_init () {
-  rm -f work/testscfg.tmp
-  touch work/testscfg.tmp
+function testscfg_init()  {
+    rm -f work/testscfg.tmp
+    touch work/testscfg.tmp
 }
 
 # Add key/value to tests configuration file
@@ -25,23 +25,23 @@ function testscfg_init () {
 #  $1 - key
 #  $2 - value
 #
-function testscfg_add () {
-  if [[ $# -ne 2 ]]; then
-    log_fatal "testscfg_add() requires 2 arguments"
-  fi
-  local -r key="${1}"
-  local -r value="${2}"
-  echo "${key}=\"${value}\"" >> work/testscfg.tmp
+function testscfg_add()  {
+    if [[ $# -ne 2 ]]; then
+        log_fatal "testscfg_add() requires 2 arguments"
+    fi
+    local -r key="${1}"
+    local -r value="${2}"
+    echo "${key}=\"${value}\"" >> work/testscfg.tmp
 }
 
 # Save tests configuration file into the given location
 #
 #  $1 - Filename
 #
-function testscfg_save () {
-  if [[ $# -ne 1 ]]; then
-    log_fatal "testscfg_save() requires 1 argument"
-  fi
-  local -r filename="${1}"
-  cp work/testscfg.tmp ${filename}
+function testscfg_save()  {
+    if [[ $# -ne 1 ]]; then
+        log_fatal "testscfg_save() requires 1 argument"
+    fi
+    local -r filename="${1}"
+    cp work/testscfg.tmp ${filename}
 }

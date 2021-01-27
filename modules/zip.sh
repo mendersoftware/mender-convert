@@ -20,15 +20,15 @@
 #
 # @return - Name of the img contained in the archive
 #
-function zip_get_imgname () {
-  if [[ $# -ne 1 ]]; then
-    log_fatal "zip_get_imgname requires one argument"
-  fi
-  local -r disk_image="${1}"
-  # Assert that the archive holds only one file
-  nfiles="$(unzip -l ${disk_image} | awk '{nfiles=$2} END {print nfiles}')"
-  [[ "$nfiles" -ne 1 ]] && log_fatal "Zip archive has more than one file. Needs to be unzipped by a human. nfiles: $nfiles"
-  local -r filename="$(unzip -lq ${disk_image} | awk 'NR==3 {filename=$NF} END {print filename}')"
-  [[ ${filename} == *.img ]] || log_fatal "no img file found in the zip archive ${disk_image}."
-  echo "$(basename ${filename})"
+function zip_get_imgname()  {
+    if [[ $# -ne 1 ]]; then
+        log_fatal "zip_get_imgname requires one argument"
+    fi
+    local -r disk_image="${1}"
+    # Assert that the archive holds only one file
+    nfiles="$(unzip -l ${disk_image} | awk '{nfiles=$2} END {print nfiles}')"
+    [[ "$nfiles" -ne 1 ]] && log_fatal "Zip archive has more than one file. Needs to be unzipped by a human. nfiles: $nfiles"
+    local -r filename="$(unzip -lq ${disk_image} | awk 'NR==3 {filename=$NF} END {print filename}')"
+    [[ ${filename} == *.img ]] || log_fatal "no img file found in the zip archive ${disk_image}."
+    echo "$(basename ${filename})"
 }
