@@ -41,7 +41,7 @@ function deb_from_repo_dist_get()  {
     local -r packages_url="${repo_url}/dists/${distribution}/${component}/binary-${architecture}/Packages"
     run_and_log_cmd "wget -Nq ${packages_url} -P /tmp"
 
-    local -r deb_package_path=$(grep Filename /tmp/Packages | grep ${package}_ | grep ${architecture} | tail -n1 | sed 's/Filename: //')
+    local -r deb_package_path=$(grep Filename /tmp/Packages | grep ${package}_ | tail -n1 | sed 's/Filename: //')
     if [ -z "${deb_package_path}" ]; then
         log_fatal "Couldn't find package ${package} in ${packages_url}"
     fi
