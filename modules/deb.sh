@@ -108,5 +108,5 @@ function deb_extract_package()  {
 
     run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir}/files/ ${dest_dir}"
 
-    log_info "Successfully installed $(basename ${filename})"
+    log_info "Successfully installed $(basename ${deb_package})"
 }
