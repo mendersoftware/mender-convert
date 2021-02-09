@@ -17,28 +17,28 @@
 # Default that can be overridden by providing this method in a
 # configuration file passed with '--config'
 function platform_modify() {
-  true
+    true
 }
 PLATFORM_MODIFY_HOOKS=(platform_modify)
 
 function user_local_modify() {
-  true
+    true
 }
 USER_LOCAL_MODIFY_HOOKS=(user_local_modify)
 
 function overlay_modify() {
-  true
+    true
 }
 OVERLAY_MODIFY_HOOKS=(overlay_modify)
 
 function trap_exit() {
-  echo "mender-convert-modify has finished. Cleaning up..."
-  sudo umount -f work/boot
-  sudo umount -f work/rootfs
+    echo "mender-convert-modify has finished. Cleaning up..."
+    sudo umount -f work/boot
+    sudo umount -f work/rootfs
 }
 
 function trap_term() {
-  true
+    true
 }
 
 trap trap_term INT TERM
@@ -55,24 +55,24 @@ source modules/testscfg.sh
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
 
-while (( "$#" )); do
-  case "$1" in
-    -o | --overlay)
-      overlays+=("${2}")
-      shift 2
-      ;;
-    -c | --config)
-      configs+=("${2}")
-      shift 2
-      ;;
-    -d | --disk-image)
-      disk_image="${2}"
-      shift 2
-      ;;
-    *)
-      log_fatal "Sorry, but the provided option is not supported: $1"
-      ;;
-  esac
+while (("$#")); do
+    case "$1" in
+        -o | --overlay)
+            overlays+=("${2}")
+            shift 2
+            ;;
+        -c | --config)
+            configs+=("${2}")
+            shift 2
+            ;;
+        -d | --disk-image)
+            disk_image="${2}"
+            shift 2
+            ;;
+        *)
+            log_fatal "Sorry, but the provided option is not supported: $1"
+            ;;
+    esac
 done
 
 # Note the use of %q formatting here. This is a bash feature to add
@@ -104,12 +104,12 @@ log_info "Installing Mender client and related files"
 deb_arch=$(probe_debian_arch_name)
 
 if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
-  deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
+    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
 elif [ "${MENDER_CLIENT_VERSION}" = "master" ]; then
-  deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client")
+    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client")
 else
-  DEBIAN_REVISION="-1"
-  deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
+    DEBIAN_REVISION="-1"
+    deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
 fi
 
 deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
@@ -118,49 +118,49 @@ deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
 testscfg_add "PREFERRED_VERSION_mender-client" "$(echo ${deb_name} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
 
 if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
-  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \
+    run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \
         work/rootfs/etc/systemd/system/multi-user.target.wants/mender-client.service"
 fi
 
 if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
 
-  log_info "Installing Mender Connect addon"
+    log_info "Installing Mender Connect addon"
 
-  if [ "${MENDER_ADDON_CONNECT_VERSION}" = "latest" ]; then
-    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-connect")
-  elif [ "${MENDER_ADDON_CONNECT_VERSION}" = "master" ]; then
-    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-connect")
-  else
-    DEBIAN_REVISION="-1"
-    deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-connect" "${MENDER_ADDON_CONNECT_VERSION}${DEBIAN_REVISION}")
-  fi
+    if [ "${MENDER_ADDON_CONNECT_VERSION}" = "latest" ]; then
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-connect")
+    elif [ "${MENDER_ADDON_CONNECT_VERSION}" = "master" ]; then
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-connect")
+    else
+        DEBIAN_REVISION="-1"
+        deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-connect" "${MENDER_ADDON_CONNECT_VERSION}${DEBIAN_REVISION}")
+    fi
 
-  deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
+    deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
 
-  run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-connect.service \
+    run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-connect.service \
         work/rootfs/etc/systemd/system/multi-user.target.wants/mender-connect.service"
 fi
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-  # Check for known U-Boot problems in all files on the boot partition.
-  check_for_broken_uboot_uefi_support work/boot
+    # Check for known U-Boot problems in all files on the boot partition.
+    check_for_broken_uboot_uefi_support work/boot
 
-  run_and_log_cmd "wget -Nq '${MENDER_GRUBENV_URL}' -P work/"
-  run_and_log_cmd "tar xzvf work/${MENDER_GRUBENV_VERSION}.tar.gz -C work/"
+    run_and_log_cmd "wget -Nq '${MENDER_GRUBENV_URL}' -P work/"
+    run_and_log_cmd "tar xzvf work/${MENDER_GRUBENV_VERSION}.tar.gz -C work/"
 
-  if [ -z "${MENDER_GRUB_KERNEL_IMAGETYPE}" ]; then
-    kernel_imagetype=$(probe_kernel_in_boot_and_root)
-  else
-    kernel_imagetype="${MENDER_GRUB_KERNEL_IMAGETYPE}"
-  fi
+    if [ -z "${MENDER_GRUB_KERNEL_IMAGETYPE}" ]; then
+        kernel_imagetype=$(probe_kernel_in_boot_and_root)
+    else
+        kernel_imagetype="${MENDER_GRUB_KERNEL_IMAGETYPE}"
+    fi
 
-  if [ -z "${MENDER_GRUB_INITRD_IMAGETYPE}" ]; then
-    initrd_imagetype=$(probe_initrd_in_boot_and_root)
-  else
-    initrd_imagetype="${MENDER_GRUB_INITRD_IMAGETYPE}"
-  fi
+    if [ -z "${MENDER_GRUB_INITRD_IMAGETYPE}" ]; then
+        initrd_imagetype=$(probe_initrd_in_boot_and_root)
+    else
+        initrd_imagetype="${MENDER_GRUB_INITRD_IMAGETYPE}"
+    fi
 
-  cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+    cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_rootfsa_part=${MENDER_ROOTFS_PART_A_NUMBER}
 mender_rootfsb_part=${MENDER_ROOTFS_PART_B_NUMBER}
 mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
@@ -168,78 +168,81 @@ kernel_imagetype=kernel
 initrd_imagetype=initrd
 EOF
 
-  run_and_log_cmd "sudo ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
-  if [ "${initrd_imagetype}" != "" ]; then
-    run_and_log_cmd "sudo ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
-  fi
+    run_and_log_cmd "sudo ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
+    if [ "${initrd_imagetype}" != "" ]; then
+        run_and_log_cmd "sudo ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
+    fi
 
-  # For partuuid support grub.cfg expects dedicated variables to be added
-  if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
-    rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
-    rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
-    log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
-    log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
-    cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+    # For partuuid support grub.cfg expects dedicated variables to be added
+    if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+        rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
+        rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+        log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
+        log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
+        cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_rootfsa_uuid=${rootfsa_partuuid}
 mender_rootfsb_uuid=${rootfsb_partuuid}
 EOF
-  else
-    cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+    else
+        cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
 EOF
-  fi
+    fi
 
-  if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
-    cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/11_bootargs_grub.cfg
+    if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
+        cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/11_bootargs_grub.cfg
 set bootargs="${MENDER_GRUB_KERNEL_BOOT_ARGS}"
 EOF
-  fi
+    fi
 
-  cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
-  run_and_log_cmd "make 2>&1"
-  run_and_log_cmd "sudo make DESTDIR=../ BOOT_DIR=boot install-boot-files"
-  run_and_log_cmd "sudo make DESTDIR=../rootfs install-tools"
-  cd - > /dev/null 2>&1
+    cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
+    run_and_log_cmd "make 2>&1"
+    run_and_log_cmd "sudo make DESTDIR=../ BOOT_DIR=boot install-boot-files"
+    run_and_log_cmd "sudo make DESTDIR=../rootfs install-tools"
+    cd - > /dev/null 2>&1
 
-  # Remove conflicting boot files. These files do not necessarily effect the
-  # functionality, but lets get rid of them to avoid confusion.
-  #
-  # There is no Mender integration for EFI boot or systemd-boot.
-  sudo rm -rf work/boot/loader work/rootfs/boot/loader
-  sudo rm -rf work/boot/EFI/Linux
-  sudo rm -rf work/boot/EFI/systemd
-  sudo rm -rf work/boot/NvVars
-  for empty_dir in $(cd work/boot; find . -maxdepth 1 -type d -empty); do
-    sudo rmdir work/boot/$empty_dir
-  done
+    # Remove conflicting boot files. These files do not necessarily effect the
+    # functionality, but lets get rid of them to avoid confusion.
+    #
+    # There is no Mender integration for EFI boot or systemd-boot.
+    sudo rm -rf work/boot/loader work/rootfs/boot/loader
+    sudo rm -rf work/boot/EFI/Linux
+    sudo rm -rf work/boot/EFI/systemd
+    sudo rm -rf work/boot/NvVars
+    for empty_dir in $(
+                     cd work/boot
+                                   find . -maxdepth 1 -type d -empty
+    ); do
+        sudo rmdir work/boot/$empty_dir
+    done
 
-  log_info "Installing GRUB"
+    log_info "Installing GRUB"
 
-  arch=$(probe_arch)
-  efi_name=$(probe_grub_efi_name)
-  efi_target_name=$(probe_grub_efi_target_name)
+    arch=$(probe_arch)
+    efi_name=$(probe_grub_efi_name)
+    efi_target_name=$(probe_grub_efi_target_name)
 
-  log_info "GRUB EFI: ${efi_target_name}"
+    log_info "GRUB EFI: ${efi_target_name}"
 
-  run_and_log_cmd "wget -Nq ${MENDER_GRUB_BINARY_STORAGE_URL}/${arch}/${efi_name} -P work/"
-  run_and_log_cmd "wget -Nq ${MENDER_GRUB_BINARY_STORAGE_URL}/${arch}/grub-editenv -P work/"
+    run_and_log_cmd "wget -Nq ${MENDER_GRUB_BINARY_STORAGE_URL}/${arch}/${efi_name} -P work/"
+    run_and_log_cmd "wget -Nq ${MENDER_GRUB_BINARY_STORAGE_URL}/${arch}/grub-editenv -P work/"
 
-  run_and_log_cmd "sudo install -m 751 work/grub-editenv work/rootfs/usr/bin/"
+    run_and_log_cmd "sudo install -m 751 work/grub-editenv work/rootfs/usr/bin/"
 
-  run_and_log_cmd "sudo mkdir -p work/boot/EFI/BOOT"
-  run_and_log_cmd "sudo cp work/${efi_name} -P work/boot/EFI/BOOT/${efi_target_name}"
+    run_and_log_cmd "sudo mkdir -p work/boot/EFI/BOOT"
+    run_and_log_cmd "sudo cp work/${efi_name} -P work/boot/EFI/BOOT/${efi_target_name}"
 fi
 
 # Copy dtb directory to the boot partition for use by the bootloader.
 if [ -d work/rootfs/boot/dtbs ]; then
-  # Look for the first directory that has dtb files. First check the base
-  # folder, then any subfolders in versioned order.
-  for candidate in work/rootfs/boot/dtbs $(find work/rootfs/boot/dtbs/ -maxdepth 1 -type d | sort -V -r); do
-    if [ $(find $candidate -maxdepth 1 -name '*.dtb' | wc -l) -gt 0 ]; then
-      run_and_log_cmd "sudo cp -r $candidate work/boot/dtb"
-      break
-    fi
-  done
+    # Look for the first directory that has dtb files. First check the base
+    # folder, then any subfolders in versioned order.
+    for candidate in work/rootfs/boot/dtbs $(find work/rootfs/boot/dtbs/ -maxdepth 1 -type d | sort -V -r); do
+        if [ $(find $candidate -maxdepth 1 -name '*.dtb' | wc -l) -gt 0 ]; then
+            run_and_log_cmd "sudo cp -r $candidate work/boot/dtb"
+            break
+        fi
+    done
 fi
 
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender"
@@ -259,14 +262,14 @@ run_and_log_cmd "sudo cp work/mender.conf.data work/rootfs/data/mender/mender.co
 run_and_log_cmd "sudo chmod 600 work/rootfs/data/mender/mender.conf"
 
 if [ -z "${MENDER_DEVICE_TYPE}" ]; then
-  # Observed systems who do not have this file, e.g images generated with mkosi
-  if [ -f work/rootfs/etc/hostname ]; then
-    device_type=$(cat work/rootfs/etc/hostname)
-  else
-    device_type="default"
-  fi
+    # Observed systems who do not have this file, e.g images generated with mkosi
+    if [ -f work/rootfs/etc/hostname ]; then
+        device_type=$(cat work/rootfs/etc/hostname)
+    else
+        device_type="default"
+    fi
 else
-  device_type="${MENDER_DEVICE_TYPE}"
+    device_type="${MENDER_DEVICE_TYPE}"
 fi
 
 run_and_log_cmd "echo 'device_type=${device_type}' > work/device_type"
@@ -276,8 +279,8 @@ run_and_log_cmd "echo 'artifact_name=${MENDER_ARTIFACT_NAME}' \
 
 log_info "Creating state scripts version file."
 case "${MENDER_CLIENT_VERSION}" in
-    1* ) VERSION_STRING='2';;
-    *  ) VERSION_STRING='3';;
+    1*)  VERSION_STRING='2' ;;
+    *)   VERSION_STRING='3' ;;
 esac
 run_and_log_cmd "sudo mkdir -p work/rootfs/etc/mender/scripts/"
 run_and_log_cmd "echo -n ${VERSION_STRING} | sudo tee work/rootfs/etc/mender/scripts/version"
@@ -285,24 +288,24 @@ run_and_log_cmd "echo -n ${VERSION_STRING} | sudo tee work/rootfs/etc/mender/scr
 log_info "Installing a custom /etc/fstab (see ${MENDER_CONVERT_LOG_FILE} for more info)"
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-  boot_part_mountpoint="/boot/efi"
+    boot_part_mountpoint="/boot/efi"
 else
-  boot_part_mountpoint="/uboot"
+    boot_part_mountpoint="/uboot"
 fi
 
 run_and_log_cmd "sudo mkdir -p work/rootfs/${boot_part_mountpoint}"
 
 if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
-  MENDER_DATA_PART_FSTAB_OPTS="${MENDER_DATA_PART_FSTAB_OPTS},x-systemd.growfs"
+    MENDER_DATA_PART_FSTAB_OPTS="${MENDER_DATA_PART_FSTAB_OPTS},x-systemd.growfs"
 fi
 
 if echo ${MENDER_ROOT_PART_FSTAB_OPTS} | tr ',' '\n' | egrep -q "^ro$"; then
-  if ! echo "${MENDER_ROOT_PART_MKFS_OPTS}" | fgrep -q -- "^64bit"; then
-    log_warn "EXT4 64bits feature is known to create unstable checksums on read-only file systems, add \"-O ^64bit\" to MENDER_ROOT_PART_MKFS_OPTS to remove it"
-  fi
-  if ! echo "${MENDER_ROOT_PART_MKFS_OPTS}" | fgrep -q -- "^has_journal"; then
-    log_warn "EXT4 journal feature is known to create unstable checksums on read-only file systems, add \"-O ^has_journal\" to MENDER_ROOT_PART_MKFS_OPTS to remove it"
-  fi
+    if ! echo "${MENDER_ROOT_PART_MKFS_OPTS}" | fgrep -q -- "^64bit"; then
+        log_warn "EXT4 64bits feature is known to create unstable checksums on read-only file systems, add \"-O ^64bit\" to MENDER_ROOT_PART_MKFS_OPTS to remove it"
+    fi
+    if ! echo "${MENDER_ROOT_PART_MKFS_OPTS}" | fgrep -q -- "^has_journal"; then
+        log_warn "EXT4 journal feature is known to create unstable checksums on read-only file systems, add \"-O ^has_journal\" to MENDER_ROOT_PART_MKFS_OPTS to remove it"
+    fi
 fi
 
 log_info "Using boot partition device in fstab: $boot_part_device"
@@ -323,32 +326,32 @@ EOF"
 # inspired by: https://forums.centos.org/viewtopic.php?t=48714
 #
 if [ -f work/rootfs/etc/selinux/config ]; then
-  grep -r 'SELINUX=Enforcing' work/rootfs/etc/selinux/config || true
-  if [ $? -eq 0 ]; then
-    log_info "Selinux is in enforcing mode. Enable autorelabel"
-    touch work/rootfs/.autorelabel
-  fi
+    grep -r 'SELINUX=Enforcing' work/rootfs/etc/selinux/config || true
+    if [ $? -eq 0 ]; then
+        log_info "Selinux is in enforcing mode. Enable autorelabel"
+        touch work/rootfs/.autorelabel
+    fi
 fi
 
 log_info "Performing platform specific modifications (if any)"
 for hook in "${PLATFORM_MODIFY_HOOKS[@]}"; do
-  log_info "Running hook: $hook"
-  eval $hook
+    log_info "Running hook: $hook"
+    eval $hook
 done
 
 log_info "Performing user/local specific modifications (if any)"
 for hook in "${USER_LOCAL_MODIFY_HOOKS[@]}"; do
-  log_info "Running hook: $hook"
-  eval $hook
+    log_info "Running hook: $hook"
+    eval $hook
 done
 
 for overlay in "${overlays[@]}"; do
-  log_info "Applying rootfs overlay: ${overlay}"
-  run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${overlay}/ work/rootfs/"
+    log_info "Applying rootfs overlay: ${overlay}"
+    run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${overlay}/ work/rootfs/"
 done
 
 log_info "Performing overlay specific modifications (if any)"
 for hook in "${OVERLAY_MODIFY_HOOKS[@]}"; do
-  log_info "Running hook: $hook"
-  eval $hook
+    log_info "Running hook: $hook"
+    eval $hook
 done
