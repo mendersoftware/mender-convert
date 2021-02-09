@@ -93,7 +93,8 @@ test:format:
         -kp \
         -bn \
         -w \
-        ${SCRIPTS}
+        ${SCRIPTS} \
+        mender-convert*
       # Print diff
     - git diff HEAD
       # Actual test: exits with non zero status if diff
