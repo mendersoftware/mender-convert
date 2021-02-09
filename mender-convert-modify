@@ -141,6 +141,25 @@ if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
         work/rootfs/etc/systemd/system/multi-user.target.wants/mender-connect.service"
 fi
 
+if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
+
+    log_info "Installing Mender Configure addon"
+
+    if [ "${MENDER_ADDON_CONFIGURE_VERSION}" = "latest" ]; then
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-configure")
+    elif [ "${MENDER_ADDON_CONFIGURE_VERSION}" = "master" ]; then
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-configure")
+    else
+        DEBIAN_REVISION="-1"
+        deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-configure" "${MENDER_ADDON_CONFIGURE_VERSION}${DEBIAN_REVISION}")
+    fi
+
+    deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
+
+    run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-configure"
+    run_and_log_cmd "sudo ln -sf /data/mender-configure work/rootfs/var/lib/mender-configure"
+fi
+
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # Check for known U-Boot problems in all files on the boot partition.
     check_for_broken_uboot_uefi_support work/boot
