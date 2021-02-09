@@ -17,18 +17,18 @@
 # Default that can be overridden by providing this method in a
 # configuration file passed with '--config'
 function platform_package() {
-  true
+    true
 }
 PLATFORM_PACKAGE_HOOKS=(platform_package)
 
 function trap_exit() {
-  echo "mender-convert-package has finished. Cleaning up..."
-  sudo umount -f work/boot > /dev/null 2>&1 || true
-  sudo umount -f work/rootfs > /dev/null 2>&1 || true
+    echo "mender-convert-package has finished. Cleaning up..."
+    sudo umount -f work/boot > /dev/null 2>&1 || true
+    sudo umount -f work/rootfs > /dev/null 2>&1 || true
 }
 
 function trap_term() {
-  true
+    true
 }
 
 trap trap_term INT TERM
@@ -43,24 +43,24 @@ source modules/testscfg.sh
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
 
-while (( "$#" )); do
-  case "$1" in
-    -o | --overlay)
-      overlays+=("${2}")
-      shift 2
-      ;;
-    -c | --config)
-      configs+=("${2}")
-      shift 2
-      ;;
-    -d | --disk-image)
-      disk_image="${2}"
-      shift 2
-      ;;
-    *)
-      log_fatal "Sorry but the provided option is not supported: $1"
-      ;;
-  esac
+while (("$#")); do
+    case "$1" in
+        -o | --overlay)
+            overlays+=("${2}")
+            shift 2
+            ;;
+        -c | --config)
+            configs+=("${2}")
+            shift 2
+            ;;
+        -d | --disk-image)
+            disk_image="${2}"
+            shift 2
+            ;;
+        *)
+            log_fatal "Sorry but the provided option is not supported: $1"
+            ;;
+    esac
 done
 
 # Note the use of %q formatting here. This is a bash feature to add
@@ -71,7 +71,7 @@ source modules/config.sh $(printf "%q " "${configs[@]}")
 
 PARTED="/usr/bin/parted"
 if [ ! -f ${PARTED} ]; then
-  PARTED="/sbin/parted"
+    PARTED="/sbin/parted"
 fi
 
 output_dir=work
@@ -102,46 +102,46 @@ data_part_sectors=$(disk_mb_to_sectors ${MENDER_DATA_PART_SIZE_MB})
 alignment_sectors=$((${MENDER_PARTITION_ALIGNMENT} / 512))
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-  boot_part_start=${alignment_sectors}
-  overhead_sectors=$(( ${alignment_sectors} * 4 ))
+    boot_part_start=${alignment_sectors}
+    overhead_sectors=$((${alignment_sectors} * 4))
 else
-  # The two first blocks are typically reserved for U-boot environment.
-  boot_part_start=$(( ${alignment_sectors} * 3))
-  overhead_sectors=$(( ${alignment_sectors} * 6 ))
+    # The two first blocks are typically reserved for U-boot environment.
+    boot_part_start=$((${alignment_sectors} * 3))
+    overhead_sectors=$((${alignment_sectors} * 6))
 fi
 
 # Validate boot-gap.bin size, ensuring it will fit between MBR and boot_part_start
 if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
-  # Add one block for MBR
-  boot_gap_sectors=$(( $(stat --printf="%b" work/boot-gap.bin) + 1))
-  if [ ${boot_gap_sectors} -ge ${boot_part_start} ]; then
-    log_warn "The work/boot-gap.bin file will overwrite the boot partition"
-    log_fatal "Please increase MENDER_PARTITION_ALIGNMENT (2x will typically solve this))"
-  fi
+    # Add one block for MBR
+    boot_gap_sectors=$(($(stat --printf="%b" work/boot-gap.bin) + 1))
+    if [ ${boot_gap_sectors} -ge ${boot_part_start} ]; then
+        log_warn "The work/boot-gap.bin file will overwrite the boot partition"
+        log_fatal "Please increase MENDER_PARTITION_ALIGNMENT (2x will typically solve this))"
+    fi
 fi
 
 # Validate boot part size
 actual_boot_size=$(du --apparent-size -s --block-size=512 ${boot_part} | cut -f 1)
 if [ ${actual_boot_size} -gt ${boot_part_sectors} ]; then
-  log_warn "The allocated boot part size $(disk_sectors_to_mb ${boot_part_sectors}) MiB is too small."
-  log_warn "The actual boot part size is $(disk_sectors_to_mb ${actual_boot_size}) MiB"
-  log_warn "Will adjust MENDER_BOOT_PART_SIZE_MB automatically"
-  log_warn "Consider adjusting the configuration file to avoid this message"
-  boot_part_sectors=${actual_boot_size}
+    log_warn "The allocated boot part size $(disk_sectors_to_mb ${boot_part_sectors}) MiB is too small."
+    log_warn "The actual boot part size is $(disk_sectors_to_mb ${actual_boot_size}) MiB"
+    log_warn "Will adjust MENDER_BOOT_PART_SIZE_MB automatically"
+    log_warn "Consider adjusting the configuration file to avoid this message"
+    boot_part_sectors=${actual_boot_size}
 fi
 
 # Make sure that the boot part sector size is aligned to
 # MENDER_PARTITION_ALIGNMENT, it is possible that the boot part is extracted
 # as-is from the input image, and the input image might not have used the same
 # alignment as our configuration
-boot_part_sectors=$(disk_align_sectors ${boot_part_sectors} ${MENDER_PARTITION_ALIGNMENT} )
+boot_part_sectors=$(disk_align_sectors ${boot_part_sectors} ${MENDER_PARTITION_ALIGNMENT})
 
 # Calculate rootfs size
 rootfs_part_sectors=$(((${disk_image_total_sectors} - ${data_part_sectors} - \
-  ${boot_part_sectors} - ${overhead_sectors}) / 2))
+    ${boot_part_sectors} - ${overhead_sectors}) / 2))
 
 # Make sure rootfs size is aligned to MENDER_PARTITION_ALIGNMENT
-rootfs_part_sectors=$(disk_align_sectors ${rootfs_part_sectors} ${MENDER_PARTITION_ALIGNMENT} )
+rootfs_part_sectors=$(disk_align_sectors ${rootfs_part_sectors} ${MENDER_PARTITION_ALIGNMENT})
 
 device_type=$(cat work/rootfs/data/mender/device_type | sed 's/[^=]*=//')
 artifact_name=$(cat work/rootfs/etc/mender/artifact_info | sed 's/[^=]*=//')
@@ -151,15 +151,15 @@ temp_img_name=$(basename "$disk_image")
 
 # Check if user has chooses custom filename
 if [ -z "${DEPLOY_IMAGE_NAME}" ]; then
-# Strip the image suffix from temp_img_name and set the original image name as
-# the output image name
-  image_name="${temp_img_name%.*}"
+    # Strip the image suffix from temp_img_name and set the original image name as
+    # the output image name
+    image_name="${temp_img_name%.*}"
 
-# Add device types to the filename and replaces whitespace with + to seperate device types. 
-  image_name="${image_name}-$(sed 's| |+|g' <<< $device_type)-mender"
+    # Add device types to the filename and replaces whitespace with + to seperate device types.
+    image_name="${image_name}-$(sed 's| |+|g' <<< $device_type)-mender"
 else
-  # User has choosen custom filename in config file
-  image_name=$DEPLOY_IMAGE_NAME
+    # User has choosen custom filename in config file
+    image_name=$DEPLOY_IMAGE_NAME
 fi
 
 actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
@@ -168,46 +168,46 @@ actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
 image_rootfs_size_sectors=$((${IMAGE_ROOTFS_SIZE} * 2))
 
 if [ "${IMAGE_ROOTFS_SIZE}" -eq -1 ]; then
-  rootfs_image_sectors="${rootfs_part_sectors}"
+    rootfs_image_sectors="${rootfs_part_sectors}"
 elif [ "${image_rootfs_size_sectors}" -lt "${actual_rootfs_size}" ]; then
-  rootfs_image_sectors="${actual_rootfs_size}"
+    rootfs_image_sectors="${actual_rootfs_size}"
 else
-  rootfs_image_sectors="${image_rootfs_size_sectors}"
+    rootfs_image_sectors="${image_rootfs_size_sectors}"
 fi
 
 rootfs_image_sectors=$((${rootfs_image_sectors} + ${IMAGE_ROOTFS_EXTRA_SPACE} * 2))
 
 rootfs_image_sectors_overhead=$(awk -v r1="$actual_rootfs_size" "BEGIN{printf \"%.0f\", r1 * ${IMAGE_OVERHEAD_FACTOR}}")
 if [ "${rootfs_image_sectors_overhead}" -gt "${rootfs_image_sectors}" ]; then
-  rootfs_image_sectors="${rootfs_image_sectors_overhead}"
+    rootfs_image_sectors="${rootfs_image_sectors_overhead}"
 fi
 
 if [ ${rootfs_image_sectors} -gt ${rootfs_part_sectors} ]; then
-  log_warn "The calculated rootfs partition size $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB is too small."
-  log_warn "The actual rootfs image size is $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
-  log_fatal "You can try adjusting the MENDER_STORAGE_TOTAL_SIZE_MB variable to increase available space, or modify one of the variables IMAGE_ROOTFS_SIZE, IMAGE_ROOTFS_EXTRA_SPACE or IMAGE_OVERHEAD_FACTOR to reduce the size of the root filesystem."
+    log_warn "The calculated rootfs partition size $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB is too small."
+    log_warn "The actual rootfs image size is $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
+    log_fatal "You can try adjusting the MENDER_STORAGE_TOTAL_SIZE_MB variable to increase available space, or modify one of the variables IMAGE_ROOTFS_SIZE, IMAGE_ROOTFS_EXTRA_SPACE or IMAGE_OVERHEAD_FACTOR to reduce the size of the root filesystem."
 fi
 
 log_info "Rootfs filesystem size will be $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
 
 # Extract file-system type from rootfs
 if file ${root_part} | grep -q ext4; then
-  image_fs_type="ext4"
+    image_fs_type="ext4"
 elif file ${root_part} | grep -q XFS; then
-  image_fs_type="xfs"
+    image_fs_type="xfs"
 else
-  log_warn "$(file work/${root_part})"
-  log_fatal "Could not determine root file-system type. Aborting..."
+    log_warn "$(file work/${root_part})"
+    log_fatal "Could not determine root file-system type. Aborting..."
 fi
 
 disk_create_file_system_from_folder "work/rootfs/data/" "work/data.img" \
-  "${data_part_sectors}" "${image_fs_type}"
+    "${data_part_sectors}" "${image_fs_type}"
 
 # Clear this area as it will be contained in the data.img
 sudo rm -rf work/rootfs/data/*
 
 disk_create_file_system_from_folder "work/rootfs/" "work/rootfs.img" \
-  "${rootfs_image_sectors}" "${image_fs_type}"
+    "${rootfs_image_sectors}" "${image_fs_type}"
 
 log_info "Copying root filesystem image to deploy directory"
 run_and_log_cmd "cp --sparse=always work/rootfs.img deploy/${image_name}.${image_fs_type}"
@@ -225,39 +225,39 @@ log_info "  Data partition    $(disk_sectors_to_mb ${data_part_sectors}) MiB"
 
 # Initialize sdcard image file
 run_and_log_cmd \
-  "dd if=/dev/zero of=${img_path} bs=512 count=0 seek=${disk_image_total_sectors} status=none"
+    "dd if=/dev/zero of=${img_path} bs=512 count=0 seek=${disk_image_total_sectors} status=none"
 
 # boot_part_start, is defined at the beginning of this file
-boot_part_end=$(( ${boot_part_start} + ${boot_part_sectors} - 1 ))
+boot_part_end=$((${boot_part_start} + ${boot_part_sectors} - 1))
 
-rootfsa_start=$(disk_align_sectors ${boot_part_end} ${MENDER_PARTITION_ALIGNMENT} )
-rootfsa_end=$(( ${rootfsa_start} + ${rootfs_part_sectors} - 1 ))
+rootfsa_start=$(disk_align_sectors ${boot_part_end} ${MENDER_PARTITION_ALIGNMENT})
+rootfsa_end=$((${rootfsa_start} + ${rootfs_part_sectors} - 1))
 
-rootfsb_start=$(disk_align_sectors ${rootfsa_end} ${MENDER_PARTITION_ALIGNMENT} )
-rootfsb_end=$(( ${rootfsb_start} + ${rootfs_part_sectors} - 1 ))
+rootfsb_start=$(disk_align_sectors ${rootfsa_end} ${MENDER_PARTITION_ALIGNMENT})
+rootfsb_end=$((${rootfsb_start} + ${rootfs_part_sectors} - 1))
 
-data_start=$(disk_align_sectors ${rootfsb_end} ${MENDER_PARTITION_ALIGNMENT} )
-data_end=$(( ${data_start} + ${data_part_sectors} - 1 ))
+data_start=$(disk_align_sectors ${rootfsb_end} ${MENDER_PARTITION_ALIGNMENT})
+data_end=$((${data_start} + ${data_part_sectors} - 1))
 
 if [ -n "${MENDER_PARTITION_SCHEME}" ]; then
-  # Force partition scheme to the one from configs
-  partition_scheme="${MENDER_PARTITION_SCHEME}"
-  log_info "Forcing partition scheme defined by MENDER_PARTITION_SCHEME to: ${partition_scheme}"
+    # Force partition scheme to the one from configs
+    partition_scheme="${MENDER_PARTITION_SCHEME}"
+    log_info "Forcing partition scheme defined by MENDER_PARTITION_SCHEME to: ${partition_scheme}"
 else
-  # By default use the partition scheme from the input image
-  partition_scheme=$(disk_get_part_value ${disk_image} 1 SCHEME)
-  log_info "Using input diskimage partition scheme (${partition_scheme})"
+    # By default use the partition scheme from the input image
+    partition_scheme=$(disk_get_part_value ${disk_image} 1 SCHEME)
+    log_info "Using input diskimage partition scheme (${partition_scheme})"
 fi
 
 # Create partition table.
 if [ "${partition_scheme}" == "gpt" ]; then
-  log_info "Writing GPT partition table"
-  run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
-  run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
+    log_info "Writing GPT partition table"
+    run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
+    run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
 else
-  log_info "Writing DOS (MBR) partition table"
-  run_and_log_cmd "${PARTED} -s ${img_path} mklabel msdos"
-  run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart primary fat32 ${boot_part_start} ${boot_part_end}"
+    log_info "Writing DOS (MBR) partition table"
+    run_and_log_cmd "${PARTED} -s ${img_path} mklabel msdos"
+    run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart primary fat32 ${boot_part_start} ${boot_part_end}"
 fi
 run_and_log_cmd "${PARTED} -s ${img_path} set 1 boot on"
 run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsa_start} ${rootfsa_end}"
@@ -267,29 +267,29 @@ run_and_log_cmd "${PARTED} -s ${img_path} print"
 
 # Update partition uuids if required
 if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
-  boot_partuuid=$(disk_get_partuuid_from_device "${boot_part_device}")
-  rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
-  rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
-  data_partuuid=$(disk_get_partuuid_from_device "${data_part_device}")
+    boot_partuuid=$(disk_get_partuuid_from_device "${boot_part_device}")
+    rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
+    rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+    data_partuuid=$(disk_get_partuuid_from_device "${data_part_device}")
 
-  if [ "${partition_scheme}" == "gpt" ]; then
-    log_info "Updating GPT partition uuids in image: '${img_path}'"
-    run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
-    run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_A_NUMBER}:${rootfsa_partuuid} '${img_path}'"
-    run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_B_NUMBER}:${rootfsb_partuuid} '${img_path}'"
-    run_and_log_cmd "sgdisk -u ${MENDER_DATA_PART_NUMBER}:${data_partuuid} '${img_path}'"
-  else
-    diskid=$(disk_get_partuuid_dos_diskid_from_device "${root_part_a_device}")
-    log_info "Updating MBR disk identifier for partition uuid support to: '0x${diskid}'"
-    run_and_log_cmd "xxd -r -p <<< '${diskid}' | LC_ALL=C rev | dd of='${img_path}' bs=1 seek=440 count=4 conv=notrunc"
-  fi
+    if [ "${partition_scheme}" == "gpt" ]; then
+        log_info "Updating GPT partition uuids in image: '${img_path}'"
+        run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
+        run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_A_NUMBER}:${rootfsa_partuuid} '${img_path}'"
+        run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_B_NUMBER}:${rootfsb_partuuid} '${img_path}'"
+        run_and_log_cmd "sgdisk -u ${MENDER_DATA_PART_NUMBER}:${data_partuuid} '${img_path}'"
+    else
+        diskid=$(disk_get_partuuid_dos_diskid_from_device "${root_part_a_device}")
+        log_info "Updating MBR disk identifier for partition uuid support to: '0x${diskid}'"
+        run_and_log_cmd "xxd -r -p <<< '${diskid}' | LC_ALL=C rev | dd of='${img_path}' bs=1 seek=440 count=4 conv=notrunc"
+    fi
 
 fi
 
 # Write boot-gap
 if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
-  log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
-  disk_write_at_offset "${output_dir}/boot-gap.bin" "${img_path}" "1"
+    log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
+    disk_write_at_offset "${output_dir}/boot-gap.bin" "${img_path}" "1"
 fi
 
 # Unmount filesystem image files
@@ -308,39 +308,39 @@ disk_write_at_offset "${output_dir}/data.img" "${img_path}" "${data_start}"
 
 log_info "Performing platform specific package operations (if any)"
 for hook in "${PLATFORM_PACKAGE_HOOKS[@]}"; do
-  log_info "Running hook: $hook"
-  eval $hook
+    log_info "Running hook: $hook"
+    eval $hook
 done
 
 # Create bmap index
 if [ "${MENDER_USE_BMAP}" == "y" ]; then
-  BMAP_TOOL="/usr/bin/bmaptool"
-  if [ ! -e "${BMAP_TOOL}" ]; then
-    log_error "You have enabled the MENDER_USE_BMAP option, but we could not find the required 'bmaptool'"
-    log_fatal "You can install 'bmaptool' with: apt-get install bmap-tools (on Debian based distributions)"
-  fi
-  run_and_log_cmd "${BMAP_TOOL} create ${img_path} > ${img_path}.bmap"
+    BMAP_TOOL="/usr/bin/bmaptool"
+    if [ ! -e "${BMAP_TOOL}" ]; then
+        log_error "You have enabled the MENDER_USE_BMAP option, but we could not find the required 'bmaptool'"
+        log_fatal "You can install 'bmaptool' with: apt-get install bmap-tools (on Debian based distributions)"
+    fi
+    run_and_log_cmd "${BMAP_TOOL} create ${img_path} > ${img_path}.bmap"
 fi
 
 case "${MENDER_COMPRESS_DISK_IMAGE}" in
-  gzip)
-    log_info "Compressing ${img_path}.gz"
-    run_and_log_cmd "pigz --best --force ${img_path}"
-    ;;
-  zip)
-    log_info "Compressing ${img_path}.zip"
-    zip -9 "${img_path}.zip" "${img_path}"
-    ;;
-  lzma)
-    log_info "Compressing ${img_path}.xz"
-    run_and_log_cmd "pxz --best --force ${img_path}"
-    ;;
-  none)
-    :
-    ;;
-  *)
-    log_fatal "Unknown MENDER_COMPRESS_DISK_IMAGE value: ${MENDER_COMPRESS_DISK_IMAGE}"
-    ;;
+    gzip)
+        log_info "Compressing ${img_path}.gz"
+        run_and_log_cmd "pigz --best --force ${img_path}"
+        ;;
+    zip)
+        log_info "Compressing ${img_path}.zip"
+        zip -9 "${img_path}.zip" "${img_path}"
+        ;;
+    lzma)
+        log_info "Compressing ${img_path}.xz"
+        run_and_log_cmd "pxz --best --force ${img_path}"
+        ;;
+    none)
+        :
+        ;;
+    *)
+        log_fatal "Unknown MENDER_COMPRESS_DISK_IMAGE value: ${MENDER_COMPRESS_DISK_IMAGE}"
+        ;;
 esac
 
 log_info "Conversion has completed! \o/"
@@ -348,15 +348,15 @@ log_info "Conversion has completed! \o/"
 ##################### Create configuration file for tests ######################
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-  boot_part_mountpoint="/boot/efi"
+    boot_part_mountpoint="/boot/efi"
 
-  # This is the name of the MENDER_FEATURES in Yocto
-  bootloader_feature="mender-grub"
+    # This is the name of the MENDER_FEATURES in Yocto
+    bootloader_feature="mender-grub"
 else
-  boot_part_mountpoint="/uboot"
+    boot_part_mountpoint="/uboot"
 
-  # This is the name of the MENDER_FEATURES in Yocto
-  bootloader_feature="mender-uboot"
+    # This is the name of the MENDER_FEATURES in Yocto
+    bootloader_feature="mender-uboot"
 fi
 mender_features="${bootloader_feature} mender-convert"
 
@@ -368,7 +368,7 @@ testscfg_add "MENDER_BOOT_PART_MOUNT_LOCATION" "${boot_part_mountpoint}"
 testscfg_add "MENDER_BOOT_PART_SIZE_MB" "$(disk_sectors_to_mb ${boot_part_sectors})"
 testscfg_add "MENDER_DATA_PART_SIZE_MB" "${MENDER_DATA_PART_SIZE_MB}"
 testscfg_add "MENDER_DEVICE_TYPE" "${device_type}"
-testscfg_add "MENDER_PARTITIONING_OVERHEAD_KB" "$(( (${overhead_sectors} * 512) / 1024 ))"
+testscfg_add "MENDER_PARTITIONING_OVERHEAD_KB" "$(((${overhead_sectors} * 512) / 1024))"
 testscfg_add "MENDER_PARTITION_ALIGNMENT" "${MENDER_PARTITION_ALIGNMENT}"
 testscfg_add "MENDER_STORAGE_TOTAL_SIZE_MB" "${MENDER_STORAGE_TOTAL_SIZE_MB}"
 testscfg_add "MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET" "12582912"
@@ -379,7 +379,7 @@ testscfg_add "MENDER_MACHINE" "${device_type}"
 
 # Outputting device base only relevant for some configurations
 if [ "${MENDER_ENABLE_PARTUUID}" != "y" ]; then
-  testscfg_add "MENDER_STORAGE_DEVICE_BASE" "${MENDER_STORAGE_DEVICE_BASE}"
+    testscfg_add "MENDER_STORAGE_DEVICE_BASE" "${MENDER_STORAGE_DEVICE_BASE}"
 fi
 
 # Something that the tests expect to be defined (originally from Yocto)
