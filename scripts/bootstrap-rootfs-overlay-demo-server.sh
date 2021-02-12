@@ -71,7 +71,6 @@ chmod 600 ${output_dir}/etc/mender/mender.conf
 
 cat <<- EOF > ${output_dir}/etc/mender/mender-connect.conf
 {
-  "ServerURL": "https://docker.mender.io",
   "ShellCommand": "/bin/sh",
   "User": "root"
 }
