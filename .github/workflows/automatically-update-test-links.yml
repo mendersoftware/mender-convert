@@ -1,0 +1,33 @@
+name: automatically-update-test-links
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+jobs:
+  createPullRequest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - name: Make changes to pull request
+        run: |
+            npm ci
+            node monitor-bb.js
+            node monitor-bb-sd.js
+            node monitor-rpi.js
+            node monitor-tinker.js
+            node monitor-ub-server.js
+        working-directory: scripts/linkbot
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v3
+        with:
+            title: "Image-Bot: New images available"
+            body: |
+                New images are available for update
+            commit-message: Image-Bot - Image updates
+
+      - name: Check outputs
+        run: |
+          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
