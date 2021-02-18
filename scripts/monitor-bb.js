@@ -3,7 +3,7 @@ const { JSDOM } = jsdom;
 
 const url = "https://rcn-ee.com/rootfs/bb.org/testing"
 const latestDate = "2021-01-11"
-var reg = "[0-9]{4}-[0-9]{2}-[0-9]{1,2}/"
+const reg = "[0-9]{4}-[0-9]{2}-[0-9]{1,2}/"
 
 JSDOM.fromURL(url, {}).then(dom => {
     var document = dom.window.document;
