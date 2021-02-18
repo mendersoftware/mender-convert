@@ -3,8 +3,7 @@ const { JSDOM } = jsdom;
 
 const url = "http://cdimage.ubuntu.com/ubuntu/releases/"
 const imageName = "18.04.5"
-
-var reg = "(?<release>[0-9]{2})\.04(?<minor>.*)"
+const reg = "(?<release>[0-9]{2})\.04(?<minor>.*)"
 
 JSDOM.fromURL(url, {}).then(dom => {
     var document = dom.window.document;
@@ -21,10 +20,7 @@ JSDOM.fromURL(url, {}).then(dom => {
     matches.sort(function(a,b) {
         let al = parseInt(a.groups.release);
         let bl = parseInt(b.groups.release);
-        console.log(b)
-        console.log(bl)
         if (al == bl) {
-            console.log(parseFloat(b.groups.minor))
             return parseFloat(b.groups.minor) - parseFloat(a.groups.minor)
         }
         return bl - al;

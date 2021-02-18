@@ -7,21 +7,12 @@ var reg = "[0-9]{4}-[0-9]{2}-[0-9]{1,2}/"
 
 JSDOM.fromURL(url, {}).then(dom => {
     var document = dom.window.document;
-    console.log(dom.serialize());
-    console.log(document.getElementsByTagName("table"));
     var table = document.getElementsByTagName("table");
-    console.log(table);
-    console.log(table.length);
-    console.log(table.items);
-    console.log(table.namedItem("rows"));
-
     var rows = table[0].rows;
-    console.log(rows);
     var matches = [];
     for (var i=0; i< rows.length; i++) {
         try {
             var text = rows[i].children[1].textContent;
-            console.log(text);
             var m = text.match(reg);
             if (m) {
                 matches.push(text);
@@ -34,7 +25,6 @@ JSDOM.fromURL(url, {}).then(dom => {
     matches.sort(function(a,b) {
         return Date.parse(b) - Date.parse(a);
     });
-    console.log(matches);
     if (matches[0] !== latestDate) {
         console.log("We've got a new release! \\o/");
         console.log(matches[0]);

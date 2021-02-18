@@ -3,8 +3,7 @@ const { JSDOM } = jsdom;
 
 const url = "http://downloads.raspberrypi.org/raspbian_lite/images"
 const imageName = "raspbian_lite-2019-09-30"
-
-var reg = "raspbian_lite-(?<date>[0-9]{4}-[0-9]{2}-[0-9]{1,2})/(?<updated>[0-9]{4}-[0-9]{2}-[0-9]{1,2}).*$"
+const reg = "raspbian_lite-(?<date>[0-9]{4}-[0-9]{2}-[0-9]{1,2})/(?<updated>[0-9]{4}-[0-9]{2}-[0-9]{1,2}).*$"
 
 JSDOM.fromURL(url, {}).then(dom => {
     var document = dom.window.document;
