@@ -16,7 +16,6 @@ try {
     console.log(m)
     console.log(m.groups.url)
     console.log(m.groups.latestDate)
-    // var url = m.groups.url
     var url = m.groups.url
     var latestDate = m.groups.latestDate
 } catch (err) {
@@ -79,6 +78,24 @@ JSDOM.fromURL(url, {}).then(async dom => {
             console.log("## Auto-update")
             console.log(`# latestDate: ${matches[0]}`)
             console.log(`${newVar}`)
+            updateURLLink(newVar)
         }
     }
 });
+
+function updateURLLink(newLine) {
+    console.error("Updating the variable")
+    try {
+        const data = fs.readFileSync('test/run-tests.sh', 'utf8').replace(/## Auto-update\nBBB_DEBIAN_EMMC_IMAGE_URL=.*/, `## Auto-update\n${newLine}\n`)
+        console.log(data)
+        console.error("Writing file...")
+        fs.writeFile('test/run-tests.sh', data, (err, data) => {
+            if (err) {
+                console.error(err)
+            }
+        })
+    } catch (err) {
+        console.error(err)
+        process.exit(1)
+    }
+}
