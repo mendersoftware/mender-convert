@@ -66,6 +66,7 @@ test:format:
     - /bin/bash
     - SCRIPTS=$(find modules configs scripts -type f
             -not -name "*.md"
+            -not -path "scripts/linkbot/*"
             -not -wholename "scripts/test/*")
     # shfmt
     ## Language=Bash
