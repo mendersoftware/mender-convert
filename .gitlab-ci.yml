@@ -169,6 +169,7 @@ convert_raspbian_raspberrypi4:
       gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
       awscli unzip qemu-system-x86 ovmf curl docker.io
     # Python3 dependencies
+    - python3 -m pip install -U pip
     - pip3 install -r https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance/requirements_py3.txt
     # Load image under test
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
