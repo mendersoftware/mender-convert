@@ -84,9 +84,10 @@ else
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "raspberrypi3" ]; then
     wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/
+    RASPBIAN_IMAGE="${RASPBIAN_IMAGE_URL##*/}"
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "input/2019-09-26-raspbian-buster-lite.zip" \
+                     "input/${RASPBIAN_IMAGE}" \
                      "--config configs/raspberrypi3_config" \
                      -- \
                      "-k" "'not test_update'" \
@@ -108,11 +109,13 @@ else
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then
     wget --progress=dot:giga -N ${BBB_DEBIAN_SDCARD_IMAGE_URL} -P input/
+    BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_URL##*/}"
+    BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED%.xz}"
     # Convert uncompressed images to speed up this job
-    unxz --force "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz"
+    unxz --force "input/${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED}"
     convert_and_test "beaglebone-sdcard" \
                      "release-1" \
-                     "input/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img" \
+                     "input/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_sdcard_config" \
                      -- \
                      "-k" "'not test_update'" \
@@ -120,10 +123,12 @@ else
 
     rm -rf deploy
     wget --progress=dot:giga -N ${BBB_DEBIAN_EMMC_IMAGE_URL} -P input/
-    unxz --force "input/bone-debian-10.7-console-armhf-2021-01-11-1gb.img.xz"
+    BBB_DEBIAN_EMMC_IMAGE_COMPRESSED="${BBB_DEBIAN_EMMC_IMAGE_URL##*/}"
+    BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED="${BBB_DEBIAN_EMMC_IMAGE_COMPRESSED%.xz}"
+    unxz --force "input/${BBB_DEBIAN_EMMC_IMAGE_COMPRESSED}"
     convert_and_test "beaglebone-emmc" \
                      "release-1" \
-                     "input/bone-debian-10.7-console-armhf-2021-01-11-1gb.img" \
+                     "input/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_emmc_config" \
                      -- \
                      "-k" "'not test_update'" \
@@ -132,9 +137,10 @@ else
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
     wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/
+    UBUNTU_SERVER_RPI_IMAGE_COMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_URL##*/}"
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "input/ubuntu-18.04.5-preinstalled-server-armhf+raspi3.img.xz" \
+                     "input/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}" \
                      "--config configs/raspberrypi3_config" \
                      -- \
                      "-k" "'not test_update'" \
