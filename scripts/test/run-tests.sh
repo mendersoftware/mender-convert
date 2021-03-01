@@ -21,13 +21,13 @@ BBB_DEBIAN_SDCARD_IMAGE_URL="https://debian.beagleboard.org/images/bone-debian-1
 # Not on official home page, but found via https://elinux.org/Beagleboard:BeagleBoneBlack_Debian:
 
 ## Auto-update
-BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2021-01-11/buster-console/bone-debian-10.7-console-armhf-2021-01-11-1gb.img.xz"
+BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2021-02-22/buster-console/bone-debian-10.8-console-armhf-2021-02-22-1gb.img.xz"
 
 ## Auto-update
-RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip"
+RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-14-raspbian-buster-lite.zip"
 
 ## Auto-update
-TINKER_IMAGE_URL="http://dlcdnet.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/20170417-tinker-board-linaro-stretch-alip-v1.8.zip"
+TINKER_IMAGE_URL="https://dlcdnets.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/20190821-tinker-board-linaro-stretch-alip-v2.0.11.img.zip"
 
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Bionic-x86-64.img.gz"
 
