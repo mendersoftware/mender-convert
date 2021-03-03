@@ -23,6 +23,23 @@ try {
     process.exit(1)
 }
 
+function getNewRaspbian(url) {
+    console.log("getNewRaspbian")
+    console.log(`${url}`)
+    return JSDOM.fromURL(url, {}).then(dom => {
+        var document = dom.window.document;
+        var refs = document.getElementsByTagName("a");
+        var test = Array.from(refs)
+            .filter(ref => ref.textContent.match(("raspbian-.*-lite.*\.zip$")))
+            .reduce((acc, element) => {
+                acc.push(element.textContent.match("raspbian-.*-lite.*\.zip$").input)
+                return acc
+            }, [])[0]
+        return `${target}=\"${url}/${test}\"`;
+    });
+}
+
+
 JSDOM.fromURL(url, {}).then(dom => {
     var document = dom.window.document;
     var table = document.getElementsByTagName("table");
@@ -48,7 +65,13 @@ JSDOM.fromURL(url, {}).then(dom => {
     });
     var matchOn = matches[0].input.split("/")[0]
     if (matchOn !== imageName) {
+        // We also need to extract the new image name from the index folder, as
+        // dated folders contain images with different dates in them o_O
         console.error("We've got a new release! \\o/");
-        updateURLLink(`${target}=\"${url}${matches[0].input.split(" ")[0]}-raspbian-buster-lite.zip\"`, target)
+        var newVar = getNewRaspbian(`${url}${matches[0].input.split(" ")[0].split("/").slice(0, -1)}`)
+            .then(res => {
+                console.log(`New release: ${res}`)
+                updateURLLink(res, target)
+            })
     }
 });
