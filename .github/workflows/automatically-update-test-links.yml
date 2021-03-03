@@ -2,6 +2,8 @@ name: automatically-update-test-links
 on:
   schedule:
     - cron: "0 03 * * 1"
+  workflow_dispatch:
+
 jobs:
   createPullRequest:
     runs-on: ubuntu-latest
