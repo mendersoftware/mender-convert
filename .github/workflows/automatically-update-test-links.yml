@@ -31,8 +31,8 @@ jobs:
                 Image-Bot - Image updates
 
                 Changelog: None
-            committer: mender-test-bot <mender-test-bot@northern.tech>
-            author: mender-test-bot <mender-test-bot@northern.tech>
+            committer: mender-test-bot <mender@northern.tech>
+            author: mender-test-bot <mender@northern.tech>
             signoff: true
 
 
