@@ -46,3 +46,13 @@ EOF
 }
 
 PLATFORM_MODIFY_HOOKS+=(grow_data_partition)
+
+#
+# Remove /etc/mender/artifact_info from image, expected to be populated at setup time
+#
+function remove_artifact_info() {
+    log_info "Removing /etc/mender/artifact_info"
+    run_and_log_cmd "rm work/rootfs/etc/mender/artifact_info"
+}
+
+USER_LOCAL_MODIFY_HOOKS+=(remove_artifact_info)
