@@ -230,6 +230,10 @@ IMAGE_ROOTFS_EXTRA_SPACE="0"
 # why it is missing a "MENDER_" prefix.
 IMAGE_OVERHEAD_FACTOR="1.5"
 
+# User specified mount point for the boot partition. If empty (default), is mounted
+# at '/boot/efi' for UEFI integration, or at '/uboot' for other cases (U-boot)
+MENDER_BOOT_PART_MOUNT_LOCATION=""
+
 source configs/mender_grub_config
 
 # Function to create Mender Artifact

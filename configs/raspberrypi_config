@@ -4,6 +4,9 @@
 # Raspberry Pi does not support GRUB bootloader integration, fallback to U-boot.
 MENDER_GRUB_EFI_INTEGRATION=n
 
+# Use same boot point that upstream to support Headless configuration
+MENDER_BOOT_PART_MOUNT_LOCATION="/boot"
+
 # Nothing to copy
 MENDER_COPY_BOOT_GAP=n
 
