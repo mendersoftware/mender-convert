@@ -45,3 +45,5 @@ docker run \
   $IMAGE_NAME "$@"
 
 [ $? -eq 0 ] && rmdir ${WORK_DIR}
+
+echo "Log file available at: logs/${LOG_FILE}"
