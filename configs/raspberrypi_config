@@ -91,6 +91,13 @@ function platform_modify() {
     run_and_log_cmd "sudo ln -fs /uboot/overlays work/rootfs/boot/overlays"
     run_and_log_cmd "sudo ln -fs /uboot/$CMDLINE work/rootfs/boot/$CMDLINE"
 
+    # Raspberry Pi headless configuration expects boot partition to be mounted
+    # at /boot, so replace these services with /uboot
+    run_and_log_cmd "find work/rootfs/lib/ -type f -name *.service | xargs sed -i.bak 's|/boot/|/uboot/|g'"
+    log_debug "Diff from modified service files:\n$(find work/rootfs/lib/ -type f -name '*.service' | xargs -I@ bash -c 'diff -u @.bak @')"
+    run_and_log_cmd "find work/rootfs/lib/ -type f -name *.service.bak | xargs rm"
+    log_info "Certain service files have been changed to align with our /uboot boot partition mount point. See convert.log for more information"
+
     run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
     run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
 
