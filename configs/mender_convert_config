@@ -129,7 +129,7 @@ MENDER_ADDON_CONNECT_INSTALL="n"
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_ADDON_CONNECT_VERSION="latest"
 
-# Install Mender Connect addon
+# Install Mender Configure addon
 #
 MENDER_ADDON_CONFIGURE_INSTALL="n"
 
