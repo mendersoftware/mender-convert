@@ -99,4 +99,13 @@ function platform_modify() {
     run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
   fi
   run_and_log_cmd "sudo rm -f work/rootfs/etc/init.d/resize2fs_once"
+
+    # Enable UART. This is required for U-Boot to operate correctly, see
+    # https://source.denx.de/u-boot/u-boot/-/blob/master/arch/arm/mach-bcm283x/Kconfig
+    log_info "Enabling UART in U-Boot configuration"
+    cat <<- EOF >> work/boot/config.txt
+
+# Enable UART
+enable_uart=1
+EOF
 }
