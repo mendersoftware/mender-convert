@@ -144,6 +144,7 @@ rootfs_part_sectors=$(((${disk_image_total_sectors} - ${data_part_sectors} - \
 rootfs_part_sectors=$(disk_align_sectors ${rootfs_part_sectors} ${MENDER_PARTITION_ALIGNMENT})
 
 device_type=$(cat work/rootfs/data/mender/device_type | sed 's/[^=]*=//')
+artifact_name=$(cat work/rootfs/etc/mender/artifact_info | sed 's/[^=]*=//')
 
 # Get the name from the input disk_image
 temp_img_name=$(basename "$disk_image")
@@ -211,7 +212,7 @@ disk_create_file_system_from_folder "work/rootfs/" "work/rootfs.img" \
 log_info "Copying root filesystem image to deploy directory"
 run_and_log_cmd "cp --sparse=always work/rootfs.img deploy/${image_name}.${image_fs_type}"
 
-mender_create_artifact "${device_type}" "${MENDER_ARTIFACT_NAME}" "${image_name}"
+mender_create_artifact "${device_type}" "${artifact_name}" "${image_name}"
 
 log_info "Creating Mender compatible disk-image"
 
@@ -371,7 +372,7 @@ testscfg_add "MENDER_PARTITIONING_OVERHEAD_KB" "$(((${overhead_sectors} * 512) /
 testscfg_add "MENDER_PARTITION_ALIGNMENT" "${MENDER_PARTITION_ALIGNMENT}"
 testscfg_add "MENDER_STORAGE_TOTAL_SIZE_MB" "${MENDER_STORAGE_TOTAL_SIZE_MB}"
 testscfg_add "MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET" "12582912"
-testscfg_add "MENDER_ARTIFACT_NAME" "${MENDER_ARTIFACT_NAME}"
+testscfg_add "MENDER_ARTIFACT_NAME" "${artifact_name}"
 testscfg_add "MENDER_FEATURES" "${mender_features}"
 testscfg_add "DEPLOY_DIR_IMAGE" "${PWD}/deploy"
 testscfg_add "MENDER_MACHINE" "${device_type}"
