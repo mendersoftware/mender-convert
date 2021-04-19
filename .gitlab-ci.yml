@@ -230,11 +230,6 @@ test_acceptance_raspberrypi:
   script:
     - ./scripts/test/run-tests.sh --only raspberrypi3
 
-test_acceptance_linaro-alip:
-  <<: *test_acceptance
-  script:
-    - ./scripts/test/run-tests.sh --only linaro-alip
-
 test_acceptance_beaglebone:
   <<: *test_acceptance
   script:
