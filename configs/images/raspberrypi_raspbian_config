@@ -46,14 +46,3 @@ EOF
 }
 
 PLATFORM_MODIFY_HOOKS+=(grow_data_partition)
-
-#
-# Create the Mender Configure state folder in the data partition and symlink it
-#
-function create_mender_configure_state_folder_data_partition() {
-    log_info "Creating the Mender Configure state folder in the data partition"
-    run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-configure"
-    run_and_log_cmd "sudo ln -sf /data/mender-configure work/rootfs/var/lib/mender-configure"
-}
-
-PLATFORM_MODIFY_HOOKS+=(create_mender_configure_state_folder_data_partition)

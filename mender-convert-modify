@@ -155,10 +155,14 @@ if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     fi
 
     deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
-
-    run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-configure"
-    run_and_log_cmd "sudo ln -sf /data/mender-configure work/rootfs/var/lib/mender-configure"
 fi
+
+# Do this unconditionally even if not installing mender-configure. The reason is
+# that if the Debian package is installed later, this folder has to preexist. It
+# is part of the rootfs setup, independently of the software.
+log_info "Creating the Mender Configure state folder in the data partition"
+run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-configure"
+run_and_log_cmd "sudo ln -sf /data/mender-configure work/rootfs/var/lib/mender-configure"
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # Check for known U-Boot problems in all files on the boot partition.
