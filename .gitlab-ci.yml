@@ -7,7 +7,7 @@ variables:
   MENDER_ARTIFACT_VERSION: 3.5.x
   MENDER_CLIENT_VERSION: latest
   MENDER_ADDON_CONNECT_VERSION: latest
-  MENDER_ADDON_CONFIGURE_VERSION: master
+  MENDER_ADDON_CONFIGURE_VERSION: latest
   # Make sure to update the link in mender-docs to the new one when changing
   # this.
   RASPBIAN_URL: https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip
@@ -229,11 +229,6 @@ test_acceptance_raspberrypi:
   <<: *test_acceptance
   script:
     - ./scripts/test/run-tests.sh --only raspberrypi3
-
-test_acceptance_linaro-alip:
-  <<: *test_acceptance
-  script:
-    - ./scripts/test/run-tests.sh --only linaro-alip
 
 test_acceptance_beaglebone:
   <<: *test_acceptance
