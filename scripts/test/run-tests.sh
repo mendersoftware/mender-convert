@@ -26,9 +26,6 @@ BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2021-04-05/b
 ## Auto-update
 RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip"
 
-## Auto-update
-TINKER_IMAGE_URL="https://dlcdnets.asus.com/pub/ASUS/mb/Linux/Tinker_Board_2GB/20190821-tinker-board-linaro-stretch-alip-v2.0.11.img.zip"
-
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Bionic-x86-64.img.gz"
 
 ## Auto-update
@@ -92,19 +89,6 @@ else
                      -- \
                      "-k" "'not test_update'" \
                      || test_result=$?
-  fi
-
-  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "linaro-alip" ]; then
-    # MEN-2809: Disabled due broken download link
-    #convert_and_test "linaro-alip" \
-    #                 "release-1" \
-    #                 "${TINKER_IMAGE_URL}" \
-    #                 "${TINKER_IMAGE}.img" \
-    #                 "${TINKER_IMAGE}.zip" \
-    #                 -- \
-    #                 "-k" "'not test_update'" \
-    #                 || test_result=$?
-    true
   fi
 
   if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then

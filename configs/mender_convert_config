@@ -136,8 +136,7 @@ MENDER_ADDON_CONFIGURE_INSTALL="n"
 # Mender Configure addon version
 #
 # Valid values are "latest" (default), "master" or a specific version
-#MENDER_ADDON_CONFIGURE_VERSION="latest"
-MENDER_ADDON_CONFIGURE_VERSION="master"
+MENDER_ADDON_CONFIGURE_VERSION="latest"
 
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.
