@@ -86,10 +86,11 @@ function platform_modify() {
     run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
 
     # Raspberry Pi applications expect to find this on the device and in some
-    # cases parse the options to determine the functionality.
-    run_and_log_cmd "sudo ln -fs /uboot/config.txt work/rootfs/boot/config.txt"
-    run_and_log_cmd "sudo ln -fs /uboot/overlays work/rootfs/boot/overlays"
-    run_and_log_cmd "sudo ln -fs /uboot/$CMDLINE work/rootfs/boot/$CMDLINE"
+    # cases parse the options to determine the functionality. Create symlinks
+    # to all files
+    for f in $(ls -1 work/boot); do
+        run_and_log_cmd "sudo ln -fs /uboot/${f} work/rootfs/boot/${f}"
+    done
 
     # Raspberry Pi headless configuration expects boot partition to be mounted
     # at /boot, so replace these services with /uboot
