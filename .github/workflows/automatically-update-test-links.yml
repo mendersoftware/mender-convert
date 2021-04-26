@@ -16,7 +16,6 @@ jobs:
             node monitor-bb.js
             node monitor-bb-sd.js
             node monitor-rpi.js
-            node monitor-tinker.js
             node monitor-ub-server.js
         working-directory: scripts/linkbot
 
