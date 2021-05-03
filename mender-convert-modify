@@ -103,13 +103,19 @@ log_info "Installing Mender client and related files"
 
 deb_arch=$(probe_debian_arch_name)
 
-if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
-    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
-elif [ "${MENDER_CLIENT_VERSION}" = "master" ]; then
-    deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client")
-else
-    DEBIAN_REVISION="-1"
-    deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
+if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
+
+    log_info "Installing Mender Client version ${MENDER_CLIENT_VERSION}"
+
+    if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
+    elif [ "${MENDER_CLIENT_VERSION}" = "master" ]; then
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client")
+    else
+        DEBIAN_REVISION="-1"
+        deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
+    fi
+
 fi
 
 deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
