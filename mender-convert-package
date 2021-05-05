@@ -148,7 +148,7 @@ device_type=$(cat work/rootfs/data/mender/device_type | sed 's/[^=]*=//')
 # Get the name from the input disk_image
 temp_img_name=$(basename "$disk_image")
 
-# Check if user has chooses custom filename
+# Check if user has chosen custom filename
 if [ -z "${DEPLOY_IMAGE_NAME}" ]; then
     # Strip the image suffix from temp_img_name and set the original image name as
     # the output image name
