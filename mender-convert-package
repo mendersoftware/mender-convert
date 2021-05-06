@@ -349,6 +349,8 @@ log_info "Conversion has completed! \o/"
 
 ##################### Create configuration file for tests ######################
 
+mender_features="mender-convert"
+
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     boot_part_mountpoint="/boot/efi"
 
@@ -360,7 +362,11 @@ else
     # This is the name of the MENDER_FEATURES in Yocto
     bootloader_feature="mender-uboot"
 fi
-mender_features="${bootloader_feature} mender-convert"
+mender_features="${mender_features} ${bootloader_feature}"
+
+if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
+    mender_features="${mender_features} mender-client-install"
+fi
 
 testscfg_add "MENDER_BOOT_PART" "${boot_part_device}"
 testscfg_add "MENDER_ROOTFS_PART_A" "${root_part_a_device}"
