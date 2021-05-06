@@ -113,6 +113,10 @@ MENDER_DATA_PART_SIZE_MB="128"
 # Default is 8MB
 MENDER_PARTITION_ALIGNMENT="8388608"
 
+# Install Mender client
+#
+MENDER_CLIENT_INSTALL="y"
+
 # Mender client version
 #
 # This is used to fetch the correct binaries

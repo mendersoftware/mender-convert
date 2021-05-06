@@ -44,6 +44,10 @@ docker run \
   --env MENDER_CONVERT_LOG_FILE=logs/${LOG_FILE} \
   $IMAGE_NAME "$@"
 
-[ $? -eq 0 ] && rmdir ${WORK_DIR}
+exit_code=$?
+
+[ ${exit_code} -eq 0 ] && rmdir ${WORK_DIR}
 
 echo "Log file available at: logs/${LOG_FILE}"
+
+exit ${exit_code}

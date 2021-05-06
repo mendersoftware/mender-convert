@@ -13,6 +13,9 @@ IMAGE_OVERHEAD_FACTOR=1.0
 # Best compression there is!
 MENDER_COMPRESS_DISK_IMAGE=lzma
 
+# MEN-4256: Do not install the mender-client by default in our images
+MENDER_CLIENT_INSTALL="n"
+
 #
 # Resize the data partition to fill the remaining space, using parted, with systemd
 #

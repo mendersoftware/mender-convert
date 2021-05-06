@@ -144,12 +144,11 @@ rootfs_part_sectors=$(((${disk_image_total_sectors} - ${data_part_sectors} - \
 rootfs_part_sectors=$(disk_align_sectors ${rootfs_part_sectors} ${MENDER_PARTITION_ALIGNMENT})
 
 device_type=$(cat work/rootfs/data/mender/device_type | sed 's/[^=]*=//')
-artifact_name=$(cat work/rootfs/etc/mender/artifact_info | sed 's/[^=]*=//')
 
 # Get the name from the input disk_image
 temp_img_name=$(basename "$disk_image")
 
-# Check if user has chooses custom filename
+# Check if user has chosen custom filename
 if [ -z "${DEPLOY_IMAGE_NAME}" ]; then
     # Strip the image suffix from temp_img_name and set the original image name as
     # the output image name
@@ -212,7 +211,10 @@ disk_create_file_system_from_folder "work/rootfs/" "work/rootfs.img" \
 log_info "Copying root filesystem image to deploy directory"
 run_and_log_cmd "cp --sparse=always work/rootfs.img deploy/${image_name}.${image_fs_type}"
 
-mender_create_artifact "${device_type}" "${artifact_name}" "${image_name}"
+if [ "${MENDER_CLIENT_INSTALL}" != "y" ]; then
+    log_warn "Generating Artifact with no Mender client in it; not suitable for deployment"
+fi
+mender_create_artifact "${device_type}" "${MENDER_ARTIFACT_NAME}" "${image_name}"
 
 log_info "Creating Mender compatible disk-image"
 
@@ -347,6 +349,8 @@ log_info "Conversion has completed! \o/"
 
 ##################### Create configuration file for tests ######################
 
+mender_features="mender-convert"
+
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     boot_part_mountpoint="/boot/efi"
 
@@ -358,7 +362,11 @@ else
     # This is the name of the MENDER_FEATURES in Yocto
     bootloader_feature="mender-uboot"
 fi
-mender_features="${bootloader_feature} mender-convert"
+mender_features="${mender_features} ${bootloader_feature}"
+
+if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
+    mender_features="${mender_features} mender-client-install"
+fi
 
 testscfg_add "MENDER_BOOT_PART" "${boot_part_device}"
 testscfg_add "MENDER_ROOTFS_PART_A" "${root_part_a_device}"
@@ -372,7 +380,7 @@ testscfg_add "MENDER_PARTITIONING_OVERHEAD_KB" "$(((${overhead_sectors} * 512) /
 testscfg_add "MENDER_PARTITION_ALIGNMENT" "${MENDER_PARTITION_ALIGNMENT}"
 testscfg_add "MENDER_STORAGE_TOTAL_SIZE_MB" "${MENDER_STORAGE_TOTAL_SIZE_MB}"
 testscfg_add "MENDER_UBOOT_ENV_STORAGE_DEVICE_OFFSET" "12582912"
-testscfg_add "MENDER_ARTIFACT_NAME" "${artifact_name}"
+testscfg_add "MENDER_ARTIFACT_NAME" "${MENDER_ARTIFACT_NAME}"
 testscfg_add "MENDER_FEATURES" "${mender_features}"
 testscfg_add "DEPLOY_DIR_IMAGE" "${PWD}/deploy"
 testscfg_add "MENDER_MACHINE" "${device_type}"
