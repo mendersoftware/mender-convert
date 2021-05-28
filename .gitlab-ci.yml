@@ -31,6 +31,8 @@ include:
     file: '.gitlab-ci-check-license.yml'
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-github-status-updates.yml'
+  - project: 'Northern.tech/Mender/mendertesting'
+    file: '.gitlab-ci-check-shell-format.yml'
 
 stages:
   - test
@@ -53,54 +55,13 @@ build:
     paths:
       - image.tar
 
-test:format:
-  stage: test
-  needs: []
-  image: alpine:3.13
+test:check-shell-formatting:
   before_script:
-    - apk update
-    - apk upgrade
-    - apk add --update bash git shfmt
-    - shfmt -version
-  script:
-    - /bin/bash
-    - SCRIPTS=$(find modules configs scripts -type f
+    - SHELL_SCRIPTS=$(find mender-convert* modules configs scripts
+            -type f
             -not -name "*.md"
             -not -path "scripts/linkbot/*"
             -not -wholename "scripts/test/*")
-    # shfmt
-    ## Language=Bash
-    #     -ln bash
-    ## Indent=4 spaces
-    #     -i 4
-    ## List files who differ in formatting
-    #     -l
-    ## Redirect operators should be followed by a space
-    #     -sr
-    ## Indent switch statements
-    #     -ci
-    ## Keep column alignment padding
-    #     -kp
-    ## Binary operators like &&, || may start a new line
-    #     -bn
-    ## Overwrite the source files
-    #     -w
-    - |
-        shfmt \
-        -ln bash \
-        -i 4 \
-        -l \
-        -sr \
-        -ci \
-        -kp \
-        -bn \
-        -w \
-        ${SCRIPTS} \
-        mender-convert*
-      # Print diff
-    - git diff HEAD
-      # Actual test: exits with non zero status if diff
-    - git diff-index --quiet HEAD
 
 .template_convert_raspbian: &convert_raspbian
   stage: convert
