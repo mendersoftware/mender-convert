@@ -38,8 +38,8 @@ stages:
   - test
   - build
   - convert
-  - test_acceptance
-  - publish
+  # - test_acceptance
+  # - publish
 
 build:
   stage: build
@@ -105,10 +105,10 @@ convert_raspbian_raspberrypi3:
   variables:
     RASPBERRYPI_PLATFORM: raspberrypi3
 
-convert_raspbian_raspberrypi4:
-  <<: *convert_raspbian
-  variables:
-    RASPBERRYPI_PLATFORM: raspberrypi4
+# convert_raspbian_raspberrypi4:
+#   <<: *convert_raspbian
+#   variables:
+#     RASPBERRYPI_PLATFORM: raspberrypi4
 
 .template_test_acceptance: &test_acceptance
   stage: test_acceptance
@@ -173,81 +173,81 @@ convert_raspbian_raspberrypi4:
     - unxz deploy/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
     - ./scripts/test/run-tests.sh --prebuilt-image raspberrypi ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
 
-test_acceptance_prebuilt_raspberrypi3:
-  <<: *test_acceptance_prebuilt_raspberrypi
-  needs:
-    - job: build
-      artifacts: true
-    - job: convert_raspbian_raspberrypi3
-      artifacts: true
-  variables:
-    RASPBERRYPI_PLATFORM: raspberrypi3
+# test_acceptance_prebuilt_raspberrypi3:
+#   <<: *test_acceptance_prebuilt_raspberrypi
+#   needs:
+#     - job: build
+#       artifacts: true
+#     - job: convert_raspbian_raspberrypi3
+#       artifacts: true
+#   variables:
+#     RASPBERRYPI_PLATFORM: raspberrypi3
 
-test_acceptance_prebuilt_raspberrypi4:
-  <<: *test_acceptance_prebuilt_raspberrypi
-  needs:
-    - job: build
-      artifacts: true
-    - job: convert_raspbian_raspberrypi4
-      artifacts: true
-  variables:
-    RASPBERRYPI_PLATFORM: raspberrypi4
+# test_acceptance_prebuilt_raspberrypi4:
+#   <<: *test_acceptance_prebuilt_raspberrypi
+#   needs:
+#     - job: build
+#       artifacts: true
+#     - job: convert_raspbian_raspberrypi4
+#       artifacts: true
+#   variables:
+#     RASPBERRYPI_PLATFORM: raspberrypi4
 
-test_acceptance_qemux86_64:
-  <<: *test_acceptance
-  script:
-    - ./scripts/test/run-tests.sh --only qemux86_64
+# test_acceptance_qemux86_64:
+#   <<: *test_acceptance
+#   script:
+#     - ./scripts/test/run-tests.sh --only qemux86_64
 
-test_acceptance_raspberrypi:
-  <<: *test_acceptance
-  script:
-    - ./scripts/test/run-tests.sh --only raspberrypi3
+# test_acceptance_raspberrypi:
+#   <<: *test_acceptance
+#   script:
+#     - ./scripts/test/run-tests.sh --only raspberrypi3
 
-test_acceptance_beaglebone:
-  <<: *test_acceptance
-  script:
-    - ./scripts/test/run-tests.sh --only beaglebone
+# test_acceptance_beaglebone:
+#   <<: *test_acceptance
+#   script:
+#     - ./scripts/test/run-tests.sh --only beaglebone
 
-test_acceptance_ubuntu:
-  <<: *test_acceptance
-  script:
-    - ./scripts/test/run-tests.sh --only ubuntu
+# test_acceptance_ubuntu:
+#   <<: *test_acceptance
+#   script:
+#     - ./scripts/test/run-tests.sh --only ubuntu
 
-publish:s3:
-  when: manual
-  stage: publish
-  image: debian:buster
-  before_script:
-    - export PUBLISH_AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-    - export PUBLISH_AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-    - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
-    - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
-    - apt update && apt install -yyq awscli
-    # Fetch artifacts from temporary S3 bucket
-    - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
-    -   aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
-    -   tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
-    - done
-  script:
-    # Prepare high privilege S3 keys (the TMP_STORAGE keys are for the tmp storage only)
-    - export AWS_ACCESS_KEY_ID=$PUBLISH_AWS_ACCESS_KEY_ID
-    - export AWS_SECRET_ACCESS_KEY=$PUBLISH_AWS_SECRET_ACCESS_KEY
+# publish:s3:
+#   when: manual
+#   stage: publish
+#   image: debian:buster
+#   before_script:
+#     - export PUBLISH_AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+#     - export PUBLISH_AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+#     - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
+#     - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
+#     - apt update && apt install -yyq awscli
+#     # Fetch artifacts from temporary S3 bucket
+#     - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
+#     -   aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
+#     -   tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
+#     - done
+#   script:
+#     # Prepare high privilege S3 keys (the TMP_STORAGE keys are for the tmp storage only)
+#     - export AWS_ACCESS_KEY_ID=$PUBLISH_AWS_ACCESS_KEY_ID
+#     - export AWS_SECRET_ACCESS_KEY=$PUBLISH_AWS_SECRET_ACCESS_KEY
 
-    - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
-    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.img.xz
-    -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
-          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
-    -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+#     - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
+#     -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.img.xz
+#     -   echo "Publishing ${PUBLISH_NAME} version to S3"
+#     -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
+#           s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+#     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
+#           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
 
-    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.mender
-    -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.mender
-          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
-    -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
-    - done
+#     -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.mender
+#     -   echo "Publishing ${PUBLISH_NAME} version to S3"
+#     -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.mender
+#           s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+#     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
+#           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+#     - done
 
-  only:
-    - /^(master|[0-9]+\.[0-9]+\.x)$/
+#   only:
+#     - /^(master|[0-9]+\.[0-9]+\.x)$/
