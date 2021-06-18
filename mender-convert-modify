@@ -105,7 +105,7 @@ deb_arch=$(probe_debian_arch_name)
 
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
 
-    log_info "Installing Mender Client version ${MENDER_CLIENT_VERSION}"
+    log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
 
     if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
         deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
