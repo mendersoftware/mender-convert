@@ -57,20 +57,15 @@ if [ -e ${output_dir} ]; then
      sudo chown -R $(id -u) ${output_dir}
      sudo chgrp -R $(id -g) ${output_dir}
 fi
-mkdir -p ${output_dir}/etc/mender
-cat <<- EOF > ${output_dir}/etc/mender/mender.conf
+mkdir -p ${root_dir}/resources
+cat <<- EOF > ${root_dir}/resources/mender.conf
 {
-  "InventoryPollIntervalSeconds": 5,
-  "RetryPollIntervalSeconds": 30,
   "ServerURL": "https://hosted.mender.io/",
-  "TenantToken": "${tenant_token}",
-  "UpdatePollIntervalSeconds": 5
+  "TenantToken": "${tenant_token}"
 }
 EOF
-
-chmod 600 ${output_dir}/etc/mender/mender.conf
 
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Hosted Mender written to: ${output_dir}/etc/mender"
+echo "Configuration file for using Hosted Mender written to: ${root_dir}/resources/mender.conf"

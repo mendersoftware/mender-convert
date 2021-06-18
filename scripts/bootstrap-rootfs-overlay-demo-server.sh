@@ -56,27 +56,15 @@ if [ -e ${output_dir} ]; then
      sudo chown -R $(id -u) ${output_dir}
      sudo chgrp -R $(id -g) ${output_dir}
 fi
+
 mkdir -p ${output_dir}/etc/mender
-cat <<- EOF > ${output_dir}/etc/mender/mender.conf
+mkdir -p ${root_dir}/resources
+cat <<- EOF > ${root_dir}/resources/mender.conf
 {
-  "InventoryPollIntervalSeconds": 5,
-  "RetryPollIntervalSeconds": 30,
   "ServerURL": "https://docker.mender.io",
-  "ServerCertificate": "/etc/mender/server.crt",
-  "UpdatePollIntervalSeconds": 5
+  "ServerCertificate": "/etc/mender/server.crt"
 }
 EOF
-
-chmod 600 ${output_dir}/etc/mender/mender.conf
-
-cat <<- EOF > ${output_dir}/etc/mender/mender-connect.conf
-{
-  "ShellCommand": "/bin/sh",
-  "User": "root"
-}
-EOF
-
-chmod 600 ${output_dir}/etc/mender/mender-connect.conf
 
 cat <<- EOF > ${output_dir}/etc/hosts
 127.0.0.1	localhost
@@ -93,4 +81,4 @@ wget -q "https://raw.githubusercontent.com/mendersoftware/mender/master/support/
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Demo Mender Server written to: ${output_dir}/etc/mender"
+echo "Configuration file for using Demo Mender Server written to: ${root_dir}/resources/mender.conf"

@@ -61,29 +61,21 @@ if [ -e ${output_dir} ]; then
     sudo chown -R $(id -u) ${output_dir}
     sudo chgrp -R $(id -g) ${output_dir}
 fi
-mkdir -p ${output_dir}/etc/mender
-cat <<- EOF > ${output_dir}/etc/mender/mender.conf
+
+mkdir -p ${root_dir}/resources
+cat <<- EOF > ${root_dir}/resources/mender.conf
 {
-  "InventoryPollIntervalSeconds": 5,
-  "RetryPollIntervalSeconds": 30,
   "ServerURL": "${server_url}",
 EOF
 
 if [ -n "${server_cert}" ]; then
-    cat <<- EOF >> ${output_dir}/etc/mender/mender.conf
-  "ServerCertificate": "/etc/mender/server.crt",
+    cat <<- EOF >> ${root_dir}/resources/mender.conf
+  "ServerCertificate": "/etc/mender/server.crt"
 EOF
     cp -f "${server_cert}" ${output_dir}/etc/mender/server.crt
 fi
 
-cat <<- EOF >> ${output_dir}/etc/mender/mender.conf
-  "UpdatePollIntervalSeconds": 5
-}
-EOF
-
-chmod 600 ${output_dir}/etc/mender/mender.conf
-
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Production Mender Server written to: ${output_dir}/etc/mender"
+echo "Configuration file for using Production Mender Server written to: ${root_dir}/resources/mender.conf"

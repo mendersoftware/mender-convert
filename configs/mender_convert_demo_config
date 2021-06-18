@@ -1,0 +1,35 @@
+# Install all the add-on's by default
+MENDER_ADDON_CONNECT_INSTALL="y"
+MENDER_ADDON_CONFIGURE_INSTALL="y"
+
+enable_demo_configuration_in_file() {
+
+    log_info "Modifying mender.conf to follow a demo setup"
+
+    run_and_log_cmd "mkdir -p work/rootfs/etc/mender"
+
+    if [ ! -f work/rootfs/etc/mender/mender.conf ]; then
+        log_error "No Mender configuration file found in the work folder."
+        exit 1
+    fi
+
+    if [ ! -f work/rootfs/etc/mender/mender-connect.conf ]; then
+        log_info "Installing the mender-connect.conf file"
+        cat <<- EOF > work/rootfs/etc/mender/mender-connect.conf
+            {
+                "ShellCommand": "/bin/sh",
+                "User": "root"
+            }
+EOF
+        run_and_log_cmd "sudo chmod 0600 work/rootfs/etc/mender/mender-connect.conf"
+    fi
+
+    log_info "Adding the demo configuration to the Mender client"
+    tmpfile=work/mender.conf.bak
+    run_and_log_cmd "cat work/rootfs/etc/mender/mender.conf |  jq '.InventoryPollIntervalSeconds=5 | .RetryPollIntervalSeconds=30 |    .UpdatePollIntervalSeconds=5' > ${tmpfile}"
+    run_and_log_cmd "cp ${tmpfile} work/rootfs/etc/mender/mender.conf"
+    run_and_log_cmd "sudo chmod 0600 work/rootfs/etc/mender/mender.conf"
+    log_warn "New mender.conf contents: $(cat  work/rootfs/etc/mender/mender.conf)"
+
+}
+PLATFORM_MODIFY_HOOKS+=(enable_demo_configuration_in_file)
