@@ -105,7 +105,7 @@ deb_arch=$(probe_debian_arch_name)
 
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
 
-    log_info "Installing Mender Client version ${MENDER_CLIENT_VERSION}"
+    log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
 
     if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
         deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
@@ -289,6 +289,15 @@ EOF
 
 run_and_log_cmd "sudo cp work/mender.conf.data work/rootfs/data/mender/mender.conf"
 run_and_log_cmd "sudo chmod 600 work/rootfs/data/mender/mender.conf"
+
+if [ -f resources/mender.conf ]; then
+    log_info "Installing the local mender.conf file"
+    run_and_log_cmd "mkdir -p work/rootfs/etc/mender"
+    run_and_log_cmd "cp resources/mender.conf work/rootfs/etc/mender"
+    run_and_log_cmd "sudo chmod 600 work/rootfs/etc/mender/mender.conf"
+else
+    log_warn "No mender.conf file found in resources. Have you remembered to run the bootstrap script?"
+fi
 
 if [ -z "${MENDER_DEVICE_TYPE}" ]; then
     # Observed systems who do not have this file, e.g images generated with mkosi

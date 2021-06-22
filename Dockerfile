@@ -51,7 +51,9 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     zip  \
     unzip \
 # manipulate binary and hex
-    xxd
+    xxd \
+# JSON power tool
+    jq
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
