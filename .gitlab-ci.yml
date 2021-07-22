@@ -13,6 +13,16 @@ variables:
   RASPBIAN_URL: https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip
   RASPBIAN_NAME: 2021-01-11-raspios-buster-armhf-lite
 
+  # Which version of mender-convert to use in published image name. Normally
+  # empty, in which case the branch or tag name will be used, but this variable
+  # is available so that it's possible to make small build fixes on an already
+  # tagged version.
+  MENDER_CONVERT_PUBLISH_VERSION: ""
+
+  # Whether to publish images. Note that images from branches are always
+  # published, even if this is false.
+  PUBLISH_MENDER_CONVERT_IMAGES: "false"
+
   DEBIAN_FRONTEND: noninteractive
 
   # Docker dind configuration.
@@ -214,7 +224,6 @@ test_acceptance_ubuntu:
     - ./scripts/test/run-tests.sh --only ubuntu
 
 publish:s3:
-  when: manual
   stage: publish
   image: debian:buster
   before_script:
@@ -233,15 +242,17 @@ publish:s3:
     - export AWS_ACCESS_KEY_ID=$PUBLISH_AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$PUBLISH_AWS_SECRET_ACCESS_KEY
 
+    - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
+
     - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
-    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.img.xz
+    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-convert-${IMAGE_VERSION}.img.xz
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
     -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
           s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
 
-    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-${MENDER_CLIENT_VERSION}.mender
+    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-convert-${IMAGE_VERSION}.mender
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
     -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.mender
           s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
@@ -249,5 +260,7 @@ publish:s3:
           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
     - done
 
-  only:
-    - /^(master|[0-9]+\.[0-9]+\.x)$/
+  rules:
+    - if: '$CI_COMMIT_REF_NAME =~ /^[0-9]+\.[0-9]+\.[0-9]+(-build[0-9]+)?$/ && $PUBLISH_MENDER_CONVERT_IMAGES == "true"'
+    - if: '$CI_COMMIT_REF_NAME =~ /^(master|[0-9]+\.[0-9]+\.x)$/'
+    - if: '$CI_COMMIT_REF_NAME !~ /^pr_[0-9]+$/ && $MENDER_CONVERT_PUBLISH_VERSION != "" && $PUBLISH_MENDER_CONVERT_IMAGES == "true"'
