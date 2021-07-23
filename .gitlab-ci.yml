@@ -134,10 +134,18 @@ test:format:
       -c configs/images/raspberrypi_raspbian_config
       -c versions_override_config
 
-    # Upload to temporary S3 bucket
+    # Collect artifacts.
     - mv deploy ${RASPBERRYPI_PLATFORM}
     - tar czf ${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}
+    # Compute checksum
+    - mkdir checksums
+    - sha256sum ${RASPBERRYPI_PLATFORM}.tar.gz > checksums/${RASPBERRYPI_PLATFORM}.tar.gz.sha256
+    # Upload to temporary S3 bucket
     - aws s3 cp ${RASPBERRYPI_PLATFORM}.tar.gz s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz
+
+  artifacts:
+    paths:
+      - checksums
 
 convert_raspbian_raspberrypi3:
   <<: *convert_raspbian
@@ -194,6 +202,8 @@ convert_raspbian_raspberrypi4:
   script:
     # Fetch artifacts from temporary S3 bucket
     - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
+    # Check checksum
+    - sha256sum -c checksums/${RASPBERRYPI_PLATFORM}.tar.gz.sha256
     - tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
     - mv ${RASPBERRYPI_PLATFORM} deploy
     # Extract converted Raspbian artifacts
@@ -253,6 +263,8 @@ publish:s3:
     # Fetch artifacts from temporary S3 bucket
     - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
     -   aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
+    #   Check checksum
+    -   sha256sum -c checksums/${RASPBERRYPI_PLATFORM}.tar.gz.sha256
     -   tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
     - done
   script:
