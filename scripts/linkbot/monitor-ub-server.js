@@ -49,7 +49,7 @@ JSDOM.fromURL(url, {}).then(dom => {
         const match = Array.from(refs).find(ref => ref.href.match(`.*ubuntu-${releaseVersion}\.?[0-9]+-preinstalled-server-armhf.*\.img\.xz$`))
         if (match) {
             console.log(`Ubuntu server image has a new release: ${match}`)
-            updateURLLink(`${target}=${match}`, target)
+            updateURLLink(`${target}=\"${match}\"`, target)
         }
     })
 });
