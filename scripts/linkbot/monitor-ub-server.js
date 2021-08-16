@@ -26,12 +26,14 @@ JSDOM.fromURL(url, {}).then(dom => {
     var refs = document.getElementsByTagName("a");
     var matches = Array.from(refs)
         .filter(ref => ref.textContent.match(reg))
+        .filter(ref => parseInt(ref.textContent.match(reg).groups.release) % 2 == 0) // Only LTS
+        .filter(ref => !ref.textContent.match(reg).groups.minor) // Ignore the minor number
         .reduce((acc, ref) => {
             acc.push(ref.textContent.match(reg))
             return acc
         }, [])
         .sort((a,b) => {
-            return parseInt(b.groups.release) - parseInt(a.groups.release) || parseFloat(b.groups.minor) - parseFloat(a.groups.minor)
+            return parseInt(b.groups.release) - parseInt(a.groups.release)
         })
     var matchOn = matches[0].input
 
@@ -44,7 +46,7 @@ JSDOM.fromURL(url, {}).then(dom => {
     JSDOM.fromURL(`${url}${releaseVersion}/release/`, {}).then(dom => {
         var document = dom.window.document;
         var refs = document.getElementsByTagName("a");
-        const match = Array.from(refs).find(ref => ref.href.match(`.*ubuntu-${releaseVersion}-preinstalled-server-armhf.*\.img\.xz$`))
+        const match = Array.from(refs).find(ref => ref.href.match(`.*ubuntu-${releaseVersion}\.?[0-9]+-preinstalled-server-armhf.*\.img\.xz$`))
         if (match) {
             console.log(`Ubuntu server image has a new release: ${match}`)
             updateURLLink(`${target}=${match}`, target)
