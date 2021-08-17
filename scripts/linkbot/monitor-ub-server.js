@@ -5,7 +5,7 @@ const { updateURLLink } = require('./common');
 
 const target = "UBUNTU_SERVER_RPI_IMAGE_URL"
 const url = "http://cdimage.ubuntu.com/ubuntu/releases/"
-const reg = ".*(?<release>[0-9]{2})\.04\.?(?<minor>[0-9]{1})?.*"
+const reg = ".*(?<release>[0-9][02468])\.04\.?(?<minor>[0-9]{1})?.*"
 
 // Read the input file, and parse the variable input
 try {
@@ -26,7 +26,6 @@ JSDOM.fromURL(url, {}).then(dom => {
     var refs = document.getElementsByTagName("a");
     var matches = Array.from(refs)
         .filter(ref => ref.textContent.match(reg))
-        .filter(ref => parseInt(ref.textContent.match(reg).groups.release) % 2 == 0) // Only LTS
         .filter(ref => !ref.textContent.match(reg).groups.minor) // Ignore the minor number
         .reduce((acc, ref) => {
             acc.push(ref.textContent.match(reg))
