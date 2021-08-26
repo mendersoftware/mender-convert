@@ -17,7 +17,7 @@ GRUB_VERSION=2.04
 MENDER_GRUB_KERNEL_BOOT_ARGS=""
 
 # grub-mender-grubenv is the Mender integration for the GRUB bootloader
-MENDER_GRUBENV_VERSION="aa7e8f8c76c6aca6dca1820aaa42dc2cbf9762a1"
+MENDER_GRUBENV_VERSION="1a7db967495bbe8be53b7a69dcb42822f39d9a74"
 MENDER_GRUBENV_URL="${MENDER_GITHUB_ORG}/grub-mender-grubenv/archive/${MENDER_GRUBENV_VERSION}.tar.gz"
 
 # Name of the storage device containing root filesystem partitions in GRUB
