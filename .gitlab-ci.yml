@@ -161,6 +161,9 @@ convert_raspbian_raspberrypi4:
     - curl -f -O https://mender.s3.amazonaws.com/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact
     - chmod ugo+x mender-artifact
     - mv mender-artifact /usr/bin/
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > versions_override_config
+    - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> versions_override_config
+    - echo "MENDER_ADDON_CONFIGURE_VERSION=${MENDER_ADDON_CONFIGURE_VERSION}" >> versions_override_config
     # Get Update Modules Artifact generators for the tests
     - if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
     -   mender_version=master
@@ -220,22 +223,22 @@ test_acceptance_prebuilt_raspberrypi4:
 test_acceptance_qemux86_64:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --only qemux86_64
+    - ./scripts/test/run-tests.sh --config versions_override_config --only qemux86_64
 
 test_acceptance_raspberrypi:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --only raspberrypi3
+    - ./scripts/test/run-tests.sh --config versions_override_config --only raspberrypi3
 
 test_acceptance_beaglebone:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --only beaglebone
+    - ./scripts/test/run-tests.sh --config versions_override_config --only beaglebone
 
 test_acceptance_ubuntu:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --only ubuntu
+    - ./scripts/test/run-tests.sh --config versions_override_config --only ubuntu
 
 publish:s3:
   stage: publish

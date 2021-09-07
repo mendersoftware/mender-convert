@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  echo "$0 <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
+  echo "$0 [--config EXTRA_CONFIG_FILE] <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
   exit 1
 }
 
@@ -44,26 +44,55 @@ get_pytest_files
 
 prepare_ssh_keys
 
-if ! [ "$1" == "--all" -o "$1" == "--only" -a -n "$2" -o "$1" == "--prebuilt-image" -a -n "$3" ]; then
-  usage
-fi
+usage_if_empty() {
+  if [ -z "$1" ]; then
+    usage
+  fi
+}
+
+PREBUILT_IMAGE=
+TEST_PLATFORM=
+TEST_ALL=0
+EXTRA_CONFIG=
+while [ -n "$1" ]; do
+  case "$1" in
+    --prebuilt-image)
+      usage_if_empty "$3"
+      PREBUILT_IMAGE="$2 $3"
+      ;;
+    --all)
+      TEST_ALL=1
+      ;;
+    --only)
+      usage_if_empty "$2"
+      TEST_PLATFORM="$2"
+      shift
+      ;;
+    --config)
+      usage_if_empty "$2"
+      EXTRA_CONFIG="$EXTRA_CONFIG --config $2"
+      shift
+      ;;
+  esac
+  shift
+done
 
 test_result=0
 
-if [ "$1" == "--prebuilt-image" ]; then
-  run_tests "$2" "$3" \
+if [ -n "$PREBUILT_IMAGE" ]; then
+  run_tests $PREBUILT_IMAGE \
             "-k" "'not test_update'" \
             || test_result=$?
   exit $test_result
 
 else
-  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "qemux86_64" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "qemux86_64" ]; then
     wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/
     convert_and_test "qemux86_64" \
                      "release-1" \
                      "input/Ubuntu-Bionic-x86-64.img.gz" \
                      "--overlay tests/ssh-public-key-overlay" \
-                     "--config configs/qemux86-64_config" \
+                     "--config configs/qemux86-64_config $EXTRA_CONFIG" \
                      || test_result=$?
 
     echo >&2 "----------------------------------------"
@@ -73,25 +102,25 @@ else
     gunzip --force "input/Ubuntu-Bionic-x86-64.img.gz"
     run_convert "release-2" \
                 "input/Ubuntu-Bionic-x86-64.img" \
-                "--config configs/qemux86-64_config" || test_result=$?
+                "--config configs/qemux86-64_config $EXTRA_CONFIG" || test_result=$?
     ret=0
     test -f deploy/Ubuntu-Bionic-x86-64-qemux86_64-mender.img || ret=$?
     assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Bionic-x86-64-qemux86_64-mender.img"
   fi
 
-  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "raspberrypi3" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
     wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/
     RASPBIAN_IMAGE="${RASPBIAN_IMAGE_URL##*/}"
     convert_and_test "raspberrypi3" \
                      "release-1" \
                      "input/${RASPBIAN_IMAGE}" \
-                     "--config configs/raspberrypi3_config" \
+                     "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
                      -- \
                      "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
-  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "beaglebone" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "beaglebone" ]; then
     wget --progress=dot:giga -N ${BBB_DEBIAN_SDCARD_IMAGE_URL} -P input/
     BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_URL##*/}"
     BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED%.xz}"
@@ -100,7 +129,7 @@ else
     convert_and_test "beaglebone-sdcard" \
                      "release-1" \
                      "input/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
-                     "--config configs/beaglebone_black_debian_sdcard_config" \
+                     "--config configs/beaglebone_black_debian_sdcard_config $EXTRA_CONFIG" \
                      -- \
                      "-k" "'not test_update'" \
                      || test_result=$?
@@ -113,19 +142,19 @@ else
     convert_and_test "beaglebone-emmc" \
                      "release-1" \
                      "input/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
-                     "--config configs/beaglebone_black_debian_emmc_config" \
+                     "--config configs/beaglebone_black_debian_emmc_config $EXTRA_CONFIG" \
                      -- \
                      "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
-  if [ "$1" == "--all" -o "$1" == "--only" -a "$2" == "ubuntu" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu" ]; then
     wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/
     UBUNTU_SERVER_RPI_IMAGE_COMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_URL##*/}"
     convert_and_test "raspberrypi3" \
                      "release-1" \
                      "input/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}" \
-                     "--config configs/raspberrypi3_config" \
+                     "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
                      -- \
                      "-k" "'not test_update'" \
                      || test_result=$?
