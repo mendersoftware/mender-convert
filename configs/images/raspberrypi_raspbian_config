@@ -49,3 +49,18 @@ EOF
 }
 
 PLATFORM_MODIFY_HOOKS+=(grow_data_partition)
+
+#
+# Allow APT Suite change in the release info
+#
+# Upstream repository http://raspbian.raspberrypi.org/raspbian has changed buster
+# release suite from "stable" to "oldstable". The following configuration option
+# allows APT to update without user interaction.
+# This is the default un newer versions of apt, see:
+#   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=931566
+#
+function apt_allow_release_change_suite() {
+    run_and_log_cmd "echo 'Acquire::AllowReleaseInfoChange::Suite \"true\";' \
+                     | sudo tee work/rootfs/etc/apt/apt.conf.d/99release-change-suite"
+}
+PLATFORM_MODIFY_HOOKS+=(apt_allow_release_change_suite)
