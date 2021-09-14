@@ -2,18 +2,18 @@
 variables:
   DOCKER_REPOSITORY: mendersoftware/mender-convert
   S3_BUCKET_NAME: mender-convert-images
+
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION: master
   MENDER_CLIENT_VERSION: latest
   MENDER_ADDON_CONNECT_VERSION: latest
   MENDER_ADDON_CONFIGURE_VERSION: latest
+
   # Make sure to update the link in mender-docs to the new one when changing
   # this.
   RASPBIAN_URL: https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip
   RASPBIAN_NAME: 2021-01-11-raspios-buster-armhf-lite
-
-  TEST_MENDER_CONVERT: "true"
 
   # Which version of mender-convert to use in published image name. Normally
   # empty, in which case the branch or tag name will be used, but this variable
@@ -21,9 +21,10 @@ variables:
   # tagged version.
   MENDER_CONVERT_PUBLISH_VERSION: ""
 
-  # Whether to publish images. Note that images from branches are always
-  # published, even if this is false.
-  PUBLISH_MENDER_CONVERT_IMAGES: "false"
+  # Whether to run acceptance tests
+  TEST_MENDER_CONVERT: "true"
+  # Whether to publish packages automatically - they can always be published manually
+  PUBLISH_MENDER_CONVERT_AUTOMATIC: "false"
 
   DEBIAN_FRONTEND: noninteractive
 
@@ -53,6 +54,25 @@ stages:
   - test_acceptance
   - publish
 
+test:check-commits:
+  only:
+    variables:
+      - '$TEST_MENDER_CONVERT == "true"'
+
+test:check-license:
+  rules:
+    - if: '$TEST_MENDER_CONVERT == "true"'
+
+test:check-shell-formatting:
+  rules:
+    - if: '$TEST_MENDER_CONVERT == "true"'
+  before_script:
+    - SHELL_SCRIPTS=$(find mender-convert* modules configs scripts
+            -type f
+            -not -name "*.md"
+            -not -path "scripts/linkbot/*"
+            -not -wholename "scripts/test/*")
+
 build:
   stage: build
   needs: []
@@ -66,14 +86,6 @@ build:
     expire_in: 2w
     paths:
       - image.tar
-
-test:check-shell-formatting:
-  before_script:
-    - SHELL_SCRIPTS=$(find mender-convert* modules configs scripts
-            -type f
-            -not -name "*.md"
-            -not -path "scripts/linkbot/*"
-            -not -wholename "scripts/test/*")
 
 .template_convert_raspbian: &convert_raspbian
   stage: convert
@@ -236,7 +248,7 @@ test_acceptance_ubuntu:
   script:
     - ./scripts/test/run-tests.sh --config versions_override_config --only ubuntu
 
-publish:s3:
+.template:publish:s3:
   stage: publish
   image: debian:buster
   before_script:
@@ -275,7 +287,11 @@ publish:s3:
           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
     - done
 
+publish:s3:manual:
+  when: manual
+  extends: .template:publish:s3
+
+publish:s3:automatic:
   rules:
-    - if: '$CI_COMMIT_REF_NAME =~ /^[0-9]+\.[0-9]+\.[0-9]+(-build[0-9]+)?$/ && $PUBLISH_MENDER_CONVERT_IMAGES == "true"'
-    - if: '$CI_COMMIT_REF_NAME =~ /^(master|[0-9]+\.[0-9]+\.x)$/'
-    - if: '$CI_COMMIT_REF_NAME !~ /^pr_[0-9]+$/ && $MENDER_CONVERT_PUBLISH_VERSION != "" && $PUBLISH_MENDER_CONVERT_IMAGES == "true"'
+    - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
+  extends: .template:publish:s3
