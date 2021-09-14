@@ -98,14 +98,10 @@ test:check-shell-formatting:
     - unzip ${RASPBIAN_NAME}.zip
 
   script:
-    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > versions_override_config
-    - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> versions_override_config
-    - echo "MENDER_ADDON_CONFIGURE_VERSION=${MENDER_ADDON_CONFIGURE_VERSION}" >> versions_override_config
-    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender-${MENDER_CLIENT_VERSION}
-      ./docker-mender-convert -d ${RASPBIAN_NAME}.img
-      -c configs/${RASPBERRYPI_PLATFORM}_config
-      -c configs/images/raspberrypi_raspbian_config
-      -c versions_override_config
+    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender
+      ./docker-mender-convert --disk-image ${RASPBIAN_NAME}.img
+      --config configs/${RASPBERRYPI_PLATFORM}_config
+      --config configs/images/raspberrypi_raspbian_config
 
     # Collect artifacts.
     - mv deploy ${RASPBERRYPI_PLATFORM}
