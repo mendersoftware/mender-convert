@@ -26,7 +26,7 @@ BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2021-05-28/b
 ## Auto-update
 RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip"
 
-UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Bionic-x86-64.img.gz"
+UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Focal-x86-64.img.gz"
 
 ## Auto-update
 UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/20.04.2/release/ubuntu-20.04.2-preinstalled-server-armhf+raspi.img.xz"
@@ -90,7 +90,7 @@ else
     wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/
     convert_and_test "qemux86_64" \
                      "release-1" \
-                     "input/Ubuntu-Bionic-x86-64.img.gz" \
+                     "input/Ubuntu-Focal-x86-64.img.gz" \
                      "--overlay tests/ssh-public-key-overlay" \
                      "--config configs/qemux86-64_config $EXTRA_CONFIG" \
                      || test_result=$?
@@ -99,13 +99,13 @@ else
     echo >&2 "Running the uncompressed test"
     echo >&2 "----------------------------------------"
     rm -rf deploy
-    gunzip --force "input/Ubuntu-Bionic-x86-64.img.gz"
+    gunzip --force "input/Ubuntu-Focal-x86-64.img.gz"
     run_convert "release-2" \
-                "input/Ubuntu-Bionic-x86-64.img" \
+                "input/Ubuntu-Focal-x86-64.img" \
                 "--config configs/qemux86-64_config $EXTRA_CONFIG" || test_result=$?
     ret=0
-    test -f deploy/Ubuntu-Bionic-x86-64-qemux86_64-mender.img || ret=$?
-    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Bionic-x86-64-qemux86_64-mender.img"
+    test -f deploy/Ubuntu-Focal-x86-64-qemux86_64-mender.img || ret=$?
+    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Focal-x86-64-qemux86_64-mender.img"
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
