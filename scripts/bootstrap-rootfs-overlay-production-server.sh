@@ -75,6 +75,10 @@ EOF
     cp -f "${server_cert}" ${output_dir}/etc/mender/server.crt
 fi
 
+cat <<- EOF >> ${root_dir}/resources/mender.conf
+}
+EOF
+
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
