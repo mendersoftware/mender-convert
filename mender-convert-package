@@ -16,6 +16,7 @@
 
 # Default that can be overridden by providing this method in a
 # configuration file passed with '--config'
+sh -x 
 function platform_package() {
     true
 }
@@ -25,6 +26,10 @@ function trap_exit() {
     echo "mender-convert-package has finished. Cleaning up..."
     sudo umount -f work/boot > /dev/null 2>&1 || true
     sudo umount -f work/rootfs > /dev/null 2>&1 || true
+    if [ ! -z ${loopdev} ]; then
+        sudo cryptsetup luksClose root
+        sudo losetup -d ${loopdev}
+    fi
 }
 
 function trap_term() {
@@ -93,7 +98,18 @@ mkdir -p work/boot
 mkdir -p work/rootfs
 
 sudo mount ${boot_part} work/boot
-sudo mount ${root_part} work/rootfs
+
+luks=$(is_luks_partition ${root_part})
+log_info "LUKS: ${luks}"
+
+# handling for luks formatted partition
+if [ "${luks}" = "y" ]; then
+    # get loop device which will be used later to properly close/unmount/delete
+    loopdev=$(process_luks_partition "${root_part}")
+    sudo mount /dev/mapper/root work/rootfs
+else    
+    sudo mount ${root_part} work/rootfs
+fi
 
 # Convert to 512 blocks
 disk_image_total_sectors=$(disk_mb_to_sectors ${MENDER_STORAGE_TOTAL_SIZE_MB})
@@ -189,24 +205,28 @@ fi
 
 log_info "Rootfs filesystem size will be $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
 
+
 # Extract file-system type from rootfs
-if file ${root_part} | grep -q ext4; then
+if sudo mount | grep "work/rootfs" | grep ext4; then
     image_fs_type="ext4"
-elif file ${root_part} | grep -q XFS; then
+elif sudo mount | grep -q "work/rootfs" | grep -q xfs; then
     image_fs_type="xfs"
 else
-    log_warn "$(file work/${root_part})"
+    log_warn "$(file ${root_part})"
     log_fatal "Could not determine root file-system type. Aborting..."
 fi
 
+luks=$(is_luks_partition ${root_part})
+log_info "LUKS: ${luks}"
+
 disk_create_file_system_from_folder "work/rootfs/data/" "work/data.img" \
-    "${data_part_sectors}" "${image_fs_type}"
+    "${data_part_sectors}" "${image_fs_type}" "n"
 
 # Clear this area as it will be contained in the data.img
 sudo rm -rf work/rootfs/data/*
 
 disk_create_file_system_from_folder "work/rootfs/" "work/rootfs.img" \
-    "${rootfs_image_sectors}" "${image_fs_type}"
+    "${rootfs_image_sectors}" "${image_fs_type}" "${luks}"
 
 log_info "Copying root filesystem image to deploy directory"
 run_and_log_cmd "cp --sparse=always work/rootfs.img deploy/${image_name}.${image_fs_type}"

@@ -108,10 +108,18 @@ disk_write_at_offset() {
 # $2 - destination file
 # $3 - image size in sectors
 # $4 - file system type, e.g ext4, xfs, ...
+# $5 - partition need luks encryption
 disk_create_file_system_from_folder() {
-    log_info "Creating a file-system image from: ${1}"
+    log_info "Creating a file-system image from: ${1}, LUKS: ${5}"
 
     run_and_log_cmd "dd if=/dev/zero of=${2} seek=${3} count=0 bs=512 status=none"
+
+    if [ "${5}" = "y" ]; then
+        log_info "Creating LUKS encrypted partition"
+        echo -n "changeme" | sudo cryptsetup -y -v luksFormat ${2} -d -
+        luks_loop=$(sudo losetup --find --show ${2})
+        echo -n "changeme" | sudo cryptsetup luksOpen ${luks_loop} img
+    fi
 
     case ${1} in
         *data/) EXTRA_OPTS="${MENDER_DATA_PART_MKFS_OPTS}" ;;
@@ -125,7 +133,11 @@ disk_create_file_system_from_folder() {
             if [ ! -f ${MKFS_EXT4} ]; then
                 MKFS_EXT4="/sbin/mkfs.ext4"
             fi
-            run_and_log_cmd "${MKFS_EXT4} -q -F ${2} ${EXTRA_OPTS}"
+            if [ "${5}" = "y" ]; then
+                run_and_log_cmd "${MKFS_EXT4} -q -F /dev/mapper/img ${EXTRA_OPTS}"
+            else
+                run_and_log_cmd "${MKFS_EXT4} -q -F ${2} ${EXTRA_OPTS}"
+            fi
             ;;
 
         "xfs")
@@ -140,10 +152,20 @@ disk_create_file_system_from_folder() {
             ;;
     esac
 
-    run_and_log_cmd "mkdir -p work/output"
-    run_and_log_cmd "sudo mount ${2} work/output"
-    run_and_log_cmd "sudo rsync --archive --delete ${1} work/output/"
-    run_and_log_cmd "sudo umount work/output"
+    if [ "${5}" = "y" ]; then
+        run_and_log_cmd "mkdir -p work/output"
+        run_and_log_cmd "sudo mount /dev/mapper/img work/output"
+        run_and_log_cmd "sudo rsync --archive --delete ${1} work/output"
+        run_and_log_cmd "sudo umount work/output"
+        run_and_log_cmd "sudo cryptsetup luksClose /dev/mapper/img"
+        run_and_log_cmd "sudo losetup -d ${luks_loop}"
+    else
+        run_and_log_cmd "mkdir -p work/output"
+        run_and_log_cmd "sudo mount ${2} work/output"
+        run_and_log_cmd "sudo rsync --archive --delete ${1} work/output/"
+        run_and_log_cmd "sudo umount work/output"
+    fi
+    
 }
 
 # Print path to the boot partition filesystem image
@@ -357,4 +379,23 @@ disk_override_partition_variable() {
             MENDER_STORAGE_DEVICE_BASE=$(disk_get_device_base "${2}")
         fi
     fi
+}
+
+is_luks_partition() {
+    file "${1}" | grep -q "LUKS"
+    if [ $? = 0 ]; then
+        echo "y"
+        return
+    fi
+
+    echo "n"
+}
+
+# $1 - path to raw file
+# return path to loop device where luks is opened
+process_luks_partition() {
+    loop_device=$(sudo losetup --find --show ${1})
+    echo -n "changeme" | sudo cryptsetup luksOpen ${loop_device} root -d -
+
+    echo "${loop_device}"
 }

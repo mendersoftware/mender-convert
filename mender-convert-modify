@@ -35,6 +35,10 @@ function trap_exit() {
     echo "mender-convert-modify has finished. Cleaning up..."
     sudo umount -f work/boot
     sudo umount -f work/rootfs
+    if [ ! -z ${loopdev} ]; then
+        sudo cryptsetup luksClose root
+        sudo losetup -d ${loopdev}
+    fi
 }
 
 function trap_term() {
@@ -95,7 +99,18 @@ mkdir -p work/boot
 mkdir -p work/rootfs
 
 sudo mount ${boot_part} work/boot
-sudo mount ${root_part} work/rootfs
+
+luks=$(is_luks_partition ${root_part})
+log_info "LUKS: ${luks}"
+
+# handling for luks formatted partition
+if [ "${luks}" = "y" ]; then
+    # get loop device which will be used later to properly close/unmount/delete
+    loopdev=$(process_luks_partition "${root_part}")
+    sudo mount /dev/mapper/root work/rootfs
+else    
+    sudo mount ${root_part} work/rootfs
+fi
 
 mkdir -p work/deb-packages
 
