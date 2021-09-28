@@ -206,7 +206,7 @@ fi
 log_info "Rootfs filesystem size will be $(disk_sectors_to_mb ${rootfs_image_sectors}) MiB"
 
 
-# Extract file-system type from rootfs
+# Extract file-system type from mounted rootfs
 if sudo mount | grep "work/rootfs" | grep ext4; then
     image_fs_type="ext4"
 elif sudo mount | grep -q "work/rootfs" | grep -q xfs; then
@@ -215,10 +215,7 @@ else
     log_warn "$(file ${root_part})"
     log_fatal "Could not determine root file-system type. Aborting..."
 fi
-
-luks=$(is_luks_partition ${root_part})
-log_info "LUKS: ${luks}"
-
+# we don't encrypt data partition
 disk_create_file_system_from_folder "work/rootfs/data/" "work/data.img" \
     "${data_part_sectors}" "${image_fs_type}" "n"
 
