@@ -101,13 +101,15 @@ build:
     - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
 
-    - apt update && apt install -yy bash wget unzip awscli docker.io
+    - apt update && apt install -yy bash wget unzip awscli docker.io curl
 
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar
 
     - wget -q ${RASPBIAN_URL}
     - unzip ${RASPBIAN_NAME}.zip
+
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
 
   script:
     - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender
@@ -118,11 +120,8 @@ build:
     # Collect artifacts.
     - mv deploy ${RASPBERRYPI_PLATFORM}
     - tar czf ${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}
-    # Compute checksum
-    - mkdir checksums
-    - sha256sum ${RASPBERRYPI_PLATFORM}.tar.gz > checksums/${RASPBERRYPI_PLATFORM}.tar.gz.sha256
     # Upload to temporary S3 bucket
-    - aws s3 cp ${RASPBERRYPI_PLATFORM}.tar.gz s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz
+    - mender_ci_save_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
 
   artifacts:
     paths:
@@ -198,10 +197,9 @@ convert_raspbian_raspberrypi4:
 .template_test_acceptance_prebuilt_raspberrypi: &test_acceptance_prebuilt_raspberrypi
   <<: *test_acceptance
   script:
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
     # Fetch artifacts from temporary S3 bucket
-    - aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
-    # Check checksum
-    - sha256sum -c checksums/${RASPBERRYPI_PLATFORM}.tar.gz.sha256
+    - mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
     - tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
     - mv ${RASPBERRYPI_PLATFORM} deploy
     # Extract converted Raspbian artifacts
@@ -256,12 +254,11 @@ test_acceptance_ubuntu:
     - export PUBLISH_AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
     - export AWS_ACCESS_KEY_ID=$TMP_STORAGE_AWS_ACCESS_KEY_ID
     - export AWS_SECRET_ACCESS_KEY=$TMP_STORAGE_AWS_SECRET_ACCESS_KEY
-    - apt update && apt install -yyq awscli
+    - apt update && apt install -yyq awscli curl
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
     # Fetch artifacts from temporary S3 bucket
     - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
-    -   aws s3 cp s3://mender-gitlab-tmp-storage/$CI_PROJECT_NAME/$CI_PIPELINE_ID/${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}.tar.gz
-    #   Check checksum
-    -   sha256sum -c checksums/${RASPBERRYPI_PLATFORM}.tar.gz.sha256
+    -   mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
     -   tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
     - done
   script:
