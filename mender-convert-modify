@@ -167,10 +167,11 @@ fi
 # the Debian package is installed later, this folder has to preexist. It is part
 # of the rootfs setup, independently of the software.
 log_info "Creating state folder in the data partition for Mender add-ons"
+run_and_log_cmd "sudo mkdir -p work/rootfs/var/lib"
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-configure"
-run_and_log_cmd "sudo ln -sf /data/mender-configure work/rootfs/var/lib/mender-configure"
+run_and_log_cmd "sudo ln -sf /data/mender-configure work/rootfs/var/lib"
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-monitor"
-run_and_log_cmd "sudo ln -sf /data/mender-monitor work/rootfs/var/lib/mender-monitor"
+run_and_log_cmd "sudo ln -sf /data/mender-monitor work/rootfs/var/lib"
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # Check for known U-Boot problems in all files on the boot partition.
@@ -277,7 +278,8 @@ if [ -d work/rootfs/boot/dtbs ]; then
 fi
 
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender"
-run_and_log_cmd "sudo ln -sf /data/mender work/rootfs/var/lib/mender"
+run_and_log_cmd "sudo mkdir -p work/rootfs/var/lib"
+run_and_log_cmd "sudo ln -sf /data/mender work/rootfs/var/lib"
 
 log_info "Using root device A in mender.conf: $root_part_a_device"
 log_info "Using root device B in mender.conf: $root_part_b_device"
