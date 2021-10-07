@@ -116,9 +116,9 @@ disk_create_file_system_from_folder() {
 
     if [ "${5}" = "y" ]; then
         log_info "Creating LUKS encrypted partition"
-	echo -n "changeme" | sudo cryptsetup -y -v luksFormat --pbkdf=pbkdf2 ${2} -d -
+	echo -n "${LUKS_PWD}" | sudo cryptsetup -y -v luksFormat --pbkdf=pbkdf2 ${2} -d -
         luks_loop=$(sudo losetup --find --show ${2})
-        echo -n "changeme" | sudo cryptsetup luksOpen ${luks_loop} img
+        echo -n "${LUKS_PWD}" | sudo cryptsetup luksOpen ${luks_loop} img
     fi
 
     case ${1} in
@@ -395,7 +395,7 @@ is_luks_partition() {
 # return path to loop device where luks is opened
 process_luks_partition() {
     loop_device=$(sudo losetup --find --show ${1})
-    echo -n "changeme" | sudo cryptsetup luksOpen ${loop_device} root -d -
+    echo -n "${LUKS_PWD}" | sudo cryptsetup luksOpen ${loop_device} root -d -
 
     echo "${loop_device}"
 }
