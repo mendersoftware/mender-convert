@@ -274,7 +274,7 @@ EOF
     run_and_log_cmd "sudo install -m 751 work/grub-editenv work/rootfs/usr/bin/"
 
     run_and_log_cmd "sudo mkdir -p work/boot/EFI/BOOT"
-    run_and_log_cmd "sudo cp work/${efi_name} -P work/boot/EFI/BOOT/${efi_target_name}"
+    run_and_log_cmd "sudo cp grub/${efi_name} -P work/boot/EFI/BOOT/${efi_target_name}"
 fi
 
 # Copy dtb directory to the boot partition for use by the bootloader.
