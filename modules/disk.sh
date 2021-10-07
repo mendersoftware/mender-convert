@@ -116,7 +116,7 @@ disk_create_file_system_from_folder() {
 
     if [ "${5}" = "y" ]; then
         log_info "Creating LUKS encrypted partition"
-        echo -n "changeme" | sudo cryptsetup -y -v luksFormat ${2} -d -
+	echo -n "changeme" | sudo cryptsetup -y -v luksFormat --pbkdf=pbkdf2 ${2} -d -
         luks_loop=$(sudo losetup --find --show ${2})
         echo -n "changeme" | sudo cryptsetup luksOpen ${luks_loop} img
     fi
