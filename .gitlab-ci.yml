@@ -10,8 +10,7 @@ variables:
   MENDER_ADDON_CONNECT_VERSION: latest
   MENDER_ADDON_CONFIGURE_VERSION: latest
 
-  # Make sure to update the link in mender-docs to the new one when changing
-  # this.
+  ## Auto-update
   RASPBIAN_URL: https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip
   RASPBIAN_NAME: 2021-01-11-raspios-buster-armhf-lite
 

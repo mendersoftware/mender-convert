@@ -17,6 +17,7 @@ jobs:
             node monitor-bb-sd.js
             node monitor-rpi.js
             node monitor-ub-server.js
+            node monitor-raspbian-os.js
         working-directory: scripts/linkbot
 
       - name: Create Pull Request
