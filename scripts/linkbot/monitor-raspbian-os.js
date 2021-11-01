@@ -41,13 +41,14 @@ function getNewRaspbian(target, url, separator) {
                 return acc;
             }, [])[0];
         console.log(`Test var: ${test}`);
+        const imageName = test.substring(0, test.length - 4);
         if (separator) {
             return {
                 replacementLine: `${target}${separator} \"${url}/${test}\"`,
-                imageName: test,
+                imageName: imageName,
             };
         }
-        return { replacementLine: `${target}=\"${url}/${test}\"`, imageName: test };
+        return { replacementLine: `${target}=\"${url}/${test}\"`, imageName: imageName };
     });
 }
 
