@@ -239,6 +239,12 @@ set bootargs="${MENDER_GRUB_KERNEL_BOOT_ARGS}"
 EOF
     fi
 
+        # append to env
+    if [ "${luks}" = "y" ]; then
+        echo "mender_luks_rootfsa_uuid=${FIXED_ROOTFSA_UUID}" >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+        echo "mender_luks_rootfsb_uuid=${FIXED_ROOTFSB_UUID}" >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+    fi
+
     cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
     run_and_log_cmd "make 2>&1"
     run_and_log_cmd "sudo make DESTDIR=../ BOOT_DIR=boot install-boot-files"

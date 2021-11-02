@@ -325,6 +325,14 @@ disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsb_start}"
 log_info "Writing data partition image"
 disk_write_at_offset "${output_dir}/data.img" "${img_path}" "${data_start}"
 
+# set fixed LUKS UUID for both partitions
+if [ "${luks}" = "y" ]; then
+    luks_loop=$(sudo losetup --find --show -P ${img_path})
+    sudo cryptsetup luksUUID --uuid=${FIXED_ROOTFSA_UUID} "${luks_loop}p2"
+    sudo cryptsetup luksUUID --uuid=${FIXED_ROOTFSB_UUID} "${luks_loop}p3"
+    sudo losetup -d ${luks_loop}
+fi 
+
 log_info "Performing platform specific package operations (if any)"
 for hook in "${PLATFORM_PACKAGE_HOOKS[@]}"; do
     log_info "Running hook: $hook"
