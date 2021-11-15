@@ -16,7 +16,7 @@ try {
   var reg =
     "raspios_lite_armhf-(?<date>[0-9]{4}-[0-9]{2}-[0-9]{1,2})/(?<updated>[0-9]{4}-[0-9]{2}-[0-9]{1,2}).*$";
   var m = line.match(
-    ".*: (?<url>[a-zA-Z-://._]*)(?<imageName>raspios_lite_armhf-[0-9]{4}-[0-9]{2}-[0-9]{1,2})/(?<updated>[0-9]{4}-[0-9]{2}-[0-9]{1,2}).*$"
+    ".*: \"(?<url>[a-zA-Z-://._]*)(?<imageName>raspios_lite_armhf-[0-9]{4}-[0-9]{2}-[0-9]{1,2})/(?<updated>[0-9]{4}-[0-9]{2}-[0-9]{1,2}).*\"$"
   );
   console.log(m);
   var url = m.groups.url;
