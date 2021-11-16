@@ -1,0 +1,24 @@
+MENDER_COMPRESS_DISK_IMAGE="none"
+MENDER_ARTIFACT_COMPRESSION="none"
+# Install the mender-client
+MENDER_CLIENT_INSTALL="y"
+# Enable sshd
+function enable_sshd()  {
+        log_warn "Enabling sshd by default"
+        touch work/boot/ssh
+}
+PLATFORM_MODIFY_HOOKS+=(enable_sshd)
+# Allow root ssh logins
+function allow_root_ssh_logins() {
+        log_warn "Allowing ssh root logins"
+        echo "PermitRootLogin yes" >> work/rootfs/etc/ssh/sshd_config
+}
+PLATFORM_MODIFY_HOOKS+=(allow_root_ssh_logins)
+# Configure the ssh key permissions in the overlay
+function set_root_ssh_permissions() {
+    sudo chown -R root:root work/rootfs/root
+    sudo chmod 755 work/rootfs/root
+    sudo chmod 700 work/rootfs/root/.ssh
+    sudo chmod 600 work/rootfs/root/.ssh/authorized_keys
+}
+OVERLAY_MODIFY_HOOKS+=(set_root_ssh_permissions)
