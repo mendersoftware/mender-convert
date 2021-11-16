@@ -86,6 +86,29 @@ build:
     paths:
       - image.tar
 
+test:hardware:
+  tags:
+    - hardware-tester
+  stage: test
+  before_script:
+    - uname -a
+    - whoami
+    - groups
+    - /home/mender-test-bot/hardware-testing/flash-img.sh /data/testimg/2*
+    - echo
+    - for i in 10 30 60 120; do
+    -   /home/mender-test-bot/hardware-testing/get-rpi-ip.sh && continue
+    -   sleep $i
+    - done
+    - echo
+    - echo "Device ready for testing."
+
+  script:
+    - ls
+    - pwd
+    - whoami
+    - uptime
+
 .template_convert_raspbian: &convert_raspbian
   stage: convert
   needs:
