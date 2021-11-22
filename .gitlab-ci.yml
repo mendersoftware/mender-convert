@@ -102,7 +102,7 @@ test:hardware:flash:
     # - for i in 10 30 60 120; do
     # -   /home/mender-test-bot/hardware-testing/get-rpi-ip.sh && continue
     # -   sleep $i
-    - done
+    # - done
     - echo
     - echo "Device ready for testing."
 
