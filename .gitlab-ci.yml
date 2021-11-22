@@ -86,7 +86,10 @@ build:
     paths:
       - image.tar
 
-test:hardware:
+test:hardware:flash:
+  # needs:
+  #   - job: convert_raspbian_raspberrypi4
+  #     artifacts: true
   tags:
     - hardware-tester
   stage: test
@@ -94,11 +97,11 @@ test:hardware:
     - uname -a
     - whoami
     - groups
-    - /home/mender-test-bot/hardware-testing/flash-img.sh /data/testimg/2*
+    # - /home/mender-test-bot/hardware-testing/flash-img.sh /data/testimg/2*
     - echo
-    - for i in 10 30 60 120; do
-    -   /home/mender-test-bot/hardware-testing/get-rpi-ip.sh && continue
-    -   sleep $i
+    # - for i in 10 30 60 120; do
+    # -   /home/mender-test-bot/hardware-testing/get-rpi-ip.sh && continue
+    # -   sleep $i
     - done
     - echo
     - echo "Device ready for testing."
@@ -108,6 +111,23 @@ test:hardware:
     - pwd
     - whoami
     - uptime
+    # Download the image to be tested
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
+    # Re-use an old pipeline to speed things up
+    - CI_PIPELINE_ID=413536839 mender_ci_load_tmp_artifact raspberrypi4.tar.gz
+
+
+    # - ./scripts/test/run-tests.sh --config versions_override_config --only raspberrypi4
+
+
+
+## TODO - Enable dis
+# test:hardware:acceptance:
+#   stage: test_acceptance
+#   needs:
+#     - job:
+#         - test:hardware:flash
+#       artifacts: true
 
 .template_convert_raspbian: &convert_raspbian
   stage: convert
