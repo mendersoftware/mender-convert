@@ -113,7 +113,7 @@ test:hardware:flash:
     - uptime
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
     # Re-use an old pipeline to speed things up
-    - CI_PIPELINE_ID=413536839 mender_ci_load_tmp_artifact /data/gitlab-runner/gitraspberrypi4.tar.gz
+    - CI_PIPELINE_ID=413536839 mender_ci_load_tmp_artifact /data/gitlab-runner/raspberrypi4.tar.gz
 
 
     # - ./scripts/test/run-tests.sh --config versions_override_config --only raspberrypi4
