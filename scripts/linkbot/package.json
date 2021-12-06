@@ -1,6 +1,6 @@
 {
   "dependencies": {
     "bent": "^7.3.12",
-    "jsdom": "^18.1.1"
+    "jsdom": "^19.0.0"
   }
 }
