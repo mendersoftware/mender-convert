@@ -1,0 +1,14 @@
+#Put me in /lib/systemd/system/
+[Unit]
+Description=eMMC flasher
+
+[Service]
+Environment="TERM=vt100"
+Type=oneshot
+User=root
+WorkingDirectory=/opt/scripts/tools/eMMC
+ExecStart=/opt/scripts/tools/eMMC/init-eMMC-flasher-Mender.sh
+Nice=-20
+
+[Install]
+WantedBy=multi-user.target
