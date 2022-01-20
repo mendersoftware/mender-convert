@@ -5,7 +5,7 @@ variables:
 
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
-  MENDER_ARTIFACT_VERSION: 3.6.x
+  MENDER_ARTIFACT_VERSION: 3.7.x
   MENDER_CLIENT_VERSION: latest
   MENDER_ADDON_CONNECT_VERSION: latest
   MENDER_ADDON_CONFIGURE_VERSION: latest
