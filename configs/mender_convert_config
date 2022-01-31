@@ -32,6 +32,9 @@ MENDER_ARTIFACT_COMPRESSION="gzip"
 # this.
 MENDER_ENABLE_SYSTEMD=y
 
+# Set the fstab options for mounting the boot partition
+MENDER_BOOT_PART_FSTAB_OPTS="defaults,sync"
+
 # Custom mkfs options for creating the rootfs partition
 MENDER_ROOT_PART_MKFS_OPTS=""
 
