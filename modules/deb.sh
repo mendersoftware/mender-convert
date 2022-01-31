@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Northern.tech AS
+# Copyright 2022 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 #  limitations under the License.
 
 source modules/log.sh
+source modules/probe.sh .
 
 # Download of latest deb package for the given distribution of an APT repository
 #
@@ -110,4 +111,40 @@ function deb_extract_package()  {
     run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir}/files/ ${dest_dir}"
 
     log_info "Successfully installed $(basename ${deb_package}) into ${dest_dir}"
+}
+
+# Download and install the binary files of a deb package into work/deb-packages
+# This is the main entry point of deb.sh
+# Defines variable DEB_NAME with the actual filename installed
+#
+#  $1 - Package name
+#  $2 - Package version
+#
+function deb_get_and_install_pacakge() {
+    if [[ $# -ne 2 ]]; then
+        log_fatal "deb_get_and_install_pacakge() requires 2 arguments"
+    fi
+    local package="$1"
+    local version="$2"
+
+    mkdir -p work/deb-packages
+
+    local deb_arch=$(probe_debian_arch_name)
+    local deb_distro=$(probe_debian_distro_name)
+    local deb_codename=$(probe_debian_distro_codename)
+    if ! [[ "$MENDER_APT_REPO_DISTS" == *"${deb_distro}/${deb_codename}"* ]]; then
+        deb_distro="debian"
+        deb_codename="buster"
+    fi
+
+    DEB_NAME=""
+    if [ "${version}" = "latest" ]; then
+        DEB_NAME=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/stable" "${package}")
+    elif [ "${version}" = "master" ]; then
+        DEB_NAME=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/experimental" "${package}")
+    else
+        local debian_version="-1+${deb_distro}+${deb_codename}"
+        DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${package}" "${version}${debian_version}")
+    fi
+    deb_extract_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
 }
