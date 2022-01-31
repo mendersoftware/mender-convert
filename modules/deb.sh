@@ -82,11 +82,17 @@ function deb_from_repo_pool_get()  {
     local -r deb_package_path="pool/${component}/${initial}/${package}/${package}_${version}_${architecture}.deb"
 
     local -r filename=$(basename $deb_package_path)
-    run_and_log_cmd "wget -Nq ${repo_url}/${deb_package_path} -P ${download_dir}"
+    run_and_log_cmd_noexit "wget -Nq ${repo_url}/${deb_package_path} -P ${download_dir}"
+    local exit_code=$?
 
     rm -f /tmp/Packages
-    log_info "Successfully downloaded ${filename}"
-    echo ${filename}
+    if [[ ${exit_code} -ne 0 ]]; then
+        log_warn "Could not download ${filename}"
+        echo ""
+    else
+        log_info "Successfully downloaded ${filename}"
+        echo ${filename}
+    fi
 }
 
 # Extract the binary files of a deb package into a directory
@@ -145,6 +151,13 @@ function deb_get_and_install_pacakge() {
     else
         local debian_version="-1+${deb_distro}+${deb_codename}"
         DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${package}" "${version}${debian_version}")
+        if [[ -z "${DEB_NAME}" ]]; then
+            local debian_version_fallback="-1"
+            DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${package}" "${version}${debian_version_fallback}")
+            if [[ -z "${DEB_NAME}" ]]; then
+                log_fatal "Specified version for ${package} cannot be found, tried ${version}${debian_version} and ${version}${debian_version_fallback}"
+            fi
+        fi
     fi
     deb_extract_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
 }
