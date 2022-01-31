@@ -82,7 +82,8 @@ function deb_from_repo_pool_get()  {
     local -r deb_package_path="pool/${component}/${initial}/${package}/${package}_${version}_${architecture}.deb"
 
     local -r filename=$(basename $deb_package_path)
-    run_and_log_cmd_noexit "wget -Nq ${repo_url}/${deb_package_path} -P ${download_dir}"
+    local -r deb_package_url=$(echo ${repo_url}/${deb_package_path} | sed 's/+/%2B/g')
+    run_and_log_cmd_noexit "wget -Nq ${deb_package_url} -P ${download_dir}"
     local exit_code=$?
 
     rm -f /tmp/Packages
