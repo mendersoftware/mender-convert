@@ -102,17 +102,23 @@ mkdir -p work/deb-packages
 log_info "Installing Mender client and related files"
 
 deb_arch=$(probe_debian_arch_name)
+deb_distro=$(probe_debian_distro_name)
+deb_codename=$(probe_debian_distro_codename)
+if ! [[ "$MENDER_APT_REPO_DISTS" == *"${deb_distro}/${deb_codename}"* ]]; then
+    deb_distro="debian"
+    deb_codename="buster"
+fi
 
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
 
     log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
 
     if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/stable" "mender-client")
     elif [ "${MENDER_CLIENT_VERSION}" = "master" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client")
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/experimental" "mender-client")
     else
-        DEBIAN_REVISION="-1"
+        DEBIAN_REVISION="-1+${deb_distro}+${deb_codename}"
         deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
     fi
 
@@ -133,11 +139,11 @@ if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
     log_info "Installing Mender Connect addon"
 
     if [ "${MENDER_ADDON_CONNECT_VERSION}" = "latest" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-connect")
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/stable" "mender-connect")
     elif [ "${MENDER_ADDON_CONNECT_VERSION}" = "master" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-connect")
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/experimental" "mender-connect")
     else
-        DEBIAN_REVISION="-1"
+        DEBIAN_REVISION="-1+${deb_distro}+${deb_codename}"
         deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-connect" "${MENDER_ADDON_CONNECT_VERSION}${DEBIAN_REVISION}")
     fi
 
@@ -152,11 +158,11 @@ if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     log_info "Installing Mender Configure addon"
 
     if [ "${MENDER_ADDON_CONFIGURE_VERSION}" = "latest" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-configure")
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/stable" "mender-configure")
     elif [ "${MENDER_ADDON_CONFIGURE_VERSION}" = "master" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-configure")
+        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/experimental" "mender-configure")
     else
-        DEBIAN_REVISION="-1"
+        DEBIAN_REVISION="-1+${deb_distro}+${deb_codename}"
         deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-configure" "${MENDER_ADDON_CONFIGURE_VERSION}${DEBIAN_REVISION}")
     fi
 
