@@ -126,13 +126,15 @@ function deb_extract_package()  {
 #
 #  $1 - Package name
 #  $2 - Package version
+#  $3 - Arch independent (optional, default "false")
 #
 function deb_get_and_install_pacakge() {
-    if [[ $# -ne 2 ]]; then
-        log_fatal "deb_get_and_install_pacakge() requires 2 arguments"
+    if ! [[ $# -eq 2 || $# -eq 3 ]]; then
+        log_fatal "deb_get_and_install_pacakge() requires 2 or 3 arguments"
     fi
     local package="$1"
     local version="$2"
+    local arch_indep="${3:-false}"
 
     mkdir -p work/deb-packages
 
@@ -150,11 +152,19 @@ function deb_get_and_install_pacakge() {
     elif [ "${version}" = "master" ]; then
         DEB_NAME=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/experimental" "${package}")
     else
+        # On direct downloads, the architecture suffix will be "all" for arch independent packages
+        local pool_arch=""
+        if [[ "$arch_indep" == "true" ]]; then
+            pool_arch="all"
+        else
+            pool_arch="$deb_arch"
+        fi
+
         local debian_version="-1+${deb_distro}+${deb_codename}"
-        DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${package}" "${version}${debian_version}")
+        DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${package}" "${version}${debian_version}")
         if [[ -z "${DEB_NAME}" ]]; then
             local debian_version_fallback="-1"
-            DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${package}" "${version}${debian_version_fallback}")
+            DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${package}" "${version}${debian_version_fallback}")
             if [[ -z "${DEB_NAME}" ]]; then
                 log_fatal "Specified version for ${package} cannot be found, tried ${version}${debian_version} and ${version}${debian_version_fallback}"
             fi

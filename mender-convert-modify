@@ -122,7 +122,7 @@ fi
 
 if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     log_info "Installing Mender Configure addon"
-    deb_get_and_install_pacakge mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}"
+    deb_get_and_install_pacakge mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}" "true"
 fi
 
 # Do this unconditionally even if not installing add-ons. The reason is that if
