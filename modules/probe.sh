@@ -97,6 +97,29 @@ probe_debian_arch_name() {
     echo "${deb_arch}"
 }
 
+# Prints Debian distro name based on ID from /etc/os-release
+#
+# Special handling for raspbian, where ID_LIKE is used instead
+#
+# No input parameters and these work on the assumption that boot and root parts
+# are mounted at work/boot and work/rootfs
+probe_debian_distro_name() {
+    distro_name="$(. work/rootfs/etc/os-release && echo "$ID")"
+    if [[ "$distro_name" == "raspbian" ]]; then
+        distro_name="$(. work/rootfs/etc/os-release && echo "$ID_LIKE")"
+    fi
+    echo "${distro_name}"
+}
+
+# Prints Debian distro codename based on VERSION_CODENAME from /etc/os-release
+#
+# No input parameters and these work on the assumption that boot and root parts
+# are mounted at work/boot and work/rootfs
+probe_debian_distro_codename() {
+    distro_codename="$(. work/rootfs/etc/os-release && echo "$VERSION_CODENAME")"
+    echo "${distro_codename}"
+}
+
 # Prints GRUB EFI target name depending on target architecture
 #
 # This is what the file name should be when put on target boot part.
