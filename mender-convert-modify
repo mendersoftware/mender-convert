@@ -97,30 +97,14 @@ mkdir -p work/rootfs
 sudo mount ${boot_part} work/boot
 sudo mount ${root_part} work/rootfs
 
-mkdir -p work/deb-packages
-
 log_info "Installing Mender client and related files"
 
-deb_arch=$(probe_debian_arch_name)
-
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
-
     log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
-
-    if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-client")
-    elif [ "${MENDER_CLIENT_VERSION}" = "master" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-client")
-    else
-        DEBIAN_REVISION="-1"
-        deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-client" "${MENDER_CLIENT_VERSION}${DEBIAN_REVISION}")
-    fi
-
-    deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
+    deb_get_and_install_pacakge mender-client "${MENDER_CLIENT_VERSION}"
 
     # Save installed client version for tests in Yocto variable format
-    testscfg_add "PREFERRED_VERSION_mender-client" "$(echo ${deb_name} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
-
+    testscfg_add "PREFERRED_VERSION_mender-client" "$(echo ${DEB_NAME} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
 fi
 
 if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
@@ -129,38 +113,16 @@ if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
 fi
 
 if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
-
     log_info "Installing Mender Connect addon"
-
-    if [ "${MENDER_ADDON_CONNECT_VERSION}" = "latest" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-connect")
-    elif [ "${MENDER_ADDON_CONNECT_VERSION}" = "master" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-connect")
-    else
-        DEBIAN_REVISION="-1"
-        deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-connect" "${MENDER_ADDON_CONNECT_VERSION}${DEBIAN_REVISION}")
-    fi
-
-    deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
+    deb_get_and_install_pacakge mender-connect "${MENDER_ADDON_CONNECT_VERSION}"
 
     run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-connect.service \
         work/rootfs/etc/systemd/system/multi-user.target.wants/mender-connect.service"
 fi
 
 if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
-
     log_info "Installing Mender Configure addon"
-
-    if [ "${MENDER_ADDON_CONFIGURE_VERSION}" = "latest" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "stable" "mender-configure")
-    elif [ "${MENDER_ADDON_CONFIGURE_VERSION}" = "master" ]; then
-        deb_name=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "experimental" "mender-configure")
-    else
-        DEBIAN_REVISION="-1"
-        deb_name=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "mender-configure" "${MENDER_ADDON_CONFIGURE_VERSION}${DEBIAN_REVISION}")
-    fi
-
-    deb_extract_package "work/deb-packages/${deb_name}" "work/rootfs/"
+    deb_get_and_install_pacakge mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}" "true"
 fi
 
 # Do this unconditionally even if not installing add-ons. The reason is that if

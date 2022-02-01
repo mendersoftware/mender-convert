@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Northern.tech AS
+# Copyright 2022 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 #  limitations under the License.
 
 source modules/log.sh
+source modules/probe.sh .
 
 # Download of latest deb package for the given distribution of an APT repository
 #
@@ -81,11 +82,18 @@ function deb_from_repo_pool_get()  {
     local -r deb_package_path="pool/${component}/${initial}/${package}/${package}_${version}_${architecture}.deb"
 
     local -r filename=$(basename $deb_package_path)
-    run_and_log_cmd "wget -Nq ${repo_url}/${deb_package_path} -P ${download_dir}"
+    local -r deb_package_url=$(echo ${repo_url}/${deb_package_path} | sed 's/+/%2B/g')
+    run_and_log_cmd_noexit "wget -Nq ${deb_package_url} -P ${download_dir}"
+    local exit_code=$?
 
     rm -f /tmp/Packages
-    log_info "Successfully downloaded ${filename}"
-    echo ${filename}
+    if [[ ${exit_code} -ne 0 ]]; then
+        log_warn "Could not download ${filename}"
+        echo ""
+    else
+        log_info "Successfully downloaded ${filename}"
+        echo ${filename}
+    fi
 }
 
 # Extract the binary files of a deb package into a directory
@@ -110,4 +118,57 @@ function deb_extract_package()  {
     run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir}/files/ ${dest_dir}"
 
     log_info "Successfully installed $(basename ${deb_package}) into ${dest_dir}"
+}
+
+# Download and install the binary files of a deb package into work/deb-packages
+# This is the main entry point of deb.sh
+# Defines variable DEB_NAME with the actual filename installed
+#
+#  $1 - Package name
+#  $2 - Package version
+#  $3 - Arch independent (optional, default "false")
+#
+function deb_get_and_install_pacakge() {
+    if ! [[ $# -eq 2 || $# -eq 3 ]]; then
+        log_fatal "deb_get_and_install_pacakge() requires 2 or 3 arguments"
+    fi
+    local package="$1"
+    local version="$2"
+    local arch_indep="${3:-false}"
+
+    mkdir -p work/deb-packages
+
+    local deb_arch=$(probe_debian_arch_name)
+    local deb_distro=$(probe_debian_distro_name)
+    local deb_codename=$(probe_debian_distro_codename)
+    if ! [[ "$MENDER_APT_REPO_DISTS" == *"${deb_distro}/${deb_codename}"* ]]; then
+        deb_distro="debian"
+        deb_codename="buster"
+    fi
+
+    DEB_NAME=""
+    if [ "${version}" = "latest" ]; then
+        DEB_NAME=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/stable" "${package}")
+    elif [ "${version}" = "master" ]; then
+        DEB_NAME=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/experimental" "${package}")
+    else
+        # On direct downloads, the architecture suffix will be "all" for arch independent packages
+        local pool_arch=""
+        if [[ "$arch_indep" == "true" ]]; then
+            pool_arch="all"
+        else
+            pool_arch="$deb_arch"
+        fi
+
+        local debian_version="-1+${deb_distro}+${deb_codename}"
+        DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${package}" "${version}${debian_version}")
+        if [[ -z "${DEB_NAME}" ]]; then
+            local debian_version_fallback="-1"
+            DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${package}" "${version}${debian_version_fallback}")
+            if [[ -z "${DEB_NAME}" ]]; then
+                log_fatal "Specified version for ${package} cannot be found, tried ${version}${debian_version} and ${version}${debian_version_fallback}"
+            fi
+        fi
+    fi
+    deb_extract_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
 }
