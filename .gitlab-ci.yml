@@ -225,6 +225,11 @@ test_acceptance_qemux86_64:
   script:
     - ./scripts/test/run-tests.sh --config versions_override_config --only qemux86_64
 
+test_acceptance_debian_qemux86_64:
+  <<: *test_acceptance
+  script:
+    - ./scripts/test/run-tests.sh --config versions_override_config --only debian-qemux86_64
+
 test_acceptance_raspberrypi:
   <<: *test_acceptance
   script:
