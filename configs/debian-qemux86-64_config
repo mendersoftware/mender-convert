@@ -1,0 +1,22 @@
+# This configuration can be used to run on a qemux86-64 machine.
+#
+# The image is generated with the following command:
+#
+#    mkosi --root-size=2G --distribution=debian --release=bullseye --format=gpt_ext4 --bootable --checksum
+#          --password password --package=openssh-server,dhcpcd5 --output=Debian-11-x86-64.img build
+#
+# Then manually uploaded to Mender's AWS S3 bucket for CI testing
+#
+# Locally, converted with the following command:
+#
+#    MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert --disk-image input/Debian-11-x86-64.img --overlay rootfs_overlay_demo --config configs/qemux86-64_config
+#
+# and qemu is executed with the following command:
+#
+#    qemu-system-x86_64 -enable-kvm -m 512 -smp 2 -bios /usr/share/OVMF/OVMF_CODE.fd -drive format=raw,file=deploy/Debian-11-x86-64-qemux86_64-mender.img
+
+MENDER_STORAGE_DEVICE_BASE=/dev/sda
+MENDER_DEVICE_TYPE="qemux86_64"
+
+# Nothing to copy
+MENDER_COPY_BOOT_GAP="n"

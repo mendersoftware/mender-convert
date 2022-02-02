@@ -28,6 +28,8 @@ RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbi
 
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Focal-x86-64.img.gz"
 
+DEBIAN_IMAGE_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.2.0-amd64-netinst.iso"
+
 ## Auto-update
 UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/ubuntu-20.04.3-preinstalled-server-armhf+raspi.img.xz"
 
@@ -157,6 +159,20 @@ else
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
                      -- \
                      "-k" "'not test_update'" \
+                     || test_result=$?
+  fi
+
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86_64" ]; then
+    wget --progress=dot:giga -N "${DEBIAN_IMAGE_URL}" -P input/
+    image_file_name=`basename "${DEBIAN_IMAGE_URL}"`
+    mv input/"${image_file_name}" input/"${image_file_name/.iso/.img}"
+    image_file_name="${image_file_name/.iso/.img}"
+    gzip -1 "input/${image_file_name}"
+    convert_and_test "qemux86_64" \
+                     "release-1" \
+                     "input/${image_file_name}.gz" \
+                     "--overlay tests/ssh-public-key-overlay" \
+                     "--config configs/debian-qemux86-64_config $EXTRA_CONFIG" \
                      || test_result=$?
   fi
 
