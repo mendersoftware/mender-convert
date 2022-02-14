@@ -256,6 +256,10 @@ if [ "${partition_scheme}" == "gpt" ]; then
     log_info "Writing GPT partition table"
     run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
     run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
+    # Keep the uuid of the original gpt table for the boot partition
+    boot_partuuid=$(disk_get_part_value "${disk_image}" 1 UUID)
+    log_info "Updating GPT partition uuid of the boot partition in image: ${img_path} to ${boot_partuuid}"
+    run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
 else
     log_info "Writing DOS (MBR) partition table"
     run_and_log_cmd "${PARTED} -s ${img_path} mklabel msdos"
