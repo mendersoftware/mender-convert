@@ -54,8 +54,8 @@ probe_arch() {
 # No input parameters and these work on the assumption that boot and root parts
 # are mounted at work/boot and work/rootfs
 probe_grub_efi_name() {
-    efi_name=""
-    arch=$(probe_arch)
+    local efi_name=""
+    local -r arch=$(probe_arch)
     case "${arch}" in
         "x86-64")
             efi_name="grub-efi-bootx64.efi"
@@ -343,4 +343,13 @@ is_efi_compatible_kernel() {
             ;;
     esac
     return 0
+}
+
+# has_secureboot_shim
+#
+# $1 - the boot partition to search for a secureboot shim
+#
+# Checks the EFI/* filesystem for the presence of a signed boot shim
+has_secureboot_shim() {
+    find "${1}" -type f -name 'shim*.efi' -print0 | grep -qz shim
 }
