@@ -152,15 +152,22 @@ necessary dependencies.
 Run mender-convert from inside the container with your desired options, e.g.
 
 ```bash
+mkdir -p input/image
+cp $PATH_TO_DISK_IMAGE/$INPUT_DISK_IMAGE input/image
+
+mkdir -p input/config
+cp $PATH_TO_MY_OWN_CONFIG/$CUSTOM_CONFIG input/config
+
 MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
-   --disk-image input/$INPUT_DISK_IMAGE \
+   --disk-image input/image/$INPUT_DISK_IMAGE \
    --config configs/raspberrypi3_config \
+   --config input/config/$CUSTOM_CONFIG \
    --overlay rootfs_overlay_demo/
 ```
 
 Conversion will take 10-30 minutes, depending on image size and resources
-available. You can watch `WORKDIR/convert.log` for progress and diagnostics
-information.
+available. You can watch `log/convert.log.XXXXX` for progress and diagnostics
+information. The exact log file path is printed before the conversion starts.
 
 After it finishes, you can find your images in the `deploy` directory on your
 host machine!
@@ -188,7 +195,7 @@ MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
 **NOTE!** You will be prompted to enter `sudo` password during the conversion
 process. This is required to be able to loopback mount images and for modifying
 them. Our recommendation is to use the provided Docker container, to run the
-tool in a isolated environment.
+tool in an isolated environment.
 
 -------------------------------------------------------------------------------
 

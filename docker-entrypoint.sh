@@ -20,9 +20,9 @@ set -e
 
 cd /mender-convert
 
-echo "Running mender-convert "$@""
+echo "Running mender-convert $*"
 
 ./mender-convert "$@"
 
-# Set owner and group to same as launch directory.
-[ -d deploy ] && chown -R --reference=. deploy
+# Set owner and group to same as input directory.
+[ -d deploy ] && chown -R --reference=input deploy

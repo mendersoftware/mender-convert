@@ -102,14 +102,17 @@ build:
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar
 
+    - mkdir -p input
+    - cd input
     - wget -q ${RASPBIAN_URL}
     - unzip ${RASPBIAN_NAME}.zip
+    - cd ..
 
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
 
   script:
-    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender
-      ./docker-mender-convert --disk-image ${RASPBIAN_NAME}.img
+    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender 
+      ./docker-mender-convert --disk-image input/${RASPBIAN_NAME}.img
       --config configs/${RASPBERRYPI_PLATFORM}_config
       --config configs/images/raspberrypi_raspbian_config
 
@@ -223,27 +226,37 @@ test_acceptance_prebuilt_raspberrypi4:
 test_acceptance_qemux86_64:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --config versions_override_config --only qemux86_64
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only qemux86_64
 
 test_acceptance_debian_qemux86_64:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --config versions_override_config --only debian-qemux86_64
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only debian-qemux86_64
 
 test_acceptance_raspberrypi:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --config versions_override_config --only raspberrypi3
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only raspberrypi3
 
 test_acceptance_beaglebone:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --config versions_override_config --only beaglebone
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only beaglebone
 
 test_acceptance_ubuntu:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --config versions_override_config --only ubuntu
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only ubuntu
 
 .template:publish:s3:
   stage: publish
@@ -275,6 +288,23 @@ test_acceptance_ubuntu:
           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
     - done
 
+.template:publish:docker-image:
+  stage: publish
+  tags:
+    - docker
+  image: docker
+  services:
+    - name: docker:20.10.8-dind
+      alias: docker
+      command: ["--mtu=1440"] # https://gitlab.com/gitlab-com/gl-infra/production/-/issues/5590
+  script:
+    - docker tag $DOCKER_REPOSITORY:pr $DOCKER_REPOSITORY:$MENDER_CONVERT_PUBLISH_VERSION
+    - docker push $DOCKER_REPOSITORY:$MENDER_CONVERT_PUBLISH_VERSION
+    - echo "PUBLISH_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $DOCKER_REPOSITORY:$MENDER_CONVERT_PUBLISH_VERSION)" >> publish.env
+  artifacts:
+    reports:
+      dotenv: publish.env
+
 publish:s3:manual:
   when: manual
   extends: .template:publish:s3
@@ -283,3 +313,12 @@ publish:s3:automatic:
   rules:
     - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
   extends: .template:publish:s3
+
+publish:docker-image:manual:
+  when: manual
+  extends: .template:publish:docker-image
+
+publish:docker-image:automatic:
+  rules:
+    - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
+  extends: .template:publish:docker-image

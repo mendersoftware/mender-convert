@@ -72,5 +72,15 @@ RUN wget -q -O /usr/bin/mender-artifact https://downloads.mender.io/mender-artif
 
 WORKDIR /
 
-COPY docker-entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+COPY . /mender-convert
+
+RUN mkdir -p /mender-convert/work
+RUN mkdir -p /mender-convert/input
+RUN mkdir -p /mender-convert/deploy
+RUN mkdir -p /mender-convert/logs
+
+VOLUME ["/mender-convert/input"]
+VOLUME ["/mender-convert/deploy"]
+VOLUME ["/mender-convert/logs"]
+
+ENTRYPOINT ["/mender-convert/docker-entrypoint.sh"]
