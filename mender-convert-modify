@@ -318,14 +318,17 @@ fi
 log_info "Using boot partition device in fstab: $boot_part_device"
 log_info "Using data partition device in fstab: $data_part_device"
 
-sudo bash -c "cat <<- EOF > work/rootfs/etc/fstab
-# stock fstab - you probably want to override this with a machine specific one
+fstab=$(sed '/\/boot/d' work/rootfs/etc/fstab)
+fstab=$(sed '/.*\s\/\s.*/d' <<< "$fstab")
+cat <<- EOF > work/rootfs/etc/fstab
+${boot_part_device}   ${boot_part_mountpoint}          auto       ${MENDER_BOOT_PART_FSTAB_OPTS}    0  0
 /dev/root            /                    auto       ${MENDER_ROOT_PART_FSTAB_OPTS} 1  ${MENDER_ROOT_PART_FS_PASSNO}
-proc                 /proc                proc       defaults              0  0
 
-${boot_part_device}   ${boot_part_mountpoint}          auto       defaults,sync    0  0
 ${data_part_device}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0
-EOF"
+
+# entries kept from original fstab
+$fstab
+EOF
 
 #
 # Make sure to re-label rootfs when selinux is in enforcing mode
