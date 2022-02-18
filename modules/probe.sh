@@ -104,7 +104,7 @@ probe_debian_arch_name() {
 # No input parameters and these work on the assumption that boot and root parts
 # are mounted at work/boot and work/rootfs
 probe_debian_distro_name() {
-    distro_name="$(. work/rootfs/etc/os-release && echo "$ID")"
+    local distro_name="$(. work/rootfs/etc/os-release && echo "$ID")"
     if [[ "$distro_name" == "raspbian" ]]; then
         distro_name="$(. work/rootfs/etc/os-release && echo "$ID_LIKE")"
     fi
@@ -116,7 +116,7 @@ probe_debian_distro_name() {
 # No input parameters and these work on the assumption that boot and root parts
 # are mounted at work/boot and work/rootfs
 probe_debian_distro_codename() {
-    distro_codename="$(. work/rootfs/etc/os-release && echo "$VERSION_CODENAME")"
+    local -r distro_codename="$(. work/rootfs/etc/os-release && echo "$VERSION_CODENAME")"
     echo "${distro_codename}"
 }
 
@@ -127,8 +127,8 @@ probe_debian_distro_codename() {
 # No input parameters and these work on the assumption that boot and root parts
 # are mounted at work/boot and work/rootfs
 probe_grub_efi_target_name() {
-    efi_target_name=""
-    arch=$(probe_arch)
+    local efi_target_name=""
+    local -r arch=$(probe_arch)
     case "$arch" in
         "x86-64")
             efi_target_name="bootx64.efi"
@@ -151,7 +151,7 @@ probe_grub_efi_target_name() {
 #  $1 - directory in which the search is performed
 #
 probe_kernel_image() {
-    kernel_image_path=""
+    local kernel_image_path=""
     for image in vmlinuz zImage bzImage; do
         # Linux kernel image type and naming varies between different platforms.
         #
@@ -188,7 +188,7 @@ probe_kernel_image() {
 #  $1 - directory in which the search is performed
 #
 probe_initrd_image() {
-    initrd_image_path=""
+    local initrd_image_path=""
     for image in initramfs initrd; do
         # initrd/initramfs naming varies between different platforms.
         #
