@@ -88,13 +88,13 @@ if [ -n "$PREBUILT_IMAGE" ]; then
   exit $test_result
 
 else
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "qemux86_64" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
     wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/
-    convert_and_test "qemux86_64" \
+    convert_and_test "qemux86-64" \
                      "release-1" \
                      "input/Ubuntu-Focal-x86-64.img.gz" \
                      "--overlay tests/ssh-public-key-overlay" \
-                     "--config configs/qemux86-64_config $EXTRA_CONFIG" \
+                     "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" \
                      || test_result=$?
 
     echo >&2 "----------------------------------------"
@@ -104,10 +104,10 @@ else
     gunzip --force "input/Ubuntu-Focal-x86-64.img.gz"
     run_convert "release-2" \
                 "input/Ubuntu-Focal-x86-64.img" \
-                "--config configs/qemux86-64_config $EXTRA_CONFIG" || test_result=$?
+                "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
     ret=0
-    test -f deploy/Ubuntu-Focal-x86-64-qemux86_64-mender.img || ret=$?
-    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Focal-x86-64-qemux86_64-mender.img"
+    test -f deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img || ret=$?
+    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img"
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
@@ -162,9 +162,9 @@ else
                      || test_result=$?
   fi
 
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86_64" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
     wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/
-    convert_and_test "qemux86_64" \
+    convert_and_test "qemux86-64" \
                      "release-1" \
                      "input/Debian-11-x86-64.img.gz" \
                      "--overlay tests/ssh-public-key-overlay" \
