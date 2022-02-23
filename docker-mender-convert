@@ -26,7 +26,7 @@ MENDER_CONVERT_DIR="$(pwd)"
 MENDER_CONVERT_VERSION=$(git_mender_convert_version)
 
 # Create a unique work directory so we can run multiple containers in parallel
-WORK_DIR=$(mktemp -d -p $(pwd) -t work.XXXX)
+WORK_DIR=$(mktemp -d $(pwd)/work.XXXX)
 WORK_SUFFIX=$(echo $WORK_DIR | awk -F. '{print $NF}')
 LOG_FILE="convert.log.${WORK_SUFFIX}"
 
