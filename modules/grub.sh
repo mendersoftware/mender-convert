@@ -78,7 +78,7 @@ function grub_install_grub_editenv_binary() {
 #
 # Keep the existing boot shim, and bootloader, and only install the mender-grub
 # config
-function grub_install_with_shim_present() {
+function grub_install_with_grub_efi_present() {
 
     grub_create_grub_config
 

@@ -140,10 +140,10 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # Check for known U-Boot problems in all files on the boot partition.
     check_for_broken_uboot_uefi_support work/boot
 
-    if has_secureboot_shim "work/boot"; then
+    if has_grub_efi "work/boot"; then
         # No need to install Grub, use the one already present, and only install
         # our grub.cfg
-        grub_install_with_shim_present
+        grub_install_with_grub_efi_present
     else
         grub_install_mender_grub
     fi
