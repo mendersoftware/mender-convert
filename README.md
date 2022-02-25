@@ -21,6 +21,19 @@ on your device.
 
 ![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
+## Requisites
+
+`mender-convert` is supported on the following development platform(s):
+
+	- Ubuntu 18.04 x86, 64bit
+
+Other platforms may work, but are not under active testing. Patches to add additional
+platforms or fix compatibility issues are welcome.
+
+The storage used during the process, specifically the work directories (usually below the clone of
+`mender-convert`) and the output directory should be located on local, Unix-style filesystem.
+Using network storage or emulated filesystems might cause permission or owner issues.
+
 
 ## Getting started
 
