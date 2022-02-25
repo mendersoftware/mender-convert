@@ -47,6 +47,11 @@ For more detailed information about `mender-convert` please visit the
 
 ### Prepare image and configuration
 
+*Only 32bit-Images are supported at the moment!*
+
+The following steps give a quick start using Raspbian. For a more detailed guide,
+especially concerning version compatibilities, please visit [the the corresponding thread](https://hub.mender.io/t/raspberry-pi-3-model-b-b-raspbian/140) on the Mender Hub.
+
 Download the raw Raspberry Pi disk image into a subdirectory input:
 
 ```bash
