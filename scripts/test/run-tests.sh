@@ -31,7 +31,7 @@ UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Focal
 DEBIAN_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-11-x86-64.img.gz"
 
 ## Auto-update
-UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/ubuntu-20.04.3-preinstalled-server-armhf+raspi.img.xz"
+UBUNTU_SERVER_RPI_IMAGE_URL="http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/ubuntu-20.04.4-preinstalled-server-armhf+raspi.img.xz"
 
 # Keep common function declarations in separate utils script
 UTILS_PATH=${0/$(basename $0)/test-utils.sh}
