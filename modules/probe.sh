@@ -38,7 +38,7 @@ probe_arch() {
 
     target_arch="unknown"
     if grep -q x86-64 <<< "${file_info}"; then
-        target_arch="x86-64"
+        target_arch="x86_64"
     elif grep -Eq "ELF 32-bit.*ARM" <<< "${file_info}"; then
         target_arch="arm"
     elif grep -Eq "ELF 64-bit.*aarch64" <<< "${file_info}"; then
@@ -57,7 +57,7 @@ probe_grub_efi_name() {
     local efi_name=""
     local -r arch=$(probe_arch)
     case "${arch}" in
-        "x86-64")
+        "x86_64")
             efi_name="grub-efi-bootx64.efi"
             ;;
         "arm")
@@ -81,7 +81,7 @@ probe_debian_arch_name() {
     deb_arch=""
     arch=$(probe_arch)
     case "${arch}" in
-        "x86-64")
+        "x86_64")
             deb_arch="amd64"
             ;;
         "arm")
@@ -130,7 +130,7 @@ probe_grub_efi_target_name() {
     local efi_target_name=""
     local -r arch=$(probe_arch)
     case "$arch" in
-        "x86-64")
+        "x86_64")
             efi_target_name="bootx64.efi"
             ;;
         "arm")
