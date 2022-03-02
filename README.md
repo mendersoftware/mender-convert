@@ -21,6 +21,19 @@ on your device.
 
 ![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
+## Requisites
+
+`mender-convert` is supported on the following development platform(s):
+
+	- Ubuntu 18.04 x86, 64bit
+
+Other platforms may work, but are not under active testing. Patches to add additional
+platforms or fix compatibility issues are welcome.
+
+The storage used during the process, specifically the work directories (usually below the clone of
+`mender-convert`) and the output directory should be located on local, Unix-style filesystem.
+Using network storage or emulated filesystems might cause permission or owner issues.
+
 
 ## Getting started
 
@@ -31,8 +44,38 @@ For more detailed information about `mender-convert` please visit the
 [Debian family](https://docs.mender.io/artifacts/debian-family) section in
 [the Mender documentation](https://docs.mender.io/).
 
+## Included configurations
+
+### Core configurations
+
+These configurations are officially supported.
+
+| Configuration | Supported OS / hardware |
+| :------------ | :---------------------- |
+| generic_x86-64_config | Generic x86, 64bit distribtion *use this as a starting point only!*  |
+| raspberrypi0w_config | RaspberryPi 0w, Raspbian 32bit |
+| raspberrypi3_config | RaspberryPi 3, Raspbian 32bit |
+| raspberrypi4_config | RaspberryPi 4, Raspbian 32bit |
+| raspberrypi4_ubuntu_config | RaspberryPi 4, Ubuntu 32bit |
+
+### Contributed configurations
+
+These configurations have been submitted by community contributors.
+
+| Configuration | Supported OS / hardware |
+| :------------ | :---------------------- |
+| beaglebone_black_debian_emmc_config | BeagleBone Black 4GB, Debian 32bit on internal eMMC storage |
+| beaglebone_black_debian_sdcard_config | BeagleBone Black, Debian 32bit on external SD card storage |
+| comfile_pi_config | Comfile Pi, Raspbian 32bit |
+| rockpro64_emmc_config | RockPro64, Debian 32bit on internal eMMC storage |
+| rockpro64_sd_config | BeagleBone Black, Debian 32bit on external SD card storage |
+
+## Example usage: Raspberry Pi 3, Raspbian 32bit
 
 ### Prepare image and configuration
+
+The following steps give a quick start using Raspbian. For a more detailed guide,
+especially concerning version compatibilities, please visit [the the corresponding thread](https://hub.mender.io/t/raspberry-pi-3-model-b-b-raspbian/140) on the Mender Hub.
 
 Download the raw Raspberry Pi disk image into a subdirectory input:
 
