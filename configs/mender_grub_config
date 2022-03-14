@@ -1,7 +1,16 @@
-# Use U-boot -> GRUB -> EFI boot-loader integration
+# Use UEFI -> GRUB boot-loader integration
+#
+# On ARM, U-boot is used as UEFI (EFI) provider
 #
 # Only disable this if you know what you are doing
 MENDER_GRUB_EFI_INTEGRATION=y
+
+# Integrate with /etc/grub.d boot scripts.
+#
+# This has no effect unless MENDER_GRUB_EFI_INTEGRATION is enabled. Default is
+# auto, in which case it will be detected. This is only supported for x86_64
+# platforms at the moment.
+MENDER_GRUB_D_INTEGRATION=auto
 
 # Version of GRUB to use. Note that there needs to be a precompiled version
 # available at the MENDER_STORAGE_URL download source.
@@ -17,7 +26,7 @@ GRUB_VERSION=2.04
 MENDER_GRUB_KERNEL_BOOT_ARGS=""
 
 # grub-mender-grubenv is the Mender integration for the GRUB bootloader
-MENDER_GRUBENV_VERSION="1a7db967495bbe8be53b7a69dcb42822f39d9a74"
+MENDER_GRUBENV_VERSION="b06a8e2cf13776b5cfc896fa8068006dd9992ebb"
 MENDER_GRUBENV_URL="${MENDER_GITHUB_ORG}/grub-mender-grubenv/archive/${MENDER_GRUBENV_VERSION}.tar.gz"
 
 # Name of the storage device containing root filesystem partitions in GRUB

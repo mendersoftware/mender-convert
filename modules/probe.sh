@@ -353,3 +353,14 @@ is_efi_compatible_kernel() {
 has_grub_efi() {
     find "${1}" -type f -name 'grub*.efi' -print0 | grep -qz grub
 }
+
+supports_grub_d() {
+    test -d "$1"/etc/grub.d || return 1
+
+    # Because we are executing programs inside a chroot in the image, we cannot
+    # currently convert non-native architectures to use grub.d integration. See
+    # relevant section on chroot inside grub_install_grub_d_config.
+    [ "$(probe_arch)" = "$(uname -m)" ] || return 1
+
+    return 0
+}

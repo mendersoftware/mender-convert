@@ -53,7 +53,9 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # manipulate binary and hex
     xxd \
 # JSON power tool
-    jq
+    jq \
+# GRUB command line tools, primarily grub-probe
+    grub-common
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 

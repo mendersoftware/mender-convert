@@ -1,4 +1,4 @@
-# Copyright 2021 Northern.tech AS
+# Copyright 2022 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -22,3 +22,5 @@ sys.path.append(
 
 # Load the parser for our custom option flags
 pytest_plugins = "utils.parseropts.parseropts"
+
+from utils.fixtures import *

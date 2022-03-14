@@ -140,7 +140,6 @@ run_tests() {
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
     --ssh-priv-key="./ssh-priv-key/key" \
     --qemu-wrapper="../scripts/test/mender-convert-qemu" \
-    mender-image-tests \
     ${pytest_extra_args}
 
   exitcode=$?
