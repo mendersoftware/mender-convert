@@ -2,8 +2,7 @@
 #
 # The image is generated with the following command:
 #
-#    mkosi --root-size=2G --distribution=debian --release=bullseye --format=gpt_ext4 --bootable --checksum
-#          --password password --package=openssh-server,dhcpcd5 --output=Debian-11-x86-64.img build
+# mender-convert/scripts/test/generate-image.sh debian
 #
 # Then manually uploaded to Mender's AWS S3 bucket for CI testing
 #
