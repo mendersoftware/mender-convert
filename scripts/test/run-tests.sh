@@ -83,7 +83,6 @@ test_result=0
 
 if [ -n "$PREBUILT_IMAGE" ]; then
   run_tests $PREBUILT_IMAGE \
-            "-k" "'not test_update'" \
             || test_result=$?
   exit $test_result
 
@@ -117,8 +116,6 @@ else
                      "release-1" \
                      "input/${RASPBIAN_IMAGE}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
@@ -132,8 +129,6 @@ else
                      "release-1" \
                      "input/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_sdcard_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
 
     rm -rf deploy
@@ -145,8 +140,6 @@ else
                      "release-1" \
                      "input/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_emmc_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
@@ -157,8 +150,6 @@ else
                      "release-1" \
                      "input/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
