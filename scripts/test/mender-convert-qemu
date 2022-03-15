@@ -20,7 +20,8 @@ qemu-system-x86_64 \
     -m 512 \
     -net user,hostfwd=tcp::8822-:22 \
     -net nic,macaddr=52:54:00$(od -txC -An -N3 /dev/urandom|tr \  :) \
-    -bios ${ovmf_file} \
+    -drive file=${ovmf_file},if=pflash,format=raw,unit=0,readonly=on \
+    -drive file=./uefi-nvram/OVMF_VARS.fd,if=pflash,format=raw,unit=1,readonly=on \
     -drive format=raw,file=${DISK_IMG} &
 
 qemu_pid=$!
