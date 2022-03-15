@@ -173,7 +173,7 @@ function grub_install_mender_grub() {
     sudo rm -rf work/boot/EFI/systemd
     sudo rm -rf work/boot/NvVars
     for empty_dir in $(
-                     cd work/boot && find . -maxdepth 1 -type d -empty
+                     cd work/boot && find . -maxdepth 1 -type d -empty -not -name .
     ); do
         sudo rmdir work/boot/$empty_dir
     done
