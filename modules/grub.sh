@@ -45,7 +45,12 @@ EOF
 mender_kernel_root_base=${MENDER_STORAGE_DEVICE_BASE}
 EOF
     fi
+}
 
+# grub_install_standalone_grub_config
+#
+#
+function grub_install_standalone_grub_config() {
     if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
         cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/11_bootargs_grub.cfg
 set bootargs="${MENDER_GRUB_KERNEL_BOOT_ARGS}"
@@ -55,10 +60,83 @@ EOF
     (   
         cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
         run_and_log_cmd "make 2>&1"
-        run_and_log_cmd "sudo make DESTDIR=../ BOOT_DIR=boot install-boot-files"
-        run_and_log_cmd "sudo make DESTDIR=../rootfs install-tools"
+        run_and_log_cmd "sudo make DESTDIR=$PWD/../ BOOT_DIR=boot install-standalone-boot-files"
+        run_and_log_cmd "sudo make DESTDIR=$PWD/../rootfs install-tools"
     )
 
+}
+
+# grub_install_grub_d_config
+#
+#
+function grub_install_grub_d_config() {
+    if [ -n "${MENDER_GRUB_KERNEL_BOOT_ARGS}" ]; then
+        log_warn "MENDER_GRUB_KERNEL_BOOT_ARGS is ignored when MENDER_GRUB_D_INTEGRATION is enabled. Set it in the GRUB configuration instead."
+    fi
+
+    # When using grub.d integration, /boot/efi must point to the boot partition,
+    # and /boot/grub must point to grub-mender-grubenv on the boot partition.
+    if [ ! -d work/rootfs/boot/efi ]; then
+        run_and_log_cmd "sudo mkdir work/rootfs/boot/efi"
+    fi
+    run_and_log_cmd "sudo mkdir work/boot/grub-mender-grubenv"
+    run_and_log_cmd "sudo mv work/rootfs/boot/grub/* work/boot/grub-mender-grubenv/"
+    run_and_log_cmd "sudo rmdir work/rootfs/boot/grub"
+    run_and_log_cmd "sudo ln -s efi/grub-mender-grubenv work/rootfs/boot/grub"
+
+    (   
+        cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
+        run_and_log_cmd "make 2>&1"
+        run_and_log_cmd "sudo make DESTDIR=$PWD/../ BOOT_DIR=boot install-boot-env"
+        run_and_log_cmd "sudo make DESTDIR=$PWD/../rootfs install-grub.d-boot-scripts"
+        run_and_log_cmd "sudo make DESTDIR=$PWD/../rootfs install-tools"
+        # We need this for running the scripts once.
+        run_and_log_cmd "sudo make DESTDIR=$PWD/../rootfs install-offline-files"
+    )
+
+    # Mender-convert usually runs in a container. It's difficult to launch
+    # additional containers from within an existing one, but we need to run
+    # `update-grub` on a simulated device using some sort of container. Use good
+    # old `chroot`, which doesn't provide perfect containment, but it is good
+    # enough for our purposes, and doesn't require special containment
+    # capabilities. This will not work for foreign architectures, but we could
+    # probably use something like qemu-aarch64-static to get around that.
+    run_and_log_cmd "sudo mount work/boot work/rootfs/boot/efi -o bind"
+    run_and_log_cmd "sudo mount /dev work/rootfs/dev -o bind,ro"
+    run_and_log_cmd "sudo mount /proc work/rootfs/proc -o bind,ro"
+    run_and_log_cmd "sudo mount /sys work/rootfs/sys -o bind,ro"
+
+    local ret=0
+
+    # Use `--no-nvram`, since we cannot update firmware memory in an offline
+    # build. Instead, use `--removable`, which creates entries that automate
+    # booting if you put the image into a new device, which you almost certainly
+    # will after using mender-convert.
+    run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --removable --no-nvram" || ret=$?
+    if [ $ret -eq 0 ]; then
+        run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --no-nvram" || ret=$?
+    fi
+
+    if [ $ret -eq 0 ]; then
+        run_and_log_cmd_noexit "sudo chroot work/rootfs update-grub" || ret=$?
+    fi
+
+    # Very important that these are unmounted, otherwise Docker may start to
+    # remove files inside them while tearing down the container. You can guess
+    # how I found that out... We run without the logger because otherwise the
+    # message from the previous command, which is the important one, is lost.
+    sudo umount -l work/rootfs/boot/efi || true
+    sudo umount -l work/rootfs/dev || true
+    sudo umount -l work/rootfs/proc || true
+    sudo umount -l work/rootfs/sys || true
+
+    [ $ret -ne 0 ] && exit $ret
+
+    (   
+        cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
+        # Should be removed after running.
+        run_and_log_cmd "sudo make DESTDIR=$PWD/../rootfs uninstall-offline-files"
+    )
 }
 
 # grub_install_grub_editenv_binary
@@ -74,18 +152,6 @@ function grub_install_grub_editenv_binary() {
 
 }
 
-# grub_install_with_shim_present
-#
-# Keep the existing boot shim, and bootloader, and only install the mender-grub
-# config
-function grub_install_with_shim_present() {
-
-    grub_create_grub_config
-
-    grub_install_grub_editenv_binary
-
-}
-
 # grub_install_mender_grub
 #
 # Install mender-grub on the converted boot partition
@@ -98,9 +164,6 @@ function grub_install_mender_grub() {
         run_and_log_cmd "sudo ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
     fi
 
-    log_info "Generating the mender-grub config..."
-    grub_create_grub_config
-
     # Remove conflicting boot files. These files do not necessarily effect the
     # functionality, but lets get rid of them to avoid confusion.
     #
@@ -110,7 +173,7 @@ function grub_install_mender_grub() {
     sudo rm -rf work/boot/EFI/systemd
     sudo rm -rf work/boot/NvVars
     for empty_dir in $(
-                     cd work/boot && find . -maxdepth 1 -type d -empty
+                     cd work/boot && find . -maxdepth 1 -type d -empty -not -name .
     ); do
         sudo rmdir work/boot/$empty_dir
     done

@@ -223,12 +223,12 @@ test_acceptance_prebuilt_raspberrypi4:
 test_acceptance_qemux86_64:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --config versions_override_config --only qemux86_64
+    - ./scripts/test/run-tests.sh --config versions_override_config --only ubuntu-qemux86-64
 
 test_acceptance_debian_qemux86_64:
   <<: *test_acceptance
   script:
-    - ./scripts/test/run-tests.sh --config versions_override_config --only debian-qemux86_64
+    - ./scripts/test/run-tests.sh --config versions_override_config --only debian-qemux86-64
 
 test_acceptance_raspberrypi:
   <<: *test_acceptance

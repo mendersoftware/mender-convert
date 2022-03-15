@@ -38,7 +38,7 @@ probe_arch() {
 
     target_arch="unknown"
     if grep -q x86-64 <<< "${file_info}"; then
-        target_arch="x86-64"
+        target_arch="x86_64"
     elif grep -Eq "ELF 32-bit.*ARM" <<< "${file_info}"; then
         target_arch="arm"
     elif grep -Eq "ELF 64-bit.*aarch64" <<< "${file_info}"; then
@@ -57,7 +57,7 @@ probe_grub_efi_name() {
     local efi_name=""
     local -r arch=$(probe_arch)
     case "${arch}" in
-        "x86-64")
+        "x86_64")
             efi_name="grub-efi-bootx64.efi"
             ;;
         "arm")
@@ -81,7 +81,7 @@ probe_debian_arch_name() {
     deb_arch=""
     arch=$(probe_arch)
     case "${arch}" in
-        "x86-64")
+        "x86_64")
             deb_arch="amd64"
             ;;
         "arm")
@@ -130,7 +130,7 @@ probe_grub_efi_target_name() {
     local efi_target_name=""
     local -r arch=$(probe_arch)
     case "$arch" in
-        "x86-64")
+        "x86_64")
             efi_target_name="bootx64.efi"
             ;;
         "arm")
@@ -345,11 +345,22 @@ is_efi_compatible_kernel() {
     return 0
 }
 
-# has_secureboot_shim
+# has_grub_efi
 #
-# $1 - the boot partition to search for a secureboot shim
+# $1 - the boot partition to search for a grub*.efi
 #
-# Checks the EFI/* filesystem for the presence of a signed boot shim
-has_secureboot_shim() {
-    find "${1}" -type f -name 'shim*.efi' -print0 | grep -qz shim
+# Checks the EFI/* filesystem for the presence of a GRUB bootloader
+has_grub_efi() {
+    find "${1}" -type f -name 'grub*.efi' -print0 | grep -qz grub
+}
+
+supports_grub_d() {
+    test -d "$1"/etc/grub.d || return 1
+
+    # Because we are executing programs inside a chroot in the image, we cannot
+    # currently convert non-native architectures to use grub.d integration. See
+    # relevant section on chroot inside grub_install_grub_d_config.
+    [ "$(probe_arch)" = "$(uname -m)" ] || return 1
+
+    return 0
 }

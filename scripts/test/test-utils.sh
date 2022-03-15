@@ -140,7 +140,6 @@ run_tests() {
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
     --ssh-priv-key="./ssh-priv-key/key" \
     --qemu-wrapper="../scripts/test/mender-convert-qemu" \
-    mender-image-tests \
     ${pytest_extra_args}
 
   exitcode=$?
@@ -163,15 +162,15 @@ prepare_ssh_keys() {
     sudo chown -R root:root tests/ssh-public-key-overlay/root
   fi
   if [ "$(stat -c %a tests/ssh-public-key-overlay/root)" != "755" ]; then
-    chmod 755 tests/ssh-public-key-overlay/root
+    sudo chmod 755 tests/ssh-public-key-overlay/root
   fi
   if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh)" != "755" ]; then
-    chmod 700 tests/ssh-public-key-overlay/root/.ssh
+    sudo chmod 700 tests/ssh-public-key-overlay/root/.ssh
   fi
   if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh/authorized_keys)" != "755" ]; then
-    chmod 600 tests/ssh-public-key-overlay/root/.ssh/authorized_keys
+    sudo chmod 600 tests/ssh-public-key-overlay/root/.ssh/authorized_keys
   fi
   if [ "$(stat -c %a tests/ssh-priv-key/key)" != "600" ]; then
-    chmod 600 tests/ssh-priv-key/key
+    sudo chmod 600 tests/ssh-priv-key/key
   fi
 }

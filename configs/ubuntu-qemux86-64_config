@@ -2,8 +2,7 @@
 #
 # The image is generated with the following command:
 #
-#    mkosi --root-size=2G --distribution=ubuntu --release=focal --format=gpt_ext4 --bootable --checksum
-#          --password password --package=openssh-server,dhcpcd5 --output=Ubuntu-Focal-x86-64.img build
+# mender-convert/scripts/test/generate-image.sh ubuntu
 #
 # Then manually uploaded to Mender's AWS S3 bucket for CI testing
 #
@@ -13,10 +12,10 @@
 #
 # and qemu is executed with the following command:
 #
-#    qemu-system-x86_64 -enable-kvm -m 512 -smp 2 -bios /usr/share/OVMF/OVMF_CODE.fd -drive format=raw,file=deploy/Ubuntu-Focal-x86-64-qemux86_64-mender.img
+#    qemu-system-x86_64 -enable-kvm -m 512 -smp 2 -bios /usr/share/OVMF/OVMF_CODE.fd -drive format=raw,file=deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img
 
 MENDER_STORAGE_DEVICE_BASE=/dev/sda
-MENDER_DEVICE_TYPE="qemux86_64"
+MENDER_DEVICE_TYPE="qemux86-64"
 
 # Nothing to copy
 MENDER_COPY_BOOT_GAP="n"

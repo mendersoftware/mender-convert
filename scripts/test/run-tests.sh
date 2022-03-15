@@ -83,18 +83,17 @@ test_result=0
 
 if [ -n "$PREBUILT_IMAGE" ]; then
   run_tests $PREBUILT_IMAGE \
-            "-k" "'not test_update'" \
             || test_result=$?
   exit $test_result
 
 else
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "qemux86_64" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
     wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/
-    convert_and_test "qemux86_64" \
+    convert_and_test "qemux86-64" \
                      "release-1" \
                      "input/Ubuntu-Focal-x86-64.img.gz" \
                      "--overlay tests/ssh-public-key-overlay" \
-                     "--config configs/qemux86-64_config $EXTRA_CONFIG" \
+                     "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" \
                      || test_result=$?
 
     echo >&2 "----------------------------------------"
@@ -104,10 +103,10 @@ else
     gunzip --force "input/Ubuntu-Focal-x86-64.img.gz"
     run_convert "release-2" \
                 "input/Ubuntu-Focal-x86-64.img" \
-                "--config configs/qemux86-64_config $EXTRA_CONFIG" || test_result=$?
+                "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
     ret=0
-    test -f deploy/Ubuntu-Focal-x86-64-qemux86_64-mender.img || ret=$?
-    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Focal-x86-64-qemux86_64-mender.img"
+    test -f deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img || ret=$?
+    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img"
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
@@ -117,8 +116,6 @@ else
                      "release-1" \
                      "input/${RASPBIAN_IMAGE}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
@@ -132,8 +129,6 @@ else
                      "release-1" \
                      "input/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_sdcard_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
 
     rm -rf deploy
@@ -145,8 +140,6 @@ else
                      "release-1" \
                      "input/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_emmc_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
@@ -157,14 +150,12 @@ else
                      "release-1" \
                      "input/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
-                     -- \
-                     "-k" "'not test_update'" \
                      || test_result=$?
   fi
 
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86_64" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
     wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/
-    convert_and_test "qemux86_64" \
+    convert_and_test "qemux86-64" \
                      "release-1" \
                      "input/Debian-11-x86-64.img.gz" \
                      "--overlay tests/ssh-public-key-overlay" \
