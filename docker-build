@@ -16,6 +16,6 @@
 
 set -e
 
-IMAGE_NAME=${IMAGE_NAME:-mender-convert}
+IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert"}
 
-eval docker build . -t ${IMAGE_NAME} "$@"
+eval docker build . -t "${IMAGE_NAME}" "$*"

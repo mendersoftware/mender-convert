@@ -88,11 +88,13 @@ if [ -n "$PREBUILT_IMAGE" ]; then
 
 else
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
-    wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/
+    wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
+    mkdir -p input/tests
+    cp -r "tests/ssh-public-key-overlay" "input/tests/ssh-public-key-overlay"
     convert_and_test "qemux86-64" \
                      "release-1" \
-                     "input/Ubuntu-Focal-x86-64.img.gz" \
-                     "--overlay tests/ssh-public-key-overlay" \
+                     "input/image/Ubuntu-Focal-x86-64.img.gz" \
+                     "--overlay input/tests/ssh-public-key-overlay" \
                      "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" \
                      || test_result=$?
 
@@ -100,9 +102,9 @@ else
     echo >&2 "Running the uncompressed test"
     echo >&2 "----------------------------------------"
     rm -rf deploy
-    gunzip --force "input/Ubuntu-Focal-x86-64.img.gz"
+    gunzip --force "input/image/Ubuntu-Focal-x86-64.img.gz"
     run_convert "release-2" \
-                "input/Ubuntu-Focal-x86-64.img" \
+                "input/image/Ubuntu-Focal-x86-64.img" \
                 "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
     ret=0
     test -f deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img || ret=$?
@@ -110,55 +112,57 @@ else
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
-    wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/
+    wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/image/
     RASPBIAN_IMAGE="${RASPBIAN_IMAGE_URL##*/}"
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "input/${RASPBIAN_IMAGE}" \
+                     "input/image/${RASPBIAN_IMAGE}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
                      || test_result=$?
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "beaglebone" ]; then
-    wget --progress=dot:giga -N ${BBB_DEBIAN_SDCARD_IMAGE_URL} -P input/
+    wget --progress=dot:giga -N ${BBB_DEBIAN_SDCARD_IMAGE_URL} -P input/image/
     BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_URL##*/}"
     BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED%.xz}"
     # Convert uncompressed images to speed up this job
-    unxz --force "input/${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED}"
+    unxz --force "input/image/${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED}"
     convert_and_test "beaglebone-sdcard" \
                      "release-1" \
-                     "input/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
+                     "input/image/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_sdcard_config $EXTRA_CONFIG" \
                      || test_result=$?
 
     rm -rf deploy
-    wget --progress=dot:giga -N ${BBB_DEBIAN_EMMC_IMAGE_URL} -P input/
+    wget --progress=dot:giga -N ${BBB_DEBIAN_EMMC_IMAGE_URL} -P input/image/
     BBB_DEBIAN_EMMC_IMAGE_COMPRESSED="${BBB_DEBIAN_EMMC_IMAGE_URL##*/}"
     BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED="${BBB_DEBIAN_EMMC_IMAGE_COMPRESSED%.xz}"
-    unxz --force "input/${BBB_DEBIAN_EMMC_IMAGE_COMPRESSED}"
+    unxz --force "input/image/${BBB_DEBIAN_EMMC_IMAGE_COMPRESSED}"
     convert_and_test "beaglebone-emmc" \
                      "release-1" \
-                     "input/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
+                     "input/image/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_emmc_config $EXTRA_CONFIG" \
                      || test_result=$?
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu" ]; then
-    wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/
+    wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/image/
     UBUNTU_SERVER_RPI_IMAGE_COMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_URL##*/}"
     convert_and_test "raspberrypi3" \
                      "release-1" \
-                     "input/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}" \
+                     "input/image/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
                      || test_result=$?
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
-    wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/
+    wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/image/
+    mkdir -p input/tests
+    cp -r "tests/ssh-public-key-overlay" "input/tests/ssh-public-key-overlay"
     convert_and_test "qemux86-64" \
                      "release-1" \
-                     "input/Debian-11-x86-64.img.gz" \
-                     "--overlay tests/ssh-public-key-overlay" \
+                     "input/image/Debian-11-x86-64.img.gz" \
+                     "--overlay input/tests/ssh-public-key-overlay" \
                      "--config configs/debian-qemux86-64_config $EXTRA_CONFIG" \
                      || test_result=$?
   fi
