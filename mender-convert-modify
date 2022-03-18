@@ -280,7 +280,7 @@ done
 
 for overlay in "${overlays[@]}"; do
     log_info "Applying rootfs overlay: ${overlay}"
-    run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${overlay}/ work/rootfs/"
+    run_and_log_cmd "sudo rsync --archive --keep-dirlinks --no-super --verbose ${overlay}/ work/rootfs/"
 done
 
 log_info "Performing overlay specific modifications (if any)"
