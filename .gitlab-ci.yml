@@ -298,9 +298,11 @@ test_acceptance_ubuntu:
       alias: docker
       command: ["--mtu=1440"] # https://gitlab.com/gitlab-com/gl-infra/production/-/issues/5590
   script:
-    - docker tag $DOCKER_REPOSITORY:pr $DOCKER_REPOSITORY:$MENDER_CONVERT_PUBLISH_VERSION
-    - docker push $DOCKER_REPOSITORY:$MENDER_CONVERT_PUBLISH_VERSION
-    - echo "PUBLISH_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $DOCKER_REPOSITORY:$MENDER_CONVERT_PUBLISH_VERSION)" >> publish.env
+    - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
+
+    - docker tag $DOCKER_REPOSITORY:pr $DOCKER_REPOSITORY:$IMAGE_VERSION
+    - docker push $DOCKER_REPOSITORY:$IMAGE_VERSION
+    - echo "PUBLISH_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $DOCKER_REPOSITORY:$IMAGE_VERSION)" >> publish.env
   artifacts:
     reports:
       dotenv: publish.env
