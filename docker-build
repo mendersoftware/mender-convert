@@ -16,6 +16,13 @@
 
 set -e
 
-IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert"}
+GIT_PROVIDED_TAG_NAME="$(git describe --exact HEAD 2>/dev/null || \
+    git for-each-ref "refs/heads/*" --format '%(refname:short)' --points-at HEAD 2>/dev/null)"
+
+if [ -z "$IMAGE_NAME" -a -z "$GIT_PROVIDED_TAG_NAME" ]; then
+  echo "Could not deduce mendersoftware/mender-convert container version from currently checked out commit. Using latest." 1>&2
+fi
+
+IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_PROVIDED_TAG_NAME:+:$GIT_PROVIDED_TAG_NAME}"}
 
 eval docker build . -t "${IMAGE_NAME}" "$*"
