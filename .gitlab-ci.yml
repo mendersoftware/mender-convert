@@ -325,5 +325,5 @@ publish:docker-image:manual:
 
 publish:docker-image:automatic:
   rules:
-    - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
+    - if: '$CI_COMMIT_BRANCH =~ /^(master|staging|production|feature-.+|[0-9]+\.[0-9]+\.([0-9]+|x))$/'
   extends: .template:publish:docker-image
