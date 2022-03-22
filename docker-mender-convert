@@ -16,38 +16,42 @@
 
 set -e
 
-. modules/git.sh
+GIT_PROVIDED_TAG_NAME="$(git describe --exact HEAD 2>/dev/null || \
+    git for-each-ref "refs/heads/*" --format '%(refname:short)' --points-at HEAD 2>/dev/null)"
 
-IMAGE_NAME=${IMAGE_NAME:-mender-convert}
+if [ -z "$IMAGE_NAME" -a -z "$GIT_PROVIDED_TAG_NAME" ]; then
+  echo "Could not deduce mendersoftware/mender-convert container version from currently checked out commit. Using latest." 1>&2
+fi
 
-MENDER_CONVERT_DIR="$(pwd)"
+IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_PROVIDED_TAG_NAME:+:$GIT_PROVIDED_TAG_NAME}"}
+DEPLOY_DIRECTORY=${DEPLOY_DIRECTORY:-"$(pwd)/deploy"}
+INPUT_DIRECTORY=${INPUT_DIRECTORY:-"$(pwd)/input"}
+LOGS_DIRECTORY=${LOGS_DIRECTORY:-"$(pwd)/logs"}
 
-#Pass in version in-case we are added as a git submodule
-MENDER_CONVERT_VERSION=$(git_mender_convert_version)
+mkdir -p "$DEPLOY_DIRECTORY"
+mkdir -p "$LOGS_DIRECTORY"
 
-# Create a unique work directory so we can run multiple containers in parallel
-WORK_DIR=$(mktemp -d $(pwd)/work.XXXX)
-WORK_SUFFIX=$(echo $WORK_DIR | awk -F. '{print $NF}')
-LOG_FILE="convert.log.${WORK_SUFFIX}"
+# Create a unique log file so we can run multiple containers in parallel
+LOG_FILE="convert.log.$(date +%s)-$$"
+
+echo "using log file at: ${LOGS_DIRECTORY}/${LOG_FILE}"
 
 set +e
 docker run \
   --rm \
-  -v $MENDER_CONVERT_DIR:/mender-convert \
-  -v $WORK_DIR:/mender-convert/work \
+  -v "$INPUT_DIRECTORY":/mender-convert/input \
+  -v "$LOGS_DIRECTORY":/mender-convert/logs \
+  -v "$DEPLOY_DIRECTORY":/mender-convert/deploy \
   --privileged=true \
   --cap-add=SYS_MODULE \
   -v /dev:/dev \
   -v /lib/modules:/lib/modules:ro \
-  --env MENDER_ARTIFACT_NAME=${MENDER_ARTIFACT_NAME} \
-  --env MENDER_CONVERT_VERSION=${MENDER_CONVERT_VERSION} \
-  --env MENDER_CONVERT_LOG_FILE=logs/${LOG_FILE} \
-  $IMAGE_NAME "$@"
+  --env MENDER_ARTIFACT_NAME="${MENDER_ARTIFACT_NAME}" \
+  --env MENDER_CONVERT_LOG_FILE=logs/"${LOG_FILE}" \
+  "$IMAGE_NAME" "$@"
 
 exit_code=$?
 
-[ ${exit_code} -eq 0 ] && rmdir ${WORK_DIR}
-
-echo "Log file available at: logs/${LOG_FILE}"
+echo "Log file available at: ${LOGS_DIRECTORY}/${LOG_FILE}"
 
 exit ${exit_code}
