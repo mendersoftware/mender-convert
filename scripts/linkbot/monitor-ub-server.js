@@ -53,11 +53,16 @@ JSDOM.fromURL(url, {}).then(dom => {
     })
         .catch(err => {
             console.log('Failed to get the update URL');
-            console.log(`${url}${releaseVersion}/release/`);
+            console.log(`${url}${releasedVersion}/release/`);
+            JSDOM.fromURL(`${url}${releasedVersion}/beta/`, {})
+                .then(dom => {
+                    console.log('Only the beta is out still');
+                });
         });
 })
     .catch(err => {
         console.log('Failed to get the URL');
-        console.log(`${url}`);
+        console.log(url);
         console.log(err);
+        throw err;
     });
