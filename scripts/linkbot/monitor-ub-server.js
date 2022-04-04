@@ -51,4 +51,13 @@ JSDOM.fromURL(url, {}).then(dom => {
             updateURLLink(`${target}=\"${match}\"`, target);
         }
     })
-});
+        .catch(err => {
+            console.log('Failed to get the update URL');
+            console.log(`${url}${releaseVersion}/release/`);
+        });
+})
+    .catch(err => {
+        console.log('Failed to get the URL');
+        console.log(`${url}`);
+        console.log(err);
+    });
