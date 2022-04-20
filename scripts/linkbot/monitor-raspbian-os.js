@@ -35,13 +35,13 @@ function getNewRaspbian(target, url, separator) {
         var document = dom.window.document;
         var refs = document.getElementsByTagName("a");
         var test = Array.from(refs)
-            .filter((ref) => ref.textContent.match("raspios-.*-lite.*.zip$"))
+            .filter((ref) => ref.textContent.match("raspios-.*-lite.*\.img\.(zip|xz)$"))
             .reduce((acc, element) => {
-                acc.push(element.textContent.match("raspios-.*-lite.*.zip$").input);
+                acc.push(element.textContent.match("raspios-.*-lite.*\.img\.(zip|xz)$").input);
                 return acc;
             }, [])[0];
         console.log(`Test var: ${test}`);
-        const imageName = test.substring(0, test.length - 4);
+        const imageName = test.substring(0, test.lastIndexOf('.img'));
         if (separator) {
             return {
                 replacementLine: `${target}${separator} \"${url}/${test}\"`,
