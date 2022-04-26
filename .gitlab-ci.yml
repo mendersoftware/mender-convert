@@ -50,6 +50,7 @@ stages:
   - test
   - build
   - convert
+  - flash
   - test_acceptance
   - publish
 
@@ -152,7 +153,7 @@ convert_raspbian_raspberrypi4:
     - apt update
     - apt install -qyy bash wget git util-linux mtools python3 python3-pip
       gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
-      awscli unzip qemu-system-x86 ovmf curl docker.io
+      awscli unzip qemu-system-x86 ovmf curl docker.io s3cmd
     # Python3 dependencies
     - python3 -m pip install -U pip
     - pip3 install --ignore-installed -r https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance/requirements_py3.txt
@@ -327,3 +328,75 @@ publish:docker-image:automatic:
   rules:
     - if: '$CI_COMMIT_BRANCH =~ /^(master|staging|production|feature-.+|[0-9]+\.[0-9]+\.([0-9]+|x))$/'
   extends: .template:publish:docker-image
+
+####################
+# Hardware testing #
+####################
+
+test:hardware:convert:
+  <<: *convert_raspbian
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4
+  when: manual
+  stage: convert
+  script:
+    # Convert the image for the hardware tester
+    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender
+      ./docker-mender-convert --disk-image input/${RASPBIAN_NAME}.img
+      --config configs/${RASPBERRYPI_PLATFORM}_config
+      --config configs/images/raspberrypi_raspbian_config
+      --config configs/testing/hardware-testing
+      --overlay tests/ssh-public-key-overlay
+    # Collect artifacts.
+    - mv deploy ${RASPBERRYPI_PLATFORM}
+    - tar czf ${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}
+    # Upload to temporary S3 bucket
+    - mender_ci_save_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
+  artifacts:
+    paths:
+      - checksums
+
+test:hardware:flash:
+  needs:
+    - job: test:hardware:convert
+      artifacts: true
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4
+  tags:
+    - hw
+  stage: flash
+  script:
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
+    # Fetch artifacts from temporary S3 bucket
+    - mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
+    # Flash and boot the device under test
+    - slave-control mode flash
+    - tar -xvzf ${RASPBERRYPI_PLATFORM}.tar.gz --wildcards --no-anchored '*.img' --to-stdout | dd of=/dev/sdmux bs=8M
+    - slave-control mode test
+
+test:hardware:acceptance:
+  <<: *test_acceptance
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4
+  stage: test_acceptance
+  needs: []
+  needs:
+    - job: build
+      artifacts: true
+    - job: test:hardware:convert
+      artifacts: true
+    - job: test:hardware:flash
+  script:
+    # Fetch artifacts from temporary S3 bucket
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
+    - mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
+    # Extract the configuration
+    - tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
+    - mv ${RASPBERRYPI_PLATFORM} deploy
+    # Run the tests
+    - ./scripts/test/run-tests.sh
+      --prebuilt-image
+      raspberrypi4
+      "${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+      --hardware-testing
+      --host ${SSH_JUMP_HOST_IP}:${SSH_JUMP_HOST_PORT} mender-image-tests -k 'not test_network_based_image_update and not test_image_update_broken_kernel'"
