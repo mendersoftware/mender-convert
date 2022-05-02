@@ -28,9 +28,9 @@ jobs:
             body: |
                 New images are available for update
             commit-message: |
-                Image-Bot - Image updates
+                chore: Image-Bot image updates
 
-                Changelog: None
+                Base image updates for our provided images.
             committer: mender-test-bot <mender@northern.tech>
             author: mender-test-bot <mender@northern.tech>
             signoff: true
