@@ -44,7 +44,14 @@ function trap_term() {
 trap trap_term INT TERM
 trap trap_exit EXIT
 
-echo "Running $(basename $0): $@"
+function join_array_by {
+  local d=${1-} f=${2-}
+  if shift 2; then
+    printf %s "$f" "${@/#/$d}"
+  fi
+}
+
+echo "Running $(basename "$0"): $*"
 
 source modules/bootstrap.sh
 source modules/disk.sh
@@ -278,10 +285,9 @@ for hook in "${USER_LOCAL_MODIFY_HOOKS[@]}"; do
     eval $hook
 done
 
-for overlay in "${overlays[@]}"; do
-    log_info "Applying rootfs overlay: ${overlay}"
-    run_and_log_cmd "sudo rsync --archive --keep-dirlinks --no-super --verbose ${overlay}/ work/rootfs/"
-done
+ALL_OVERLAYS=$(join_array_by ":" "work/rootfs/" "${overlays[*]}")
+log_info "Applying rootfs overlays: ${overlays[*]}"
+run_and_log_cmd "sudo mount -t overlay overaly -o lowerdir=$ALL_OVERLAYS work/rootfs/"
 
 log_info "Performing overlay specific modifications (if any)"
 for hook in "${OVERLAY_MODIFY_HOOKS[@]}"; do
