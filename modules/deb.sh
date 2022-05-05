@@ -28,7 +28,7 @@ source modules/probe.sh .
 #
 function deb_from_repo_dist_get()  {
     if [[ $# -lt 5 || $# -gt 7 ]]; then
-        log_fatal "deb_from_repo_dist_get() requires 5 arguments"
+        log_fatal "deb_from_repo_dist_get() requires 5 arguments. 6th is optional"
     fi
     local -r download_dir="${1}"
     local -r repo_url="${2}"
@@ -67,8 +67,8 @@ function deb_from_repo_dist_get()  {
 # @return - Filename of the downloaded package
 #
 function deb_from_repo_pool_get()  {
-    if [[ $# -ne 5 ]]; then
-        log_fatal "deb_from_repo_pool_get() requires 5 arguments"
+    if [[ $# -lt 5 || $# -gt 7 ]]; then
+        log_fatal "deb_from_repo_pool_get() requires 5 arguments. 6th is optional"
     fi
     local -r download_dir="${1}"
     local -r repo_url="${2}"
