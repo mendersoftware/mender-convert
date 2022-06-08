@@ -58,8 +58,8 @@ if [ -e ${output_dir} ]; then
 fi
 
 mkdir -p ${output_dir}/etc/mender
-mkdir -p ${root_dir}/resources
-cat <<- EOF > ${root_dir}/resources/mender.conf
+mkdir -p ${root_dir}/input/resources
+cat <<- EOF > ${root_dir}/input/resources/mender.conf
 {
   "ServerURL": "https://docker.mender.io",
   "ServerCertificate": "/etc/mender/server.crt"
@@ -81,4 +81,4 @@ wget -q "https://raw.githubusercontent.com/mendersoftware/mender/master/support/
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Demo Mender Server written to: ${root_dir}/resources/mender.conf"
+echo "Configuration file for using Demo Mender Server written to: ${root_dir}/input/resources/mender.conf"
