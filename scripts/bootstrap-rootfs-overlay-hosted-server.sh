@@ -37,7 +37,7 @@ while (("$#")); do
             ;;
         *)
             echo "Sorry but the provided option is not supported: $1"
-            echo "Usage:  $(basename $0) --output-dir ./rootfs_overlay_demo --tenant-token <paste your token here>"
+            echo "Usage:  $(basename $0) --output-dir ./input/rootfs_overlay_demo --tenant-token <paste your token here>"
             exit 1
             ;;
     esac
@@ -57,8 +57,8 @@ if [ -e ${output_dir} ]; then
      sudo chown -R $(id -u) ${output_dir}
      sudo chgrp -R $(id -g) ${output_dir}
 fi
-mkdir -p ${root_dir}/resources
-cat <<- EOF > ${root_dir}/resources/mender.conf
+mkdir -p ${root_dir}/input/resources
+cat <<- EOF > ${root_dir}/input/resources/mender.conf
 {
   "ServerURL": "https://hosted.mender.io/",
   "TenantToken": "${tenant_token}"
@@ -68,4 +68,4 @@ EOF
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Hosted Mender written to: ${root_dir}/resources/mender.conf"
+echo "Configuration file for using Hosted Mender written to: ${root_dir}/input/resources/mender.conf"
