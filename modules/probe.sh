@@ -345,15 +345,6 @@ is_efi_compatible_kernel() {
     return 0
 }
 
-# has_grub_efi
-#
-# $1 - the boot partition to search for a grub*.efi
-#
-# Checks the EFI/* filesystem for the presence of a GRUB bootloader
-has_grub_efi() {
-    find "${1}" -type f -name 'grub*.efi' -print0 | grep -qz grub
-}
-
 supports_grub_d() {
     test -d "$1"/etc/grub.d || return 1
 

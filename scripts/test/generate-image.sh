@@ -82,8 +82,6 @@ post_process_image() {
     regenerate_grub_live "$image"
     mount ${LO_DEVICE}p1 tmp-p1
     mount ${LO_DEVICE}p2 tmp-p2
-
-    post_tweaks tmp-p1 tmp-p2
 }
 
 pre_tweaks() {
@@ -107,21 +105,6 @@ EOF
     sed -E -i -e 's/^#? *PermitRootLogin .*/PermitRootLogin yes/' $root/etc/ssh/sshd_config
 }
 
-post_tweaks() {
-    local -r boot="$1"
-    local -r root="$2"
-
-    # Delete systemd-boot, which isn't normally present in images that were
-    # installed with OS installers, at least not at the time of writing.
-    rm -rf "$boot/EFI/systemd"
-
-    # Also replace bootx64.efi, which is the default bootloader. Mkosi installs
-    # systemd-bootx86.efi, but we want the shim.
-    rm -f "$boot/EFI/BOOT/*"
-    mkdir -p "$boot/EFI/BOOT"
-    cp "$root/usr/lib/shim/shimx64.efi.signed" "$boot/EFI/BOOT/BOOTX64.EFI"
-}
-
 # Unfortunately installing grub scripts is something which is not really
 # possible when offline. This is something which is easier with systemd-boot, so
 # longterm GRUB will probably follow, or systemd-boot will take over. Anyway,
@@ -136,7 +119,7 @@ Description=Regenerate grub scripts, disable itself and then shut down.
 
 [Service]
 Type=oneshot
-ExecStart=sh -c "grub-install && update-grub && systemctl disable mender-regenerate-grub-and-shutdown.service && poweroff"
+ExecStart=sh -c "grub-install && grub-install --removable && update-grub && systemctl disable mender-regenerate-grub-and-shutdown.service && poweroff"
 EOF
 
     ln -sf "$root/etc/systemd/system/mender-regenerate-grub-and-shutdown.service" "$root/etc/systemd/system/multi-user.target.wants/"
