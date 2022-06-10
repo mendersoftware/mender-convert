@@ -140,21 +140,21 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # Check for known U-Boot problems in all files on the boot partition.
     check_for_broken_uboot_uefi_support work/boot
 
-    if has_grub_efi "work/boot"; then
+    if [ "$MENDER_GRUB_D_INTEGRATION" = y ] || ( [ "$MENDER_GRUB_D_INTEGRATION" = auto ] && supports_grub_d "work/rootfs" ); then
         # No need to install Grub, use the one already present, and only install
         # our tools.
-        log_info "GRUB EFI bootloader already present, not installing one."
-        grub_install_grub_editenv_binary
-    else
-        log_info "Installing GRUB EFI bootloader..."
-        grub_install_mender_grub
-    fi
+        log_info "Not installing GRUB EFI bootloader, relying on platform provided one."
 
-    if [ "$MENDER_GRUB_D_INTEGRATION" = y ] || ( [ "$MENDER_GRUB_D_INTEGRATION" = auto ] && supports_grub_d "work/rootfs" ); then
+        log_info "Installing Mender GRUB tools..."
+        grub_install_grub_editenv_binary
+
         log_info "Generating grub config using update-grub..."
         grub_create_grub_config
         grub_install_grub_d_config
     else
+        log_info "Installing GRUB EFI bootloader..."
+        grub_install_mender_grub
+
         log_info "Generating the mender-grub config..."
         grub_create_grub_config
         grub_install_standalone_grub_config
