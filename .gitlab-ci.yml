@@ -92,9 +92,9 @@ build:
   needs:
     - job: build
       artifacts: true
-  image: ubuntu:18.04
+  image: ubuntu:22.04
   services:
-    - docker:19.03-dind
+    - docker:dind
   tags:
     - mender-qa-slave
   before_script:
@@ -142,9 +142,9 @@ convert_raspbian_raspberrypi4:
   needs:
     - job: build
       artifacts: true
-  image: ubuntu:18.04
+  image: ubuntu:22.04
   services:
-    - docker:19.03-dind
+    - docker:dind
   tags:
     - mender-qa-slave
   timeout: 2h
@@ -153,7 +153,7 @@ convert_raspbian_raspberrypi4:
     - apt update
     - apt install -qyy bash wget git util-linux mtools python3 python3-pip
       gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
-      awscli unzip qemu-system-x86 ovmf curl docker.io s3cmd
+      awscli unzip qemu-system-x86 ovmf curl docker.io s3cmd fdisk
     # Python3 dependencies
     - python3 -m pip install -U pip
     - pip3 install --ignore-installed -r https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance/requirements_py3.txt
