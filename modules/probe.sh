@@ -344,8 +344,10 @@ is_efi_compatible_kernel() {
     return 0
 }
 
-supports_grub_d() {
-    test -d "$1"/etc/grub.d || return 1
+supports_grub_d_and_efi() {
+    test -d "$1"/EFI || return 1
+    test -d "$2"/boot/efi || return 1
+    test -d "$2"/etc/grub.d || return 1
 
     # Because we are executing programs inside a chroot in the image, we cannot
     # currently convert non-native architectures to use grub.d integration. See
