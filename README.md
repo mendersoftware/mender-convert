@@ -52,7 +52,7 @@ These configurations are officially supported.
 
 | Configuration | Supported OS / hardware |
 | :------------ | :---------------------- |
-| generic_x86-64_config | Generic x86, 64bit distribtion *use this as a starting point only!*  |
+| generic_x86-64_config | Generic x86, 64bit distribution *use this as a starting point only!*  |
 | raspberrypi0w_config | RaspberryPi 0w, Raspbian 32bit |
 | raspberrypi3_config | RaspberryPi 3, Raspbian 32bit |
 | raspberrypi4_config | RaspberryPi 4, Raspbian 32bit |
