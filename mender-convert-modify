@@ -140,7 +140,9 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # Check for known U-Boot problems in all files on the boot partition.
     check_for_broken_uboot_uefi_support work/boot
 
-    if [ "$MENDER_GRUB_D_INTEGRATION" = y ] || ( [ "$MENDER_GRUB_D_INTEGRATION" = auto ] && supports_grub_d "work/rootfs" ); then
+    if [ "$MENDER_GRUB_D_INTEGRATION" = y ] || ( [ "$MENDER_GRUB_D_INTEGRATION" = auto ] \
+        && supports_grub_d_and_efi "work/boot" "work/rootfs" ); then
+
         # No need to install Grub, use the one already present, and only install
         # our tools.
         log_info "Not installing GRUB EFI bootloader, relying on platform provided one."
