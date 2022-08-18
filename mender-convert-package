@@ -199,17 +199,32 @@ else
     log_fatal "Could not determine root file-system type. Aborting..."
 fi
 
-disk_create_file_system_from_folder "work/rootfs/data/" "work/data.img" \
-    "${data_part_sectors}" "${image_fs_type}"
-
-# Clear this area as it will be contained in the data.img
-sudo rm -rf work/rootfs/data/*
+# NOTE: Since the data partition has a dependency on the rootfs.img checksum
+# when writing the bootstrap Artifact we have to move the datadir out of the
+# way, and write the rootfs image first.
+run_and_log_cmd "mv --force work/rootfs/data work/data"
 
 disk_create_file_system_from_folder "work/rootfs/" "work/rootfs.img" \
     "${rootfs_image_sectors}" "${image_fs_type}"
 
 log_info "Copying root filesystem image to deploy directory"
 run_and_log_cmd "cp --sparse=always work/rootfs.img deploy/${image_name}.${image_fs_type}"
+
+# Add the bootstrap Artifact to the data.img before packaging
+# the data image
+log_info "Installing the bootstrap Artifact"
+rootfs_img_checksum=$(sha256sum work/rootfs.img | cut -d ' ' -f1)
+run_and_log_cmd "mender-artifact write bootstrap-artifact \
+                    --artifact-name "${MENDER_ARTIFACT_NAME}" \
+                    --no-progress \
+                    --device-type  "${device_type}" \
+                    --provides rootfs-image.version:"${MENDER_ARTIFACT_NAME}" \
+                    --provides rootfs-image.checksum:${rootfs_img_checksum} \
+                    --output-path work/data/mender/bootstrap.mender"
+
+disk_create_file_system_from_folder "work/data/" "work/data.img" \
+    "${data_part_sectors}" "${image_fs_type}"
+run_and_log_cmd "rm -rf work/data"
 
 if [ "${MENDER_CLIENT_INSTALL}" != "y" ]; then
     log_warn "Generating Artifact with no Mender client in it; not suitable for deployment"
