@@ -39,6 +39,7 @@ echo "Running $(basename $0): $@"
 source modules/bootstrap.sh
 source modules/disk.sh
 source modules/testscfg.sh
+source modules/versioncmp.sh
 
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
@@ -203,6 +204,15 @@ fi
 # when writing the bootstrap Artifact we have to move the datadir out of the
 # way, and write the rootfs image first.
 run_and_log_cmd "mv --force work/rootfs/data work/data"
+
+if [[ "${MENDER_CLIENT_INSTALL}" == y ]]; then
+    # If the client version is less than 3.4, then log a warning
+    if ! miminum_required_version "3.4.0" "${MENDER_CLIENT_VERSION}"; then
+        log_warn "You are now installing a Mender client which does not support the " \
+                "bootstrap Artifact present in the image. This means that updates will not " \
+                "work, and your image is impossible to update"
+    fi
+fi
 
 disk_create_file_system_from_folder "work/rootfs/" "work/rootfs.img" \
     "${rootfs_image_sectors}" "${image_fs_type}"
