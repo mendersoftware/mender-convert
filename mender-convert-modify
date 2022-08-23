@@ -204,11 +204,6 @@ fi
 run_and_log_cmd "echo 'device_type=${device_type}' > work/device_type"
 run_and_log_cmd "sudo install -m 0444 work/device_type work/rootfs/data/mender/"
 
-if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
-    run_and_log_cmd "echo 'artifact_name=${MENDER_ARTIFACT_NAME}' \
-                     | sudo tee work/rootfs/etc/mender/artifact_info"
-fi
-
 log_info "Creating state scripts version file."
 case "${MENDER_CLIENT_VERSION}" in
     1*)  VERSION_STRING='2' ;;
