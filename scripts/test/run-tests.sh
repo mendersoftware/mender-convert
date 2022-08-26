@@ -157,7 +157,7 @@ else
                      || test_result=$?
   fi
 
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu" ]; then
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-raspberrypi3" ]; then
     wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/image/
     UBUNTU_SERVER_RPI_IMAGE_COMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_URL##*/}"
     convert_and_test "raspberrypi3" \
