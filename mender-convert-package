@@ -388,6 +388,7 @@ testscfg_add "MENDER_ARTIFACT_NAME" "${MENDER_ARTIFACT_NAME}"
 testscfg_add "MENDER_FEATURES" "${mender_features}"
 testscfg_add "DEPLOY_DIR_IMAGE" "${PWD}/deploy"
 testscfg_add "MENDER_MACHINE" "${device_type}"
+testscfg_add "MENDER_GRUB_D_INTEGRATION" "${MENDER_GRUB_D_INTEGRATION}"
 
 # Outputting device base only relevant for some configurations
 if [ "${MENDER_ENABLE_PARTUUID}" != "y" ]; then

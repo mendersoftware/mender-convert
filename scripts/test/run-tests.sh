@@ -123,6 +123,21 @@ else
     assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img"
   fi
 
+  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; then
+    wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
+    mkdir -p input/tests
+    cp -r "tests/ssh-public-key-overlay" "input/tests/ssh-public-key-overlay"
+    QEMU_NO_SECURE_BOOT=1 \
+                     convert_and_test \
+                     "qemux86-64" \
+                     "release-1" \
+                     "input/image/Ubuntu-Focal-x86-64.img.gz" \
+                     "--overlay input/tests/ssh-public-key-overlay" \
+                     "--config configs/ubuntu-qemux86-64_config" \
+                     "--config configs/testing/no-grub.d_config $EXTRA_CONFIG" \
+                     || test_result=$?
+  fi
+
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
     wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/image/
     RASPBIAN_IMAGE="${RASPBIAN_IMAGE_URL##*/}"
