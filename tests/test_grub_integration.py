@@ -76,8 +76,13 @@ def check_all_root_occurrences_valid(grub_cfg):
 
     assert found_expected, "Expected content (%s) not found" % expected
 
+@pytest.fixture(scope="session")
+def only_grub_d_integration(bitbake_variables):
+    if bitbake_variables["MENDER_GRUB_D_INTEGRATION"] == "n":
+        pytest.skip("grub.d integration is off, skipping test")
 
-@pytest.mark.usefixtures("setup_board", "cleanup_boot_scripts")
+
+@pytest.mark.usefixtures("setup_board", "cleanup_boot_scripts", "only_grub_d_integration")
 class TestGrubIntegration:
     @pytest.mark.min_mender_version("1.0.0")
     def test_no_root_occurrences(self, connection, latest_part_image):

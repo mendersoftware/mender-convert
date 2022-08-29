@@ -258,6 +258,13 @@ test_acceptance_ubuntu_qemux86_64:
     - cp versions_override_config input/config/versions_override_config
     - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only ubuntu-qemux86-64
 
+test_acceptance_ubuntu_qemux86_64_no_grub_d:
+  <<: *test_acceptance
+  script:
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only ubuntu-qemux86-64-no-grub-d
+
 test_acceptance_debian_qemux86_64:
   <<: *test_acceptance
   script:
