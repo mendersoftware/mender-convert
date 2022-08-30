@@ -396,7 +396,11 @@ if [ "${MENDER_ENABLE_PARTUUID}" != "y" ]; then
 fi
 
 # Something that the tests expect to be defined (originally from Yocto)
-testscfg_add "IMAGE_FSTYPES" "${image_fs_type} mender sdimg"
+if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" ]; then
+    testscfg_add "IMAGE_FSTYPES" "${image_fs_type} mender uefiimg"
+else
+    testscfg_add "IMAGE_FSTYPES" "${image_fs_type} mender sdimg"
+fi
 testscfg_add "ARTIFACTIMG_FSTYPE" "${image_fs_type}"
 
 # Save configuration file for tests
