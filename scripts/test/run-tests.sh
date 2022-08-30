@@ -102,7 +102,7 @@ else
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
     wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
     mkdir -p input/tests
-    cp -r "tests/ssh-public-key-overlay" "input/tests/ssh-public-key-overlay"
+    sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
     convert_and_test "qemux86-64" \
                      "release-1" \
                      "input/image/Ubuntu-Focal-x86-64.img.gz" \
@@ -126,7 +126,7 @@ else
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; then
     wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
     mkdir -p input/tests
-    cp -r "tests/ssh-public-key-overlay" "input/tests/ssh-public-key-overlay"
+    sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
     QEMU_NO_SECURE_BOOT=1 \
                      convert_and_test \
                      "qemux86-64" \
@@ -185,7 +185,7 @@ else
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
     wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/image/
     mkdir -p input/tests
-    cp -r "tests/ssh-public-key-overlay" "input/tests/ssh-public-key-overlay"
+    sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
     convert_and_test "qemux86-64" \
                      "release-1" \
                      "input/image/Debian-11-x86-64.img.gz" \
