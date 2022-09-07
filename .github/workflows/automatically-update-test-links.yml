@@ -1,7 +1,7 @@
 name: automatically-update-test-links
 on:
   schedule:
-    - cron: "0 03 * * 1"
+    - cron: '0 03 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -12,29 +12,24 @@ jobs:
       - uses: actions/setup-node@v2
       - name: Make changes to pull request
         run: |
-            npm ci
-            node monitor-bb.js
-            node monitor-bb-sd.js
-            node monitor-rpi.js
-            node monitor-ub-server.js
-            node monitor-raspbian-os.js
+          npm ci
+          npm run start
         working-directory: scripts/linkbot
 
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v3
         with:
-            title: "Image-Bot: New images available"
-            body: |
-                New images are available for update
-            commit-message: |
-                chore: Image-Bot image updates
+          title: 'Image-Bot: New images available'
+          body: |
+            New images are available for update
+          commit-message: |
+            chore: Image-Bot image updates
 
-                Base image updates for our provided images.
-            committer: mender-test-bot <mender@northern.tech>
-            author: mender-test-bot <mender@northern.tech>
-            signoff: true
-
+            Base image updates for our provided images.
+          committer: mender-test-bot <mender@northern.tech>
+          author: mender-test-bot <mender@northern.tech>
+          signoff: true
 
       - name: Check outputs
         run: |
