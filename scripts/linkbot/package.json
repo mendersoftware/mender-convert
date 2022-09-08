@@ -1,6 +1,25 @@
 {
+  "name": "linkbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "dependencies": {
     "bent": "^7.3.12",
     "jsdom": "^19.0.0"
-  }
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mendersoftware/mender-convert.git"
+  },
+  "author": "Northern.tech AS",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://tracker.mender.io/projects/MEN"
+  },
+  "homepage": "https://github.com/mendersoftware/mender-convert#readme"
 }

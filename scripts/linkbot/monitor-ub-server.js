@@ -1,68 +1,38 @@
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
-const fs = require('fs');
-const { updateURLLink } = require('./common');
+import { getCurrentTestData, getLinksByMatch } from './common.js';
 
-const target = "UBUNTU_SERVER_RPI_IMAGE_URL";
-const url = "http://cdimage.ubuntu.com/ubuntu/releases/";
-const reg = ".*(?<release>[0-9][02468])\.04\.?(?<minor>[0-9]{1})?.*";
+const reg = '(?<url>[a-zA-Z-://._]*)(?<release>[0-9][02468]).04.?(?<minor>[0-9]{1})?.*';
+export const target = 'UBUNTU_SERVER_RPI_IMAGE_URL';
 
-// Read the input file, and parse the variable input
-try {
-    const data = fs.readFileSync('../test/run-tests.sh', 'utf8')
-          .split('\n')
-          .filter(line => line.match(`${target}=.*`));
-    var line = data[0];
-    var m = line.match(`.*=\"${reg}\"`);
-    var imageName = m.groups.release;
-    var minor = m.groups.minor || 0;
-} catch (err) {
-    console.error(err);
-    process.exit(1);
-}
+const getReleaseName = (release, minor) => `${release}.04${minor ? `.${minor}` : ''}`;
 
-JSDOM.fromURL(url, {}).then(dom => {
-    var document = dom.window.document;
-    var refs = document.getElementsByTagName("a");
-    var matches = Array.from(refs)
-        .filter(ref => ref.textContent.match(reg))
-        .filter(ref => !ref.textContent.match(reg).groups.minor) // Ignore the minor number
-        .reduce((acc, ref) => {
-            acc.push(ref.textContent.match(reg));
-            return acc;
-        }, [])
-        .sort((a,b) => {
-            return parseInt(b.groups.release) - parseInt(a.groups.release);
-        });
-    var matchOn = matches[0].input;
-
-    return matchOn;
-
-    // Get the release image url from the releases (sub)-page
-    // const url = "http://cdimage.ubuntu.com/ubuntu/releases/"
-}).then(releaseVersion => {
-    var releasedVersion = releaseVersion.replace(/\s/g, "").replace(/\//g, "");
-    JSDOM.fromURL(`${url}${releasedVersion}/release/`, {}).then(dom => {
-        var document = dom.window.document;
-        var refs = document.getElementsByTagName("a");
-        const match = Array.from(refs).find(ref => ref.href.match(`.*ubuntu-${releasedVersion}\.?[0-9]+-preinstalled-server-armhf.*\.img\.xz$`));
-        if (match) {
-            console.log(`Ubuntu server image has a new release: ${match}`);
-            updateURLLink(`${target}=\"${match}\"`, target);
-        }
-    })
-        .catch(err => {
-            console.log('Failed to get the update URL');
-            console.log(`${url}${releasedVersion}/release/`);
-            JSDOM.fromURL(`${url}${releasedVersion}/beta/`, {})
-                .then(dom => {
-                    console.log('Only the beta is out still');
-                });
-        });
-})
-    .catch(err => {
-        console.log('Failed to get the URL');
-        console.log(url);
-        console.log(err);
-        throw err;
+// Get the release image url from the releases (sub)-page
+export const checkForUpdates = async ({ url, release }) => {
+  const releasedVersion = await getLinksByMatch(url, reg).then((links) => {
+    const matches = links.sort((a, b) => {
+      if (b.match.groups.release === a.match.groups.release) {
+        return parseInt(b.match.groups.minor) - parseInt(a.match.groups.minor);
+      }
+      return parseInt(b.match.groups.release) - parseInt(a.match.groups.release);
     });
+    const { match } = matches[0];
+    return getReleaseName(match.groups.release, match.groups.minor);
+  });
+  if (release === releasedVersion) {
+    return;
+  }
+  console.log(`Ubuntu server image has a new release: ${releasedVersion}`);
+  const links = await getLinksByMatch(`${url}${releasedVersion}/release/`, `.*ubuntu-${releasedVersion}-preinstalled-server-armhf.*\.img\.xz$`);
+  const { link, match } = links[0];
+  if (match) {
+    return { newLine: `${target}="${link}"` };
+  }
+  const betaLinks = await getLinksByMatch(`${url}${releasedVersion}/release/`, `.*ubuntu-${releasedVersion}-beta-preinstalled-server-armhf.*\.img\.xz$`);
+  if (betaLinks.length) {
+    console.log('Only the beta is out still');
+  }
+};
+
+export const determineCurrentState = () => {
+  const { minor, release, url } = getCurrentTestData(target, reg);
+  return { url, release: getReleaseName(release, minor) };
+};
