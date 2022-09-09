@@ -102,7 +102,7 @@ build:
   tags:
     - mender-qa-slave
   before_script:
-    - apt update && apt install -yy bash wget unzip awscli docker.io curl
+    - apt update && apt install -yy bash wget xz-utils awscli docker.io curl
 
     - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
     - docker load -i image.tar
@@ -110,7 +110,7 @@ build:
     - mkdir -p input
     - cd input
     - wget -q ${RASPBIAN_URL}
-    - unzip ${RASPBIAN_NAME}.zip
+    - unxz ${RASPBIAN_NAME}.xz
     - cd ..
 
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
