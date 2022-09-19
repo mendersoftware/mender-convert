@@ -36,6 +36,10 @@ variables:
   DOCKER_TLS_VERIFY: "1"
   DOCKER_TLS_CERTDIR: "/certs"
 
+  # Ubuntu distribution to use in test_acceptance jobs
+  # Jammy Jellyfish is Ubuntu 22.04
+  ACC_TESTS_UBUNTU_DISTRO: "jammy"
+
 include:
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-commits.yml'
@@ -137,23 +141,36 @@ convert_raspbian_raspberrypi4:
   variables:
     RASPBERRYPI_PLATFORM: raspberrypi4
 
+.bash_helpers: &bash_helpers |
+  # Bash function to check if the string is a final tag
+  function is_final_tag () {
+    version="$1"
+    [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && return 0 || return $?
+  }
+  # Bash function to check if the string is a build tag
+  function is_build_tag () {
+    version="$1"
+    [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-build[0-9]+$ ]] && return 0 || return $?
+  }
+
 .template_test_acceptance: &test_acceptance
   stage: test_acceptance
   needs:
     - job: build
       artifacts: true
-  image: ubuntu:22.04
+  image: ubuntu:${ACC_TESTS_UBUNTU_DISTRO}
   services:
     - docker:dind
   tags:
     - mender-qa-slave
   timeout: 2h
   before_script:
+    - *bash_helpers
     # Install dependencies
     - apt update
     - apt install -qyy bash wget git util-linux mtools python3 python3-pip
       gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
-      awscli unzip qemu-system-x86 ovmf curl docker.io s3cmd fdisk
+      awscli unzip qemu-system-x86 ovmf curl docker.io s3cmd fdisk gnupg-agent
     # Python3 dependencies
     - python3 -m pip install -U pip
     - pip3 install --ignore-installed -r https://raw.githubusercontent.com/mendersoftware/meta-mender/master/tests/acceptance/requirements_py3.txt
@@ -163,9 +180,19 @@ convert_raspbian_raspberrypi4:
     # Set mender-image-tests submodule to correct version
     - git submodule update --init --recursive
     # Get mender-artifact for the tests
-    - curl -f -O https://mender.s3.amazonaws.com/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact
-    - chmod ugo+x mender-artifact
-    - mv mender-artifact /usr/bin/
+    - if is_final_tag "${MENDER_ARTIFACT_VERSION}" || is_build_tag "${MENDER_ARTIFACT_VERSION}"; then
+      # Direct download from the pool
+    -   wget "https://downloads.mender.io/repos/debian/pool/main/m/mender-artifact/mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2B${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb"
+    -   dpkg --install mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
+    -   rm mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
+    - else
+      # Assume master and install from experimental repo
+    -   curl -fLsS https://downloads.mender.io/repos/debian/gpg | apt-key add -
+    -   echo "deb [arch=$(dpkg --print-architecture)] https://downloads.mender.io/repos/debian ubuntu/${ACC_TESTS_UBUNTU_DISTRO}/experimental main" >
+          /etc/apt/sources.list.d/mender.list
+    -   apt-get update && apt-get install mender-artifact
+    - fi
+    # Prepare versions file for mender-convert
     - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > versions_override_config
     - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> versions_override_config
     - echo "MENDER_ADDON_CONFIGURE_VERSION=${MENDER_ADDON_CONFIGURE_VERSION}" >> versions_override_config
