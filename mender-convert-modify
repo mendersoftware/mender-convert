@@ -164,6 +164,15 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
 
 fi
 
+MENDER_CLIENT_DATA_DIR_SERVICE_URL="https://raw.githubusercontent.com/mendersoftware/\
+meta-mender/e05cde10fde3646a78081709e717fb42a6c5ba44/meta-mender-core/recipes-mender/mender-client/files/mender-client-data-dir.service"
+
+run_and_log_cmd "wget --quiet -O work/mender-client-data-dir.service $MENDER_CLIENT_DATA_DIR_SERVICE_URL"
+run_and_log_cmd "sudo install -m 644 work/mender-client-data-dir.service work/rootfs/lib/systemd/system/mender-client-data-dir.service"
+run_and_log_cmd "sudo mkdir -p work/rootfs/lib/systemd/system/mender-client.service.wants"
+run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client-data-dir.service \
+    work/rootfs/lib/systemd/system/mender-client.service.wants/mender-client-data-dir.service"
+
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender"
 run_and_log_cmd "sudo mkdir -p work/rootfs/var/lib"
 run_and_log_cmd "sudo ln -sf /data/mender work/rootfs/var/lib"
