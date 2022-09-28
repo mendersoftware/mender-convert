@@ -32,4 +32,4 @@ EOF
     log_warn "New mender.conf contents: $(cat  work/rootfs/etc/mender/mender.conf)"
 
 }
-PLATFORM_MODIFY_HOOKS+=(enable_demo_configuration_in_file)
+OVERLAY_MODIFY_HOOKS+=(enable_demo_configuration_in_file)
