@@ -9,7 +9,7 @@ enable_demo_configuration_in_file() {
     run_and_log_cmd "mkdir -p work/rootfs/etc/mender"
 
     if [ ! -f work/rootfs/etc/mender/mender.conf ]; then
-        log_error "No Mender configuration file found in the work folder."
+        log_error 'No Mender configuration file found in the work folder. Either run a bootstrap script and pass the output directory as an overlay to mender-convert, or pass your own overlay with an $OVERLAY/etc/mender/mender.conf file.'
         exit 1
     fi
 

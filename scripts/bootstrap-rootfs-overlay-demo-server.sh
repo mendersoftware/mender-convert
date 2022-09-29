@@ -16,12 +16,6 @@
 # Exit if any command exits with a non-zero exit status.
 set -o errexit
 
-root_dir=$( cd "$( dirname "${BASH_SOURCE[0]}")/../"  && pwd)
-if [ "${root_dir}" != "${PWD}" ]; then
-    echo "You must execute $(basename $0) from the root directory: ${root_dir}"
-    exit 1
-fi
-
 server_ip=""
 output_dir=""
 while (("$#")); do
@@ -57,8 +51,7 @@ if [ -e ${output_dir} ]; then
 fi
 
 mkdir -p ${output_dir}/etc/mender
-mkdir -p ${root_dir}/input/resources
-cat <<- EOF > ${root_dir}/input/resources/mender.conf
+cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
   "ServerURL": "https://docker.mender.io",
   "ServerCertificate": "/etc/mender/server.crt"
@@ -80,4 +73,4 @@ wget -q "https://raw.githubusercontent.com/mendersoftware/mender/master/support/
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Demo Mender Server written to: ${root_dir}/input/resources/mender.conf"
+echo "Configuration file for using Demo Mender Server written to: ${output_dir}/etc/mender/mender.conf"
