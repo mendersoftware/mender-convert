@@ -92,11 +92,24 @@ function platform_modify() {
         run_and_log_cmd "sudo ln -fs /uboot/${f} work/rootfs/boot/${f}"
     done
 
-    # Raspberry Pi headless configuration expects boot partition to be mounted
-    # at /boot, so replace these services with /uboot
-    run_and_log_cmd "find work/rootfs/lib/ -type f -name *.service | xargs sed -i.bak 's|/boot/|/uboot/|g'"
-    log_debug "Diff from modified service files:\n$(find work/rootfs/lib/ -type f -name '*.service' | xargs -I@ bash -c 'diff -u @.bak @')"
-    run_and_log_cmd "find work/rootfs/lib/ -type f -name *.service.bak | xargs rm"
+    # Raspberry Pi headless configuration and other first boot scripts inspect the boot partition
+    # for files. Modify the hard-coded mount point for the partition from /boot to /uboot.
+
+    # Integrate with systemd services with "/boot/" hardcoded
+    files_to_modify=$(find work/rootfs/lib/ -type f -name "*.service" | xargs grep '/boot/' | cut -d: -f1 | uniq)
+
+    # MEN-5944: Integrate with raspberrypi-sys-mods/firstboot
+    # See: https://github.com/RPi-Distro/raspberrypi-sys-mods
+    if [ -f "work/rootfs/usr/lib/raspberrypi-sys-mods/firstboot" ]; then
+        files_to_modify="$files_to_modify work/rootfs/usr/lib/raspberrypi-sys-mods/firstboot"
+    fi
+
+    # Modify the files and log the changes
+    for f in $files_to_modify; do
+        run_and_log_cmd "sed -i.bak 's|/boot|/uboot|g' ${f}"
+        log_debug "Modified file ${f}\n$(diff -u ${f}.bak ${f})"
+        rm ${f}.bak
+    done
     log_info "Certain service files have been changed to align with our /uboot boot partition mount point. See convert.log for more information"
 
     run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
