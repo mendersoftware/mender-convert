@@ -104,6 +104,12 @@ function platform_modify() {
         files_to_modify="$files_to_modify work/rootfs/usr/lib/raspberrypi-sys-mods/firstboot"
     fi
 
+    # MEN-5954: Integrate with userconf-pi/userconf-service
+    # See: https://github.com/RPi-Distro/userconf-pi
+    if [ -f "work/rootfs/usr/lib/userconf-pi/userconf-service" ]; then
+        files_to_modify="$files_to_modify work/rootfs/usr/lib/userconf-pi/userconf-service"
+    fi
+
     # Modify the files and log the changes
     for f in $files_to_modify; do
         run_and_log_cmd "sed -i.bak 's|/boot|/uboot|g' ${f}"
