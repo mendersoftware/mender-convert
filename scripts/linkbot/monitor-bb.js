@@ -10,8 +10,8 @@ export const checkForUpdates = ({ url, latestDate }) =>
     if (date === latestDate) {
       return;
     }
-    const consoleLinks = await getLinksByMatch(matches[0].link, 'bullseye-minimal-arm64');
-    const result = await getLinksByMatch(consoleLinks[0].link, 'bbai64-debian.*.img.xz$').then((links) => `${target}=\"${links[0].link}\"`);
+    const consoleLinks = await getLinksByMatch(matches[0].link, 'bullseye-minimal-armhf');
+    const result = await getLinksByMatch(consoleLinks[0].link, 'am335x-debian.*.img.xz$').then((links) => `${target}=\"${links[0].link}\"`);
     return { newLine: result };
   });
 
