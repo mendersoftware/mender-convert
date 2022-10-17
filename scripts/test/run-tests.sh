@@ -33,7 +33,7 @@ BBB_DEBIAN_SDCARD_IMAGE_URL="https://debian.beagleboard.org/images/bone-debian-1
 # Not on official home page, but found via https://elinux.org/Beagleboard:BeagleBoneBlack_Debian:
 
 ## Auto-update
-BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2022-03-02/buster-console/bone-debian-10.11-console-armhf-2022-03-02-1gb.img.xz"
+BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2022-10-10/bullseye-minimal-arm64/bbai64-debian-11.5-minimal-arm64-2022-10-10-4gb.img.xz"
 
 ## Auto-update
 RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip"
@@ -43,7 +43,7 @@ UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Focal
 DEBIAN_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-11-x86-64.img.gz"
 
 ## Auto-update
-UBUNTU_SERVER_RPI_IMAGE_URL="https://cdimage.ubuntu.com/ubuntu/releases/20.04/release/ubuntu-20.04.5-preinstalled-server-armhf+raspi.img.xz"
+UBUNTU_SERVER_RPI_IMAGE_URL="https://cdimage.ubuntu.com/ubuntu/releases/22.04.1/release/ubuntu-22.04.1-preinstalled-server-armhf+raspi.img.xz"
 
 # Keep common function declarations in separate utils script
 UTILS_PATH=${0/$(basename $0)/test-utils.sh}

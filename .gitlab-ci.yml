@@ -11,8 +11,8 @@ variables:
   MENDER_ADDON_CONFIGURE_VERSION: latest
 
   ## Auto-update
-  RASPBIAN_URL: "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-01-28/2022-01-28-raspios-bullseye-armhf-lite.zip"
-  RASPBIAN_NAME: 2022-01-28-raspios-bullseye-armhf-lite
+  RASPBIAN_URL: "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-09-26/2022-09-22-raspios-bullseye-armhf-lite.img.xz"
+  RASPBIAN_NAME: 2022-09-22-raspios-bullseye-armhf-lite
 
   # Which version of mender-convert to use in published image name. Normally
   # empty, in which case the branch or tag name will be used, but this variable
