@@ -36,7 +36,7 @@ BBB_DEBIAN_SDCARD_IMAGE_URL="https://debian.beagleboard.org/images/bone-debian-1
 BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2022-03-02/buster-console/bone-debian-10.11-console-armhf-2022-03-02-1gb.img.xz"
 
 ## Auto-update
-RASPBIAN_IMAGE_URL="http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip"
+RASPBIAN_IMAGE_URL="https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-09-26/2022-09-22-raspios-bullseye-armhf-lite.img.xz"
 
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Focal-x86-64.img.gz"
 
