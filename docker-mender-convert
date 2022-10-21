@@ -24,9 +24,11 @@ if [ -z "$IMAGE_NAME" -a -z "$GIT_PROVIDED_TAG_NAME" ]; then
 fi
 
 IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_PROVIDED_TAG_NAME:+:$GIT_PROVIDED_TAG_NAME}"}
+CONFIGS_DIRECTORY=${CONFIGS_DIRECTORY:-"$(pwd)/configs"}
 DEPLOY_DIRECTORY=${DEPLOY_DIRECTORY:-"$(pwd)/deploy"}
 INPUT_DIRECTORY=${INPUT_DIRECTORY:-"$(pwd)/input"}
 LOGS_DIRECTORY=${LOGS_DIRECTORY:-"$(pwd)/logs"}
+WORK_DIRECTORY=${WORK_DIRECTORY:-"$(pwd)/work"}
 
 mkdir -p "$DEPLOY_DIRECTORY"
 mkdir -p "$LOGS_DIRECTORY"
@@ -39,9 +41,11 @@ echo "using log file at: ${LOGS_DIRECTORY}/${LOG_FILE}"
 set +e
 docker run \
   --rm \
+  -v "$CONFIGS_DIRECTORY":/mender-convert/configs \
   -v "$INPUT_DIRECTORY":/mender-convert/input \
   -v "$LOGS_DIRECTORY":/mender-convert/logs \
   -v "$DEPLOY_DIRECTORY":/mender-convert/deploy \
+  -v "$WORK_DIRECTORY":/mender-convert/work \
   --privileged=true \
   --cap-add=SYS_MODULE \
   -v /dev:/dev \

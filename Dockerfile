@@ -75,8 +75,10 @@ RUN mkdir -p /mender-convert/input
 RUN mkdir -p /mender-convert/deploy
 RUN mkdir -p /mender-convert/logs
 
+VOLUME ["/mender-convert/configs"]
 VOLUME ["/mender-convert/input"]
 VOLUME ["/mender-convert/deploy"]
 VOLUME ["/mender-convert/logs"]
+VOLUME ["/mender-convert/work"]
 
 ENTRYPOINT ["/mender-convert/docker-entrypoint.sh"]

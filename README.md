@@ -165,6 +165,11 @@ MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
    --overlay rootfs_overlay_demo/
 ```
 
+The container will use the `work/` directory as a temporary area to unpack and
+customize the image's content. You can customize the work directory path
+by setting the `WORK_DIRECTORY` env variable. To reduce the time required to
+perform the conversion, you can use tempfs or ramfs mount points.
+
 Conversion will take 10-30 minutes, depending on image size and resources
 available. You can watch `log/convert.log.XXXXX` for progress and diagnostics
 information. The exact log file path is printed before the conversion starts.
