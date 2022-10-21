@@ -1,6 +1,13 @@
 version: 2
 updates:
   - commit-message:
+      prefix: chore
+    directory: /tests
+    package-ecosystem: pip
+    schedule:
+      interval: monthly
+      day: saturday
+  - commit-message:
       prefix: "chore"
     directory: /
     package-ecosystem: gitsubmodule
