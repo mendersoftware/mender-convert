@@ -16,12 +16,6 @@
 # Exit if any command exits with a non-zero exit status.
 set -o errexit
 
-root_dir=$( cd "$( dirname "${BASH_SOURCE[0]}")/../"  && pwd)
-if [ "${root_dir}" != "${PWD}" ]; then
-    echo "You must execute $(basename $0) from the root directory: ${root_dir}"
-    exit 1
-fi
-
 tenant_token=""
 output_dir=""
 while (("$#")); do
@@ -56,8 +50,8 @@ if [ -e ${output_dir} ]; then
      sudo chown -R $(id -u) ${output_dir}
      sudo chgrp -R $(id -g) ${output_dir}
 fi
-mkdir -p ${root_dir}/input/resources
-cat <<- EOF > ${root_dir}/input/resources/mender.conf
+mkdir -p ${output_dir}/etc/mender
+cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
   "ServerURL": "https://hosted.mender.io/",
   "TenantToken": "${tenant_token}"
@@ -67,4 +61,4 @@ EOF
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Hosted Mender written to: ${root_dir}/input/resources/mender.conf"
+echo "Configuration file for using Hosted Mender written to: ${output_dir}/etc/mender/mender.conf"

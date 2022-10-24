@@ -190,15 +190,6 @@ EOF
 run_and_log_cmd "sudo cp work/mender.conf.data work/rootfs/data/mender/mender.conf"
 run_and_log_cmd "sudo chmod 600 work/rootfs/data/mender/mender.conf"
 
-if [ -f input/resources/mender.conf ]; then
-    log_info "Installing the local mender.conf file"
-    run_and_log_cmd "mkdir -p work/rootfs/etc/mender"
-    run_and_log_cmd "cp input/resources/mender.conf work/rootfs/etc/mender"
-    run_and_log_cmd "sudo chmod 600 work/rootfs/etc/mender/mender.conf"
-else
-    log_warn "No mender.conf file found in input/resources. Have you remembered to run the bootstrap script?"
-fi
-
 if [ -z "${MENDER_DEVICE_TYPE}" ]; then
     # Observed systems who do not have this file, e.g images generated with mkosi
     if [ -f work/rootfs/etc/hostname ]; then

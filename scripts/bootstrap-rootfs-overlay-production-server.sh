@@ -16,12 +16,6 @@
 # Exit if any command exits with a non-zero exit status.
 set -o errexit
 
-root_dir=$( cd "$( dirname "${BASH_SOURCE[0]}")/../"  && pwd)
-if [ "${root_dir}" != "${PWD}" ]; then
-    echo "You must execute $(basename $0) from the root directory: ${root_dir}"
-    exit 1
-fi
-
 server_url=""
 output_dir=""
 while (("$#")); do
@@ -61,24 +55,24 @@ if [ -e ${output_dir} ]; then
     sudo chgrp -R $(id -g) ${output_dir}
 fi
 
-mkdir -p ${root_dir}/input/resources
-cat <<- EOF > ${root_dir}/input/resources/mender.conf
+mkdir -p ${output_dir}/etc/mender
+cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
   "ServerURL": "${server_url}",
 EOF
 
 if [ -n "${server_cert}" ]; then
-    cat <<- EOF >> ${root_dir}/input/resources/mender.conf
+    cat <<- EOF >> ${output_dir}/etc/mender/mender.conf
   "ServerCertificate": "/etc/mender/server.crt"
 EOF
     cp -f "${server_cert}" ${output_dir}/etc/mender/server.crt
 fi
 
-cat <<- EOF >> ${root_dir}/input/resources/mender.conf
+cat <<- EOF >> ${output_dir}/etc/mender/mender.conf
 }
 EOF
 
 sudo chown -R 0 ${output_dir}
 sudo chgrp -R 0 ${output_dir}
 
-echo "Configuration file for using Production Mender Server written to: ${root_dir}/input/resources/mender.conf"
+echo "Configuration file for using Production Mender Server written to: ${output_dir}/etc/mender/mender.conf"
