@@ -230,6 +230,7 @@ run_and_log_cmd "mender-artifact write bootstrap-artifact \
                     --device-type  "${device_type}" \
                     --provides rootfs-image.version:"${MENDER_ARTIFACT_NAME}" \
                     --provides rootfs-image.checksum:${rootfs_img_checksum} \
+                    --clears-provides 'rootfs-image.*' \
                     --output-path work/data/mender/bootstrap.mender"
 
 disk_create_file_system_from_folder "work/data/" "work/data.img" \
