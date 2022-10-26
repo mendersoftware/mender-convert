@@ -111,9 +111,10 @@ function grub_install_grub_d_config() {
     # build. Instead, use `--removable`, which creates entries that automate
     # booting if you put the image into a new device, which you almost certainly
     # will after using mender-convert.
-    run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --removable --no-nvram" || ret=$?
+    local -r target_name=$(probe_grub_install_target)
+    run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --target=${target_name} --removable --no-nvram" || ret=$?
     if [ $ret -eq 0 ]; then
-        run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --no-nvram" || ret=$?
+        run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --target=${target_name} --no-nvram" || ret=$?
     fi
 
     if [ $ret -eq 0 ]; then
