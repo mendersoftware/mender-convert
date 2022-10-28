@@ -36,8 +36,10 @@ probe_arch() {
     fi
 
     target_arch="unknown"
-    if grep -q x86-64 <<< "${file_info}"; then
+    if grep -Eq "ELF 64-bit.*x86-64" <<< "${file_info}"; then
         target_arch="x86_64"
+    elif grep -Eq "ELF 32-bit.*386" <<< "${file_info}"; then
+        target_arch="i386"
     elif grep -Eq "ELF 32-bit.*ARM" <<< "${file_info}"; then
         target_arch="arm"
     elif grep -Eq "ELF 64-bit.*aarch64" <<< "${file_info}"; then
@@ -70,6 +72,27 @@ probe_grub_efi_name() {
             ;;
     esac
     echo "$efi_name"
+}
+
+# Prints GRUB grub-install target name depending on target architecture
+#
+# No input parameters and these work on the assumption that boot and root parts
+# are mounted at work/boot and work/rootfs
+probe_grub_install_target() {
+    local target_name=""
+    local -r arch=$(probe_arch)
+    case "${arch}" in
+        "x86_64")
+            target_name="x86_64-efi"
+            ;;
+        "i386")
+            target_name="i386-efi"
+            ;;
+        *)
+            log_fatal "Unsupported arch: ${arch}"
+            ;;
+    esac
+    echo "$target_name"
 }
 
 # Prints Debian arch name depending on target architecture
