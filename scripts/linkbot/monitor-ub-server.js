@@ -7,7 +7,7 @@ const getReleaseName = (release, minor) => `${release}.04${minor ? `.${minor}` :
 
 // Get the release image url from the releases (sub)-page
 export const checkForUpdates = async ({ url, release }) => {
-  const releasedVersion = await getLinksByMatch(url, reg).then((links) => {
+  const releasedVersion = await getLinksByMatch(url, reg).then(links => {
     const matches = links.sort((a, b) => {
       if (b.match.groups.release === a.match.groups.release) {
         return parseInt(b.match.groups.minor) - parseInt(a.match.groups.minor);
