@@ -4,7 +4,7 @@ const reg = 'bone-debian-(?<version>[0-9]+.[0-9]+)-iot-armhf-(?<date>[0-9]{4}-[0
 export const target = 'BBB_DEBIAN_SDCARD_IMAGE_URL';
 
 export const checkForUpdates = ({ url, imageName }) =>
-  getLinksByMatch(url, reg).then(async (links) => {
+  getLinksByMatch(url, reg).then(async links => {
     // The bone-debian setup has two parts which needs comparing:
     // * The release-version: i.e., 10.3
     // * The date: i.e., 2020-04-06

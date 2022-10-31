@@ -5,13 +5,13 @@ export const fileTypes = {
   testRunner: {
     key: 'testRunner',
     path: '../test/run-tests.sh',
-    matcher: (target) => (line) => line.match(`${target}=.*`),
+    matcher: target => line => line.match(`${target}=.*`),
     replacer: ({ newLine, target }) => [RegExp(`## Auto-update\n${target}=.*`), `## Auto-update\n${newLine}`]
   },
   ciFile: {
     key: 'ciFile',
     path: '../../.gitlab-ci.yml',
-    matcher: (target) => (line) => line.match(`${target}: .*`),
+    matcher: target => line => line.match(`${target}: .*`),
     replacer: ({ targetName, targetUrl, newName, newUrl }) => [
       RegExp(` *## Auto-update\n *${targetUrl}:.*\n *${targetName}: .*`),
       `  ## Auto-update\n  ${targetUrl}: "${newUrl}"\n  ${targetName}: ${newName}`
@@ -22,7 +22,7 @@ export const fileTypes = {
 export const updateURLLink = (updatedValues, fileType = fileTypes.testRunner.key) => {
   try {
     const data = fs.readFileSync(fileTypes[fileType].path, 'utf8').replace(...fileTypes[fileType].replacer(updatedValues));
-    fs.writeFile(fileTypes[fileType].path, data, (err) => {
+    fs.writeFile(fileTypes[fileType].path, data, err => {
       if (err) {
         console.error(err);
       }
@@ -46,7 +46,7 @@ export const getCurrentTestData = (target, matcher, fileType = fileTypes.testRun
 };
 
 export const getLinksByMatch = (url, matcher) =>
-  JSDOM.fromURL(url, {}).then((dom) => {
+  JSDOM.fromURL(url, {}).then(dom => {
     const refs = dom.window.document.getElementsByTagName('a');
     return Array.from(refs).reduce((accu, element) => {
       const match = element.textContent.match(matcher);

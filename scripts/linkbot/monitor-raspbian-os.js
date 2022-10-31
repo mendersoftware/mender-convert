@@ -4,7 +4,7 @@ const reg = 'raspios_lite_armhf-(?<date>[0-9]{4}-[0-9]{2}-[0-9]{1,2})/.*';
 export const target = 'RASPBIAN_URL';
 
 export const checkForUpdates = ({ url, imageName: currentImageName }) =>
-  getLinksByMatch(url, reg).then(async (links) => {
+  getLinksByMatch(url, reg).then(async links => {
     const { link, match } = links.sort((a, b) => Date.parse(b.match.groups.date) - Date.parse(a.match.groups.date))[0];
     const matchOn = match.input.split('/')[0];
     if (matchOn === currentImageName) {
