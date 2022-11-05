@@ -127,9 +127,9 @@ function deb_extract_package()  {
 #  $2 - Package version
 #  $3 - Arch independent (optional, default "false")
 #
-function deb_get_and_install_pacakge() {
+function deb_get_and_install_package() {
     if ! [[ $# -eq 2 || $# -eq 3 ]]; then
-        log_fatal "deb_get_and_install_pacakge() requires 2 or 3 arguments"
+        log_fatal "deb_get_and_install_package() requires 2 or 3 arguments"
     fi
     local package="$1"
     local version="$2"
