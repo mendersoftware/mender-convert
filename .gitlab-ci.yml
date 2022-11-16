@@ -100,7 +100,7 @@ build:
   services:
     - docker:dind
   tags:
-    - mender-qa-slave
+    - mender-qa-worker-generic
   before_script:
     - apt update && apt install -yy bash wget xz-utils awscli docker.io curl
 
@@ -162,7 +162,7 @@ convert_raspbian_raspberrypi4:
   services:
     - docker:dind
   tags:
-    - mender-qa-slave
+    - mender-qa-worker-mender-convert-tests
   timeout: 2h
   before_script:
     - *bash_helpers
