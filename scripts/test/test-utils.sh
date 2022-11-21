@@ -91,10 +91,13 @@ convert_and_test() {
   done
   pytest_extra_args=$@ # Optional
 
-  run_convert ${artifact_name} ${image_file} ${extra_args}
+  local ret=0
+
+  run_convert ${artifact_name} ${image_file} ${extra_args} || ret=$?
+
+  assert "${ret}" "0" "Failed to convert ${image_file}"
 
   local compression="${image_file##*.}"
-  local ret=0
 
   image_name=$(image_name_after_conversion "${image_file}" "${compression}" "${device_type}")
 
@@ -104,7 +107,7 @@ convert_and_test() {
 
   run_tests "${device_type}" "$(basename ${converted_image_uncompressed})" ${pytest_extra_args} || ret=$?
 
-  assert "${ret}" "0" "Failed to convert ${image_file}"
+  assert "${ret}" "0" "Tests failed for ${image_file}"
 
 }
 
