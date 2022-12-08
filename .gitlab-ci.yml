@@ -82,7 +82,7 @@ build:
   needs: []
   image: docker:git
   services:
-    - docker:19.03.5-dind
+    - docker:20.10.21-dind
   script:
     - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build --build-arg MENDER_ARTIFACT_VERSION=${MENDER_ARTIFACT_VERSION}
     - docker save $DOCKER_REPOSITORY:pr > image.tar
@@ -329,7 +329,7 @@ test_acceptance_ubuntu_raspberrypi3:
     - docker
   image: docker
   services:
-    - name: docker:20.10.8-dind
+    - name: docker:20.10.21-dind
       alias: docker
       command: ["--mtu=1440"] # https://gitlab.com/gitlab-com/gl-infra/production/-/issues/5590
   before_script:
