@@ -32,8 +32,6 @@ variables:
   # has a common mount for /certs (i.e. runners.docker.volumes) directory
   # and that the dind service name is always docker (default hostname).
   DOCKER_HOST: "tcp://docker:2376"
-  DOCKER_CERT_PATH: "/certs/client"
-  DOCKER_TLS_VERIFY: "1"
   DOCKER_TLS_CERTDIR: "/certs"
 
   # Ubuntu distribution to use in test_acceptance jobs
