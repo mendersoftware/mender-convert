@@ -172,13 +172,16 @@ class TestGrubIntegration:
         # * `root` variable is not set in offline copy.
         # * `fwsetup` is added somewhat randomly depending on availability both
         #   on build host and device.
+        # * locale, lang and gettext settings and module may or may not be
+        #   present depending on test host.
         try:
             connection.run("cp /data/grub-main.cfg /data/old-grub-modified.cfg")
             connection.run("cp /boot/grub/grub.cfg /data/new-grub-modified.cfg")
             connection.run(
                 r"sed -i -En -e '/\bsearch\b/{s/ --hint[^ ]*//g;}' "
                 "-e \"/^set root='hd0,gpt1'$/d\" "
-                r"-e '\,### BEGIN /etc/grub.d/30_uefi-firmware ###,{p; n; :loop; \,### END /etc/grub.d/30_uefi-firmware ###,b end; n; b loop; :end;}' "
+                r"-e '\,### BEGIN /etc/grub.d/30_uefi-firmware ###,{p; n; :uefi_loop; \,### END /etc/grub.d/30_uefi-firmware ###,b uefi_end; n; b uefi_loop; :uefi_end;}' "
+                r"-e ':locale_loop; /^\s*(set (locale_dir|lang)=|insmod gettext)/{n; b locale_loop;}' "
                 "-e p "
                 "/data/old-grub-modified.cfg /data/new-grub-modified.cfg"
             )
@@ -193,7 +196,8 @@ class TestGrubIntegration:
             connection.run(
                 r"sed -i -En -e '/\bsearch\b/{s/ --hint[^ ]*//g;}' "
                 "-e \"/^set root='hd0,gpt1'$/d\" "
-                r"-e '\,### BEGIN /etc/grub.d/30_uefi-firmware ###,{p; n; :loop; \,### END /etc/grub.d/30_uefi-firmware ###,b end; n; b loop; :end;}' "
+                r"-e '\,### BEGIN /etc/grub.d/30_uefi-firmware ###,{p; n; :uefi_loop; \,### END /etc/grub.d/30_uefi-firmware ###,b uefi_end; n; b uefi_loop; :uefi_end;}' "
+                r"-e ':locale_loop; /^\s*(set (locale_dir|lang)=|insmod gettext)/{n; b locale_loop;}' "
                 "-e p "
                 "/data/old-grub-mender-grubenv-modified.cfg /data/new-grub-mender-grubenv-modified.cfg"
             )
