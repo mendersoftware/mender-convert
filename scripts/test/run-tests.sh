@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 set -e
 
 usage() {
-  echo "$0 [--config EXTRA_CONFIG_FILE] <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME>"
+  echo "$0 [--config EXTRA_CONFIG_FILE] <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME> [-- <pytest-options>]"
   exit 1
 }
 
@@ -87,6 +87,10 @@ while [ -n "$1" ]; do
       EXTRA_CONFIG="$EXTRA_CONFIG --config $2"
       shift
       ;;
+    --)
+      shift
+      break
+      ;;
   esac
   shift
 done
@@ -94,7 +98,7 @@ done
 test_result=0
 
 if [ -n "$PREBUILT_IMAGE" ]; then
-  run_tests $PREBUILT_IMAGE \
+  run_tests $PREBUILT_IMAGE "$@" \
             || test_result=$?
   exit $test_result
 
@@ -108,6 +112,8 @@ else
                      "input/image/Ubuntu-Focal-x86-64.img.gz" \
                      "--overlay input/tests/ssh-public-key-overlay" \
                      "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" \
+                     "--" \
+                     "$@" \
                      || test_result=$?
 
     echo >&2 "----------------------------------------"
@@ -135,6 +141,8 @@ else
                      "--overlay input/tests/ssh-public-key-overlay" \
                      "--config configs/ubuntu-qemux86-64_config" \
                      "--config configs/testing/no-grub.d_config $EXTRA_CONFIG" \
+                     "--" \
+                     "$@" \
                      || test_result=$?
   fi
 
@@ -145,6 +153,8 @@ else
                      "release-1" \
                      "input/image/${RASPBIAN_IMAGE}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
+                     "--" \
+                     "$@" \
                      || test_result=$?
   fi
 
@@ -158,6 +168,8 @@ else
                      "release-1" \
                      "input/image/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_sdcard_config $EXTRA_CONFIG" \
+                     "--" \
+                     "$@" \
                      || test_result=$?
 
     rm -rf deploy
@@ -169,6 +181,8 @@ else
                      "release-1" \
                      "input/image/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
                      "--config configs/beaglebone_black_debian_emmc_config $EXTRA_CONFIG" \
+                     "--" \
+                     "$@" \
                      || test_result=$?
   fi
 
@@ -179,6 +193,8 @@ else
                      "release-1" \
                      "input/image/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
+                     "--" \
+                     "$@" \
                      || test_result=$?
   fi
 
@@ -191,6 +207,8 @@ else
                      "input/image/Debian-11-x86-64.img.gz" \
                      "--overlay input/tests/ssh-public-key-overlay" \
                      "--config configs/debian-qemux86-64_config $EXTRA_CONFIG" \
+                     "--" \
+                     "$@" \
                      || test_result=$?
   fi
 
