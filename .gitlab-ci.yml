@@ -25,6 +25,8 @@ variables:
   # Whether to publish packages automatically - they can always be published manually
   PUBLISH_MENDER_CONVERT_AUTOMATIC: "false"
 
+  TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE: "2"
+
   DEBIAN_FRONTEND: noninteractive
 
   # Docker dind configuration.
@@ -229,7 +231,11 @@ convert_raspbian_raspberrypi4:
     - mv ${RASPBERRYPI_PLATFORM} deploy
     # Extract converted Raspbian artifacts
     - unxz deploy/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
-    - ./scripts/test/run-tests.sh --prebuilt-image raspberrypi ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+    - ./scripts/test/run-tests.sh
+      --prebuilt-image raspberrypi
+      ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 test_acceptance_prebuilt_raspberrypi3:
   <<: *test_acceptance_prebuilt_raspberrypi
@@ -256,42 +262,66 @@ test_acceptance_ubuntu_qemux86_64:
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only ubuntu-qemux86-64
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only ubuntu-qemux86-64
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 test_acceptance_ubuntu_qemux86_64_no_grub_d:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only ubuntu-qemux86-64-no-grub-d
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only ubuntu-qemux86-64-no-grub-d
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 test_acceptance_debian_qemux86_64:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only debian-qemux86-64
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only debian-qemux86-64
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 test_acceptance_raspberrypi:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only raspberrypi3
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only raspberrypi3
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 test_acceptance_beaglebone:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only beaglebone
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only beaglebone
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 test_acceptance_ubuntu_raspberrypi3:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh --config input/config/versions_override_config --only ubuntu-raspberrypi3
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only ubuntu-raspberrypi3
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 .template:publish:s3:
   stage: publish
@@ -432,5 +462,7 @@ test:hardware:acceptance:
       --prebuilt-image
       raspberrypi4
       "${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+      --
       --hardware-testing
       --host ${SSH_JUMP_HOST_IP}:${SSH_JUMP_HOST_PORT} mender-image-tests -k 'not test_network_based_image_update and not test_image_update_broken_kernel'"
+      -n 1

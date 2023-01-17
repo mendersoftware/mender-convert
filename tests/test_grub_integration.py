@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import subprocess
 from utils.common import (
     extract_partition,
     get_no_sftp,
+    make_tempdir,
 )
 
 
@@ -93,57 +94,40 @@ class TestGrubIntegration:
         partition."""
 
         # First, check that the offline generated scripts don't have any.
-        extract_partition(latest_part_image, 1)
-        try:
+        with make_tempdir() as tmpdir:
+            extract_partition(latest_part_image, 1, tmpdir)
             subprocess.check_call(
-                ["mcopy", "-i", "img1.fs", "::/grub-mender-grubenv/grub.cfg", "."]
+                ["mcopy", "-i", f"{tmpdir}/img1.fs", "::/grub-mender-grubenv/grub.cfg", tmpdir]
             )
-            check_all_root_occurrences_valid("grub.cfg")
-        finally:
-            os.remove("img1.fs")
-            os.remove("grub.cfg")
+            check_all_root_occurrences_valid(f"{tmpdir}/grub.cfg")
 
-        extract_partition(latest_part_image, 2)
-        try:
+            extract_partition(latest_part_image, 2, tmpdir)
             subprocess.check_call(
                 [
                     "debugfs",
                     "-R",
-                    "dump -p /boot/grub-mender-grubenv.cfg grub-mender-grubenv.cfg",
-                    "img2.fs",
+                    f"dump -p /boot/grub-mender-grubenv.cfg {tmpdir}/grub-mender-grubenv.cfg",
+                    f"{tmpdir}/img2.fs",
                 ]
             )
-            check_all_root_occurrences_valid("grub-mender-grubenv.cfg")
-        finally:
-            os.remove("img2.fs")
-            os.remove("grub-mender-grubenv.cfg")
+            check_all_root_occurrences_valid(f"{tmpdir}/grub-mender-grubenv.cfg")
 
         # Then, check that the runtime generated scripts don't have any.
-        get_no_sftp("/boot/grub/grub.cfg", connection)
-        try:
-            check_all_root_occurrences_valid("grub.cfg")
-        finally:
-            os.remove("grub.cfg")
+        with make_tempdir() as tmpdir:
+            get_no_sftp("/boot/grub/grub.cfg", connection, local=tmpdir)
+            check_all_root_occurrences_valid(f"{tmpdir}/grub.cfg")
 
-        get_no_sftp("/boot/grub-mender-grubenv.cfg", connection)
-        try:
-            check_all_root_occurrences_valid("grub-mender-grubenv.cfg")
-        finally:
-            os.remove("grub-mender-grubenv.cfg")
+            get_no_sftp("/boot/grub-mender-grubenv.cfg", connection, local=tmpdir)
+            check_all_root_occurrences_valid(f"{tmpdir}/grub-mender-grubenv.cfg")
 
         # Check again after running `update-grub`.
         connection.run("grub-install && update-grub")
-        get_no_sftp("/boot/grub/grub.cfg", connection)
-        try:
-            check_all_root_occurrences_valid("grub.cfg")
-        finally:
-            os.remove("grub.cfg")
+        with make_tempdir() as tmpdir:
+            get_no_sftp("/boot/grub/grub.cfg", connection, local=tmpdir)
+            check_all_root_occurrences_valid(f"{tmpdir}/grub.cfg")
 
-        get_no_sftp("/boot/grub-mender-grubenv.cfg", connection)
-        try:
-            check_all_root_occurrences_valid("grub-mender-grubenv.cfg")
-        finally:
-            os.remove("grub-mender-grubenv.cfg")
+            get_no_sftp("/boot/grub-mender-grubenv.cfg", connection, local=tmpdir)
+            check_all_root_occurrences_valid(f"{tmpdir}/grub-mender-grubenv.cfg")
 
     @pytest.mark.min_mender_version("1.0.0")
     def test_offline_and_runtime_boot_scripts_identical(self, connection):
