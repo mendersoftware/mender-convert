@@ -25,7 +25,7 @@ variables:
   # Whether to publish packages automatically - they can always be published manually
   PUBLISH_MENDER_CONVERT_AUTOMATIC: "false"
 
-  TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE: "2"
+  TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE: "4"
 
   DEBIAN_FRONTEND: noninteractive
 
