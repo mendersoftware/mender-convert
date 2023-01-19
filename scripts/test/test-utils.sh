@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -155,8 +155,8 @@ run_tests() {
     --board-type="${device_type}" \
     --mender-image="${converted_image_name}.sdimg" \
     --sdimg-location="${MENDER_CONVERT_DIR}/deploy" \
-    --ssh-priv-key="./ssh-priv-key/key" \
-    --qemu-wrapper="../scripts/test/mender-convert-qemu" \
+    --ssh-priv-key="${MENDER_CONVERT_DIR}/tests/ssh-priv-key/key" \
+    --qemu-wrapper="${MENDER_CONVERT_DIR}/scripts/test/mender-convert-qemu" \
     ${pytest_extra_args}
 
   exitcode=$?
