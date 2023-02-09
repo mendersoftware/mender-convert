@@ -207,10 +207,10 @@ run_and_log_cmd "mv --force work/rootfs/data work/data"
 
 if [[ "${MENDER_CLIENT_INSTALL}" == y ]]; then
     # If the client version is less than 3.4, then log a warning
-    if ! miminum_required_version "3.4.0" "${MENDER_CLIENT_VERSION}"; then
-        log_warn "You are now installing a Mender client which does not support the " \
-                "bootstrap Artifact present in the image. This means that updates will not " \
-                "work, and your image is impossible to update"
+    if ! minimum_required_version "3.4.0" "${MENDER_CLIENT_VERSION}"; then
+        log_warn "You are now installing a Mender client which does not support the "
+        log_warn "bootstrap Artifact present in the image. This means that updates will not "
+        log_warn "work, and your image is impossible to update"
     fi
 fi
 
