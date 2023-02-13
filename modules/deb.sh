@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -111,7 +111,10 @@ function deb_extract_package()  {
     cd ${extract_dir}
     run_and_log_cmd "ar -xv ${deb_package}"
     mkdir -p files
-    run_and_log_cmd "sudo tar xJf data.tar.xz -C files"
+
+    local -r data_archive=$(find . -maxdepth 1 -type f -regex '.*/data\.tar\.\(zst\|xz\)'  -printf '%P\n' -quit)
+    run_and_log_cmd "sudo tar xf ${data_archive} -C files"
+
     cd - > /dev/null 2>&1
 
     run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir}/files/ ${dest_dir}"
