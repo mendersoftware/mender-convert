@@ -52,6 +52,7 @@ docker run \
   -v /lib/modules:/lib/modules:ro \
   --env MENDER_ARTIFACT_NAME="${MENDER_ARTIFACT_NAME}" \
   --env MENDER_CONVERT_LOG_FILE=logs/"${LOG_FILE}" \
+  --env MENDER_CONVERT_VERSION=${GIT_PROVIDED_TAG_NAME} \
   "$IMAGE_NAME" "$@"
 
 exit_code=$?
