@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -25,6 +25,12 @@ if [ "$UID" -ne 0 ]; then
     echo "We'll need root for this..." 1>&2
     exec sudo "$0" "$@"
 fi
+
+DEBIAN_CODENAME="bullseye"
+DEBIAN_IMAGE_ID="Debian-11"
+
+UBUNTU_CODENAME="jammy"
+UBUNTU_IMAGE_ID="Ubuntu-Jammy"
 
 while [ -n "$1" ]; do
     case "$1" in
@@ -53,9 +59,9 @@ cleanup_losetup() {
 }
 
 generate_debian() {
-    local -r image="Debian-11-x86-64.img"
+    local -r image="${DEBIAN_IMAGE_ID}-x86-64.img"
 
-    mkosi --root-size=2G --distribution=debian --release=bullseye --format=gpt_ext4 --bootable --checksum \
+    mkosi --root-size=2G --distribution=debian --release="$DEBIAN_CODENAME" --format=gpt_ext4 --bootable --checksum \
           --password password --package=openssh-server,dhcpcd5 --package grub-efi-amd64-signed \
           --package shim-signed --package lsb-release --output="$image" build
 
@@ -65,9 +71,9 @@ generate_debian() {
 }
 
 generate_ubuntu() {
-    local -r image="Ubuntu-Focal-x86-64.img"
+    local -r image="${UBUNTU_IMAGE_ID}-x86-64.img"
 
-    mkosi --root-size=2G --distribution=ubuntu --release=focal --format=gpt_ext4 --bootable --checksum \
+    mkosi --root-size=2G --distribution=ubuntu --release="$UBUNTU_CODENAME" --format=gpt_ext4 --bootable --checksum \
           --password password --package=openssh-server,dhcpcd5 --package grub-efi-amd64-signed \
           --package shim-signed --package lsb-release --output="$image" build
 
