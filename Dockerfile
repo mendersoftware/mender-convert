@@ -17,6 +17,7 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # For 'ar' command to unpack .deb
     binutils \
     xz-utils \
+    zstd \
 # to be able to detect file system types of extracted images
     file \
 # to copy files between rootfs directories
