@@ -152,12 +152,22 @@ class TestGrubIntegration:
             connection.run("rm -f /data/new-grub-efi-modified.cfg")
 
         # Another few differences we work around in the main grub files:
+        #
         # * `--hint` parameters are not generated in offline copy.
+        #
         # * `root` variable is not set in offline copy.
+        #
         # * `fwsetup` is added somewhat randomly depending on availability both
         #   on build host and device.
+        #
         # * locale, lang and gettext settings and module may or may not be
         #   present depending on test host.
+        #
+        # * Inside the `00_header` section, ignore the `search` functions which
+        #   set the root variable. This is safe because we have a later script
+        #   which sets the root again (`07_mender_choose_partitions_grub.cfg` at
+        #   the time of writing). These are sometimes inside an if condition
+        #   using `feature_platform_search_hint`, which we also need to ignore.
         try:
             connection.run("cp /data/grub-main.cfg /data/old-grub-modified.cfg")
             connection.run("cp /boot/grub/grub.cfg /data/new-grub-modified.cfg")
@@ -169,7 +179,36 @@ class TestGrubIntegration:
                 "-e p "
                 "/data/old-grub-modified.cfg /data/new-grub-modified.cfg"
             )
-            connection.run("diff -u /data/old-grub-modified.cfg /data/new-grub-modified.cfg")
+            connection.run(
+                "sed -i -En -e '"
+                r"""
+\%BEGIN /etc/grub.d/00_header% {
+  :header_loop;
+  /if .*feature_platform_search_hint/ {
+    :hint_loop;
+    /^ *fi *$/ ! {
+      n;
+      b hint_loop;
+    };
+    n;
+  };
+  /^ *search .*--set=root/ {
+    n;
+    b header_loop;
+  };
+  \%END /etc/grub.d/00_header% ! {
+    p;
+    n;
+    b header_loop;
+  };
+};
+p;
+' """
+                "/data/old-grub-modified.cfg /data/new-grub-modified.cfg"
+            )
+            connection.run(
+                "diff -u /data/old-grub-modified.cfg /data/new-grub-modified.cfg"
+            )
         finally:
             connection.run("rm -f /data/old-grub-modified.cfg /data/new-grub-modified.cfg")
 
@@ -183,6 +222,33 @@ class TestGrubIntegration:
                 r"-e '\,### BEGIN /etc/grub.d/30_uefi-firmware ###,{p; n; :uefi_loop; \,### END /etc/grub.d/30_uefi-firmware ###,b uefi_end; n; b uefi_loop; :uefi_end;}' "
                 r"-e ':locale_loop; /^\s*(set (locale_dir|lang)=|insmod gettext)/{n; b locale_loop;}' "
                 "-e p "
+                "/data/old-grub-mender-grubenv-modified.cfg /data/new-grub-mender-grubenv-modified.cfg"
+            )
+            connection.run(
+                "sed -i -En -e '"
+                r"""
+\%BEGIN /etc/grub.d/00_header% {
+  :header_loop;
+  /if .*feature_platform_search_hint/ {
+    :hint_loop;
+    /^ *fi *$/ ! {
+      n;
+      b hint_loop;
+    };
+    n;
+  };
+  /^ *search .*--set=root/ {
+    n;
+    b header_loop;
+  };
+  \%END /etc/grub.d/00_header% ! {
+    p;
+    n;
+    b header_loop;
+  };
+};
+p;
+' """
                 "/data/old-grub-mender-grubenv-modified.cfg /data/new-grub-mender-grubenv-modified.cfg"
             )
             connection.run(
