@@ -162,7 +162,7 @@ MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
    --disk-image input/image/$INPUT_DISK_IMAGE \
    --config configs/raspberrypi3_config \
    --config input/config/$CUSTOM_CONFIG \
-   --overlay rootfs_overlay_demo/
+   --overlay rootfs_overlay_demo
 ```
 
 The container will use the `work/` directory as a temporary area to unpack and
@@ -194,7 +194,7 @@ Start the conversion process with:
 MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
    --disk-image input/$INPUT_DISK_IMAGE \
    --config configs/raspberrypi3_config \
-   --overlay rootfs_overlay_demo/
+   --overlay rootfs_overlay_demo
 ```
 
 **NOTE!** You will be prompted to enter `sudo` password during the conversion
