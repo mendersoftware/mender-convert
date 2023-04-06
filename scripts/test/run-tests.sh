@@ -38,7 +38,7 @@ BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/bb.org/testing/2022-03-02/b
 ## Auto-update
 RASPBIAN_IMAGE_URL="https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-09-26/2022-09-22-raspios-bullseye-armhf-lite.img.xz"
 
-UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Focal-x86-64.img.gz"
+UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Jammy-x86-64.img.gz"
 
 DEBIAN_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-11-x86-64.img.gz"
 
@@ -109,7 +109,7 @@ else
     sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
     convert_and_test "qemux86-64" \
                      "release-1" \
-                     "input/image/Ubuntu-Focal-x86-64.img.gz" \
+                     "input/image/Ubuntu-Jammy-x86-64.img.gz" \
                      "--overlay input/tests/ssh-public-key-overlay" \
                      "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" \
                      "--" \
@@ -120,13 +120,13 @@ else
     echo >&2 "Running the uncompressed test"
     echo >&2 "----------------------------------------"
     rm -rf deploy
-    gunzip --force "input/image/Ubuntu-Focal-x86-64.img.gz"
+    gunzip --force "input/image/Ubuntu-Jammy-x86-64.img.gz"
     run_convert "release-2" \
-                "input/image/Ubuntu-Focal-x86-64.img" \
+                "input/image/Ubuntu-Jammy-x86-64.img" \
                 "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
     ret=0
-    test -f deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img || ret=$?
-    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Focal-x86-64-qemux86-64-mender.img"
+    test -f deploy/Ubuntu-Jammy-x86-64-qemux86-64-mender.img || ret=$?
+    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Jammy-x86-64-qemux86-64-mender.img"
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; then
@@ -137,7 +137,7 @@ else
                      convert_and_test \
                      "qemux86-64" \
                      "release-1" \
-                     "input/image/Ubuntu-Focal-x86-64.img.gz" \
+                     "input/image/Ubuntu-Jammy-x86-64.img.gz" \
                      "--overlay input/tests/ssh-public-key-overlay" \
                      "--config configs/ubuntu-qemux86-64_config" \
                      "--config configs/testing/no-grub.d_config $EXTRA_CONFIG" \

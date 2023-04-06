@@ -6,7 +6,7 @@ chardet==5.1.0
 cryptography==39.0.1
 filelock==3.9.0
 idna==3.4
-iniconfig==1.1.1
+iniconfig==2.0.0
 invoke==2.0.0
 packaging==23.0
 pathlib2==2.3.7.post1
@@ -19,7 +19,7 @@ pyparsing==3.0.9
 pytest==7.2.1
 pytest-html==3.2.0
 pytest-metadata==2.0.4
-pytest-xdist==2.5.0
+pytest-xdist==3.2.0
 python-lzo==1.14
 PyYAML==6.0
 redo==2.0.4
