@@ -277,82 +277,149 @@ else
     log_info "Using input diskimage partition scheme (${partition_scheme})"
 fi
 
-# Create partition table.
-if [ "${partition_scheme}" == "gpt" ]; then
-    log_info "Writing GPT partition table"
-    run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
-    run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
-    # Keep the uuid of the original gpt table for the boot partition
-    boot_partuuid=$(disk_get_part_value "${disk_image}" 1 UUID)
-    log_info "Updating GPT partition uuid of the boot partition in image: ${img_path} to ${boot_partuuid}"
-    run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
+# Do encrypted check 
+if [ "${MENDER_USE_LUKS}" == "y" ]; then
+  log_info "Encrypting Rootfs"
+  log_info "Creating GPT partition table"
+  run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
+  run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
+  # Keep the uuid of the original gpt table for the boot partition
+  boot_partuuid=$(disk_get_part_value "${disk_image}" 1 UUID)
+  log_info "Updating GPT partition uuid of the boot partition in image: ${img_path} to ${boot_partuuid}"
+  run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
+  
+  run_and_log_cmd "${PARTED} -s ${img_path} set 1 boot on"
+  run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsa_start} ${data_end}"
+  run_and_log_cmd "${PARTED} -s ${img_path} print"
+  
+  #TODO Determine if using LUKS logical partitions does something to the size required.  
+  run_and_log_cmd loop_device=$(sudo losetup --offset $(( ${rootfsa_start} * 512 )) --sizelimit $((( 2 * ${rootfs_part_sectors} + ${data_part_sectors} ) * 512 )) --show --find ${img_path})
+
+  
+  log_info "Loop Device used ${loop_device}, offset ${rootfsa_start} sizelimit $((2 * ${rootfs_part_sectors} + ${data_part_sectors} * 2))"
+  run_and_log_cmd sudo cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --verify-passphrase ${loop_device}
+
+  log_info "Openning LUKS "
+  run_and_log_cmd sudo cryptsetup luksOpen ${loop_device} mender_crypt
+
+  log_info "Creating Physical volume"
+  run_and_log_cmd sudo pvcreate /dev/mapper/mender_crypt
+   
+  volume_group_name=vge_mender
+  rootfsa_name=rootfsa
+  rootfsb_name=rootfsb
+  data_name=data
+
+  log_info "create a logical volume group"
+  run_and_log_cmd sudo vgcreate ${volume_group_name} /dev/mapper/mender_crypt
+  run_and_log_cmd sudo vgs
+
+  log_info "Creating logical volumes"
+  run_and_log_cmd sudo lvcreate -n ${rootfsa_name} -L "${rootfs_size_mb}M" ${volume_group_name}
+  run_and_log_cmd sudo lvcreate -n ${rootfsb_name} -L "${rootfs_size_mb}M" ${volume_group_name}
+  run_and_log_cmd sudo lvcreate -n ${data_name} -L "${data_size_mb}M" ${volume_group_name}
+  run_and_log_cmd sudo lvs
+
+  log_info "Write Partitions"
+  rootfsa_filepath="/dev/${volume_group_name}/${rootfsa_name}"
+  rootfsb_filepath="/dev/${volume_group_name}/${rootfsb_name}"
+  data_filepath="/dev/${volume_group_name}/${data_name}"
+
+  # Write boot-gap
+  if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
+      log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
+      disk_write_at_offset "${output_dir}/boot-gap.bin" "${img_path}" "1"
+  fi
+
+  log_info "Writing boot partition image"
+  disk_write_at_offset "${boot_part}" "${img_path}" "${boot_part_start}"
+  log_info "Writing rootfs A image"
+  run_and_log_cmd sudo dd if="${output_dir}/rootfs.img" of="${rootfsa_filepath}"
+  log_info "Writing rootfs B image"
+  run_and_log_cmd sudo dd if="${output_dir}/rootfs.img" of="${rootfsb_filepath}"
+  log_info "Writing data image"
+  run_and_log_cmd sudo dd if="${output_dir}/data.img" of="${data_filepath}"
+  
+
 else
-    log_info "Writing DOS (MBR) partition table"
-    run_and_log_cmd "${PARTED} -s ${img_path} mklabel msdos"
-    run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart primary fat32 ${boot_part_start} ${boot_part_end}"
-fi
-run_and_log_cmd "${PARTED} -s ${img_path} set 1 boot on"
-run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsa_start} ${rootfsa_end}"
-run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsb_start} ${rootfsb_end}"
-run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${data_start} ${data_end}"
-run_and_log_cmd "${PARTED} -s ${img_path} print"
+  # Create partition table.
+  if [ "${partition_scheme}" == "gpt" ]; then
+      log_info "Writing GPT partition table"
+      run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
+      run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
+      # Keep the uuid of the original gpt table for the boot partition
+      boot_partuuid=$(disk_get_part_value "${disk_image}" 1 UUID)
+      log_info "Updating GPT partition uuid of the boot partition in image: ${img_path} to ${boot_partuuid}"
+      run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
+  else
+      log_info "Writing DOS (MBR) partition table"
+      run_and_log_cmd "${PARTED} -s ${img_path} mklabel msdos"
+      run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart primary fat32 ${boot_part_start} ${boot_part_end}"
+  fi
+  run_and_log_cmd "${PARTED} -s ${img_path} set 1 boot on"
+  run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsa_start} ${rootfsa_end}"
+  run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsb_start} ${rootfsb_end}"
+  run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${data_start} ${data_end}"
+  run_and_log_cmd "${PARTED} -s ${img_path} print"
 
-# Update partition uuids if required
-if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
-    boot_partuuid=$(disk_get_partuuid_from_device "${boot_part_device}")
-    rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
-    rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
-    data_partuuid=$(disk_get_partuuid_from_device "${data_part_device}")
+  # Update partition uuids if required
+  if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+      boot_partuuid=$(disk_get_partuuid_from_device "${boot_part_device}")
+      rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
+      rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+      data_partuuid=$(disk_get_partuuid_from_device "${data_part_device}")
 
-    if [ "${partition_scheme}" == "gpt" ]; then
+      if [ "${partition_scheme}" == "gpt" ]; then
         log_info "Updating GPT partition uuids in image: '${img_path}'"
         run_and_log_cmd "sgdisk -u ${MENDER_BOOT_PART_NUMBER}:${boot_partuuid} '${img_path}'"
         run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_A_NUMBER}:${rootfsa_partuuid} '${img_path}'"
         run_and_log_cmd "sgdisk -u ${MENDER_ROOTFS_PART_B_NUMBER}:${rootfsb_partuuid} '${img_path}'"
         run_and_log_cmd "sgdisk -u ${MENDER_DATA_PART_NUMBER}:${data_partuuid} '${img_path}'"
-    else
+      else
         diskid=$(disk_get_partuuid_dos_diskid_from_device "${root_part_a_device}")
         log_info "Updating MBR disk identifier for partition uuid support to: '0x${diskid}'"
         run_and_log_cmd "xxd -r -p <<< '${diskid}' | LC_ALL=C rev | dd of='${img_path}' bs=1 seek=440 count=4 conv=notrunc"
-    fi
+      fi
+
+  fi
+
+  # Write boot-gap
+  if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
+      log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
+      disk_write_at_offset "${output_dir}/boot-gap.bin" "${img_path}" "1"
+  fi
+
+  # Unmount filesystem image files
+  run_and_log_cmd "sudo umount -f work/boot"
+  run_and_log_cmd "sudo umount -f work/rootfs"
+
+  # Burn Partitions
+  log_info "Writing boot partition image"
+  disk_write_at_offset "${boot_part}" "${img_path}" "${boot_part_start}"
+  log_info "Writing rootfsa partition image"
+  disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsa_start}"
+  log_info "Writing rootfsb partition image"
+  disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsb_start}"
+  log_info "Writing data partition image"
+  disk_write_at_offset "${output_dir}/data.img" "${img_path}" "${data_start}"
+
 
 fi
+  log_info "Performing platform specific package operations (if any)"
+  for hook in "${PLATFORM_PACKAGE_HOOKS[@]}"; do
+      log_info "Running hook: $hook"
+      eval $hook
+  done
 
-# Write boot-gap
-if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
-    log_info "Writing boot gap of size: ${boot_part_sectors} (sectors)"
-    disk_write_at_offset "${output_dir}/boot-gap.bin" "${img_path}" "1"
-fi
-
-# Unmount filesystem image files
-run_and_log_cmd "sudo umount -f work/boot"
-run_and_log_cmd "sudo umount -f work/rootfs"
-
-# Burn Partitions
-log_info "Writing boot partition image"
-disk_write_at_offset "${boot_part}" "${img_path}" "${boot_part_start}"
-log_info "Writing rootfsa partition image"
-disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsa_start}"
-log_info "Writing rootfsb partition image"
-disk_write_at_offset "${output_dir}/rootfs.img" "${img_path}" "${rootfsb_start}"
-log_info "Writing data partition image"
-disk_write_at_offset "${output_dir}/data.img" "${img_path}" "${data_start}"
-
-log_info "Performing platform specific package operations (if any)"
-for hook in "${PLATFORM_PACKAGE_HOOKS[@]}"; do
-    log_info "Running hook: $hook"
-    eval $hook
-done
-
-# Create bmap index
-if [ "${MENDER_USE_BMAP}" == "y" ]; then
-    BMAP_TOOL="/usr/bin/bmaptool"
-    if [ ! -e "${BMAP_TOOL}" ]; then
-        log_error "You have enabled the MENDER_USE_BMAP option, but we could not find the required 'bmaptool'"
-        log_fatal "You can install 'bmaptool' with: apt-get install bmap-tools (on Debian based distributions)"
-    fi
-    run_and_log_cmd "${BMAP_TOOL} create ${img_path} > ${img_path}.bmap"
-fi
+  # Create bmap index
+  if [ "${MENDER_USE_BMAP}" == "y" ]; then
+      BMAP_TOOL="/usr/bin/bmaptool"
+      if [ ! -e "${BMAP_TOOL}" ]; then
+    log_error "You have enabled the MENDER_USE_BMAP option, but we could not find the required 'bmaptool'"
+    log_fatal "You can install 'bmaptool' with: apt-get install bmap-tools (on Debian based distributions)"
+      fi
+      run_and_log_cmd "${BMAP_TOOL} create ${img_path} > ${img_path}.bmap"
+  fi
 
 case "${MENDER_COMPRESS_DISK_IMAGE}" in
     gzip)
