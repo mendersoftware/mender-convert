@@ -293,7 +293,7 @@ if [ "${MENDER_USE_LUKS}" == "y" ]; then
   run_and_log_cmd "${PARTED} -s ${img_path} print"
   
   #TODO Determine if using LUKS logical partitions does something to the size required.  
-  run_and_log_cmd loop_device=$(sudo losetup --offset $(( ${rootfsa_start} * 512 )) --sizelimit $((( 2 * ${rootfs_part_sectors} + ${data_part_sectors} ) * 512 )) --show --find ${img_path})
+  run_and_log_cmd sudo losetup --offset $(( ${rootfsa_start} * 512 )) --sizelimit $((( 2 * ${rootfs_part_sectors} + ${data_part_sectors} ) * 512 )) --show --find ${img_path} | loop_device
 
   
   log_info "Loop Device used ${loop_device}, offset ${rootfsa_start} sizelimit $((2 * ${rootfs_part_sectors} + ${data_part_sectors} * 2))"

@@ -5,3 +5,4 @@ mender_local_config
 *.xml
 *.html
 logs/convert.log*
+*.sw*

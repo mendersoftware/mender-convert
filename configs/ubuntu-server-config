@@ -1,4 +1,4 @@
-# This configuration can be used to run any distribution on a any x86-64 machine.
+#This configuration can be used to run any distribution on a any x86-64 machine.
 # As example is used CentOS distribution but can be applied to others also.
 #
 # Install CentOS using classic partition scheme (not use LVM) with minimal
@@ -31,9 +31,9 @@
 #	sgdisk -e /dev/sda
 #
 
-MENDER_STORAGE_DEVICE_BASE=/dev/sda
+MENDER_STORAGE_DEVICE_BASE=/dev/nvme0n1p
 MENDER_DEVICE_TYPE="x86_64"
-MENDER_USE_LUKS="y"
+
 MENDER_STORAGE_TOTAL_SIZE_MB=16000
 
 # Nothing to copy
