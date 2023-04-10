@@ -251,6 +251,8 @@ log_info "  Boot partition    $(disk_sectors_to_mb ${boot_part_sectors}) MiB"
 log_info "  RootFS partitions $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB x 2"
 log_info "  Data partition    $(disk_sectors_to_mb ${data_part_sectors}) MiB"
 
+rootfs_size_mb=$(disk_sectors_to_mb ${rootfs_part_sectors})
+data_size_mb=$(disk_sectors_to_mb ${data_part_sectors})
 # Initialize sdcard image file
 run_and_log_cmd \
     "dd if=/dev/zero of=${img_path} bs=512 count=0 seek=${disk_image_total_sectors} status=none"
@@ -290,20 +292,19 @@ if [ "${MENDER_USE_LUKS}" == "y" ]; then
   
   run_and_log_cmd "${PARTED} -s ${img_path} set 1 boot on"
   run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfsa_start} ${data_end}"
-  run_and_log_cmd "${PARTED} -s ${img_path} print"
   
   #TODO Determine if using LUKS logical partitions does something to the size required.  
-  run_and_log_cmd sudo losetup --offset $(( ${rootfsa_start} * 512 )) --sizelimit $((( 2 * ${rootfs_part_sectors} + ${data_part_sectors} ) * 512 )) --show --find ${img_path} | loop_device
+  loop_device=$(losetup --offset $(( ${rootfsa_start} * 512 )) --sizelimit $((( 2 * ${rootfs_part_sectors} + ${data_part_sectors} * 2 ) * 512 )) --show --find ${img_path})
 
   
-  log_info "Loop Device used ${loop_device}, offset ${rootfsa_start} sizelimit $((2 * ${rootfs_part_sectors} + ${data_part_sectors} * 2))"
-  run_and_log_cmd sudo cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --verify-passphrase ${loop_device}
+  log_info "Loop Device used ${loop_device}, offset $(( ${rootfsa_start} * 512 )) sizelimit $(((2 * ${rootfs_part_sectors} + ${data_part_sectors}) *512 ))"
+  cryptsetup luksFormat --hash=sha512 --key-size=512 --cipher=aes-xts-plain64 --verify-passphrase ${loop_device}
 
   log_info "Openning LUKS "
-  run_and_log_cmd sudo cryptsetup luksOpen ${loop_device} mender_crypt
+  cryptsetup luksOpen ${loop_device} mender_crypt
 
   log_info "Creating Physical volume"
-  run_and_log_cmd sudo pvcreate /dev/mapper/mender_crypt
+  pvcreate /dev/mapper/mender_crypt
    
   volume_group_name=vge_mender
   rootfsa_name=rootfsa
@@ -311,14 +312,14 @@ if [ "${MENDER_USE_LUKS}" == "y" ]; then
   data_name=data
 
   log_info "create a logical volume group"
-  run_and_log_cmd sudo vgcreate ${volume_group_name} /dev/mapper/mender_crypt
-  run_and_log_cmd sudo vgs
+  vgcreate ${volume_group_name} /dev/mapper/mender_crypt
+  vgs
 
   log_info "Creating logical volumes"
-  run_and_log_cmd sudo lvcreate -n ${rootfsa_name} -L "${rootfs_size_mb}M" ${volume_group_name}
-  run_and_log_cmd sudo lvcreate -n ${rootfsb_name} -L "${rootfs_size_mb}M" ${volume_group_name}
-  run_and_log_cmd sudo lvcreate -n ${data_name} -L "${data_size_mb}M" ${volume_group_name}
-  run_and_log_cmd sudo lvs
+  lvcreate -n ${rootfsa_name} -L "${rootfs_part_sectors}s" ${volume_group_name}
+  lvcreate -n ${rootfsb_name} -L "${rootfs_part_sectors}s" ${volume_group_name}
+  lvcreate -n ${data_name} -L "${data_part_sectors}s" ${volume_group_name}
+  lvs
 
   log_info "Write Partitions"
   rootfsa_filepath="/dev/${volume_group_name}/${rootfsa_name}"
@@ -334,13 +335,16 @@ if [ "${MENDER_USE_LUKS}" == "y" ]; then
   log_info "Writing boot partition image"
   disk_write_at_offset "${boot_part}" "${img_path}" "${boot_part_start}"
   log_info "Writing rootfs A image"
-  run_and_log_cmd sudo dd if="${output_dir}/rootfs.img" of="${rootfsa_filepath}"
+  dd if="${output_dir}/rootfs.img" of="${rootfsa_filepath}" 
   log_info "Writing rootfs B image"
-  run_and_log_cmd sudo dd if="${output_dir}/rootfs.img" of="${rootfsb_filepath}"
+  dd if="${output_dir}/rootfs.img" of="${rootfsb_filepath}"
   log_info "Writing data image"
-  run_and_log_cmd sudo dd if="${output_dir}/data.img" of="${data_filepath}"
-  
-
+  dd if="${output_dir}/data.img" of="${data_filepath}"
+ 
+  log_info "Deleting Loop device" 
+  vgchange -a n vge_mender
+  cryptsetup luksClose mender_crypt
+  losetup -d ${loop_device}
 else
   # Create partition table.
   if [ "${partition_scheme}" == "gpt" ]; then
