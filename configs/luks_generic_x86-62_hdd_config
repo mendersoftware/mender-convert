@@ -1,0 +1,58 @@
+# This configuration can be used to run any distribution on a any x86-64 machine.
+# As example is used CentOS distribution but can be applied to others also.
+#
+# Install CentOS using classic partition scheme (not use LVM) with minimal
+# 2 partitons /boot/efi and /root. For root please choose only necessary size
+# e.g. 10G (or desired size).
+#
+# This has been tested on images generated with the following command:
+#
+# Boot live USB and copy the data from internal storage (hdd, eMMC) e.g. for eMMC:
+#
+# 	dd if=/dev/mmcblk0 of=/media/usb/centos.img bs=1M count=10000 status=progress
+#
+# Before running mender-convert we need to fix GPT partition table (as we didn't copy
+# whole hdd). Run following command to fix GPT partition table on copied image:
+#
+#	sgdisk -e /media/usb/centos.img
+#
+# Converted with the following command:
+#
+#	MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
+#		--disk-image input/centos.img \
+#		--config configs/centos_x86-64_hdd_config \
+#		--overlay rootfs_overlay_demo/
+#
+# and image must be then copied back after conversion to internal storage (when booted again from live USB) e.g. for hdd:
+#
+#	zcat /media/usb/centos-x86_64-mender.img.gz | sudo dd of=/dev/sda bs=1M status=progress
+#
+# after copy run again (to fix GPT partition table):
+#	sgdisk -e /dev/sda
+#
+
+MENDER_STORAGE_DEVICE_BASE=/dev/sda
+MENDER_DEVICE_TYPE="x86_64"
+MENDER_USE_LUKS="y"
+MENDER_STORAGE_TOTAL_SIZE_MB=16000
+MENDER_GRUB_EFI_INTEGRATION="y"
+MENDER_GRUB_D_INTEGRATION="n"
+MENDER_ROOTFS_PART_A="/dev/vge_mender/rootfs1"
+MENDER_ROOTFS_PART_B="/dev/vge_mender/rootfs2"
+MENDER_DATA_PART="/dev/vge_mender/data1"
+MENDER_BOOT_PART="/dev/sda1"
+
+
+# Nothing to copy
+MENDER_COPY_BOOT_GAP="n"
+
+function platform_modify() {
+    #
+    # Make sure /lib64 exists since the Mender binary requires it.
+    # Some systems put everything under /lib (ie Yocto) and a simple
+    # symlink is enough to find everything Mender needs.
+    #
+    if [ ! -e work/rootfs/lib64 ]; then
+        run_and_log_cmd "ln -s /lib work/rootfs/lib64"
+    fi
+}
