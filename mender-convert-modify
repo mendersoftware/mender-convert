@@ -85,12 +85,20 @@ source modules/config.sh $(printf "%q " "${configs[@]}")
 boot_part=$(disk_boot_part)
 root_part=$(disk_root_part)
 
-# Sysfs device paths
-boot_part_device=$(disk_boot_part_device)
-data_part_device=$(disk_data_part_device)
-root_part_a_device=$(disk_root_part_a_device)
-root_part_b_device=$(disk_root_part_b_device)
+if [ ${MENDER_USE_LUKS} == "y" ]; then
 
+  # Sysfs device paths
+  boot_part_device=${MENDER_BOOT_PART}
+  data_part_device=${MENDER_DATA_PART}
+  root_part_a_device=${MENDER_ROOTFS_PART_A}
+  root_part_b_device=${MENDER_ROOTFS_PART_B}
+else
+  # Sysfs device paths
+  boot_part_device=$(disk_boot_part_device)
+  data_part_device=$(disk_data_part_device)
+  root_part_a_device=$(disk_root_part_a_device)
+  root_part_b_device=$(disk_root_part_b_device)
+fi
 # Create mount points
 mkdir -p work/boot
 mkdir -p work/rootfs

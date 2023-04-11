@@ -291,6 +291,12 @@ disk_get_device_part_number() {
         /dev/[sh]d[a-z][1-9]*)
             dev_part=${1##*d[a-z]}
             ;;
+	/dev/vge_mender/data[1-9])
+	    dev_part=1
+	    ;;
+	/dev/vge_mender/rootfs[1-9])
+	    dev_part=$(echo $1 | cut -ds -f2)
+	    ;;
         ubi*_*)
             dev_part=$(echo $1 | cut -d_ -f2)
             ;;
@@ -327,6 +333,12 @@ disk_get_device_base() {
         /dev/[sh]d[a-z][1-9]*)
             dev_base=${1%%[1-9]*}
             ;;
+	/dev/vge_mender/data1)
+	    dev_base="/dev/vge_mender/data"
+	    ;;
+	/dev/vge_mender/rootfs[1-9])
+	    dev_base="/dev/vge_mender/rootfs"
+	    ;;
         ubi*_*)
             dev_base=$(echo $1 | cut -d_ -f1)
             ;;

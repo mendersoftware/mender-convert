@@ -307,9 +307,9 @@ if [ "${MENDER_USE_LUKS}" == "y" ]; then
   pvcreate /dev/mapper/mender_crypt
    
   volume_group_name=vge_mender
-  rootfsa_name=rootfsa
-  rootfsb_name=rootfsb
-  data_name=data
+  rootfsa_name=rootfs1
+  rootfsb_name=rootfs2
+  data_name=data1
 
   log_info "create a logical volume group"
   vgcreate ${volume_group_name} /dev/mapper/mender_crypt
