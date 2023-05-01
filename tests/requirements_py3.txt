@@ -4,7 +4,7 @@ certifi==2022.12.7
 cffi==1.15.1
 chardet==5.1.0
 cryptography==39.0.1
-filelock==3.9.0
+filelock==3.12.0
 idna==3.4
 iniconfig==2.0.0
 invoke==2.0.0
