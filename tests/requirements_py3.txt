@@ -38,7 +38,7 @@ pytest-xdist==3.1.0
     # via -r requirements_py3.in
 redo==2.0.4
     # via -r requirements_py3.in
-requests==2.28.1
+requests==2.31.0
     # via -r requirements_py3.in
 urllib3==1.26.16
     # via requests
