@@ -4,18 +4,14 @@
 #
 #    pip-compile tests/requirements_py3.in
 #
-attrs==23.1.0
-    # via pytest
 certifi==2023.5.7
     # via requests
 charset-normalizer==2.1.1
     # via requests
-exceptiongroup==1.1.1
-    # via pytest
 execnet==1.9.0
     # via pytest-xdist
 filelock==3.9.0
-    # via -r tests/requirements_py3.in
+    # via -r requirements_py3.in
 idna==3.4
     # via requests
 iniconfig==2.0.0
@@ -26,25 +22,23 @@ pluggy==1.2.0
     # via pytest
 py==1.11.0
     # via pytest-html
-pytest==7.2.1
+pytest==7.4.0
     # via
-    #   -r tests/requirements_py3.in
+    #   -r requirements_py3.in
     #   pytest-html
     #   pytest-metadata
     #   pytest-xdist
 pytest-html==3.2.0
-    # via -r tests/requirements_py3.in
+    # via -r requirements_py3.in
 pytest-metadata==2.0.4
     # via
-    #   -r tests/requirements_py3.in
+    #   -r requirements_py3.in
     #   pytest-html
 pytest-xdist==3.1.0
-    # via -r tests/requirements_py3.in
+    # via -r requirements_py3.in
 redo==2.0.4
-    # via -r tests/requirements_py3.in
+    # via -r requirements_py3.in
 requests==2.28.1
-    # via -r tests/requirements_py3.in
-tomli==2.0.1
-    # via pytest
+    # via -r requirements_py3.in
 urllib3==1.26.16
     # via requests
