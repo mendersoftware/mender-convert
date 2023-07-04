@@ -177,6 +177,11 @@ information. The exact log file path is printed before the conversion starts.
 After it finishes, you can find your images in the `deploy` directory on your
 host machine!
 
+#### Troubleshooting
+
+A continuously expanded list of possible problems and how to address those is
+maintained in the [Mender documentation](https://docs.mender.io/troubleshoot/mender-client)
+
 ## Using mender-convert without Docker
 
 In order to be able to manipulate and create filesystem and disk images,
