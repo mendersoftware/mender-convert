@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ disk_get_part_nums() {
 #  $3 - size (in 512 blocks)
 #  $4 - path to output file
 disk_extract_part() {
-    run_and_log_cmd "dd if=$1 of=$4 skip=$2 bs=512 count=$3 conv=sparse status=none"
+    run_and_log_cmd "dd if=$1 of=$4 skip=${2}b bs=1M count=${3}b status=none iflag=count_bytes,skip_bytes"
 }
 
 # Convert MiB to number of 512 sectors
