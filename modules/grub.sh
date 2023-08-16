@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -31,11 +31,14 @@ EOF
 
     # For partuuid support grub.cfg expects dedicated variables to be added
     if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
+        boot_partuuid=$(disk_get_partuuid_from_device "${boot_part_device}")
         rootfsa_partuuid=$(disk_get_partuuid_from_device "${root_part_a_device}")
         rootfsb_partuuid=$(disk_get_partuuid_from_device "${root_part_b_device}")
+        log_info "Using boot partition partuuid in grubenv: $boot_partuuid"
         log_info "Using root partition A partuuid in grubenv: $rootfsa_partuuid"
         log_info "Using root partition B partuuid in grubenv: $rootfsb_partuuid"
         cat <<- EOF >> work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
+mender_boot_uuid=${boot_partuuid}
 mender_rootfsa_uuid=${rootfsa_partuuid}
 mender_rootfsb_uuid=${rootfsb_partuuid}
 EOF
