@@ -36,8 +36,6 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     dosfstools \
 # to download Mender binaries
     wget \
-# to download mender-grub-env
-    git \
 # to compile mender-grub-env
     make \
 # to get rid of 'sh: 1: udevadm: not found' errors triggered by parted

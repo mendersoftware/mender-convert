@@ -16,19 +16,20 @@
 
 set -e
 
-GIT_PROVIDED_TAG_NAME="$(git describe --exact HEAD 2>/dev/null || \
+GIT_TAG_OR_BRANCH_NAME="$(git describe --exact HEAD 2>/dev/null || \
     git for-each-ref "refs/heads/*" --format '%(refname:short)' --points-at HEAD 2>/dev/null)"
 
-if [ -z "$IMAGE_NAME" -a -z "$GIT_PROVIDED_TAG_NAME" ]; then
+if [ -z "$IMAGE_NAME" -a -z "$GIT_TAG_OR_BRANCH_NAME" ]; then
   echo "Could not deduce mendersoftware/mender-convert container version from currently checked out commit. Using latest." 1>&2
 fi
 
-IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_PROVIDED_TAG_NAME:+:$GIT_PROVIDED_TAG_NAME}"}
+IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_TAG_OR_BRANCH_NAME:+:$GIT_TAG_OR_BRANCH_NAME}"}
 CONFIGS_DIRECTORY=${CONFIGS_DIRECTORY:-"$(pwd)/configs"}
 DEPLOY_DIRECTORY=${DEPLOY_DIRECTORY:-"$(pwd)/deploy"}
 INPUT_DIRECTORY=${INPUT_DIRECTORY:-"$(pwd)/input"}
 LOGS_DIRECTORY=${LOGS_DIRECTORY:-"$(pwd)/logs"}
 WORK_DIRECTORY=${WORK_DIRECTORY:-"$(pwd)/work"}
+MENDER_CONVERT_VERSION="$(git describe --tags --dirty --exact-match 2> /dev/null || git rev-parse --short HEAD)"
 
 mkdir -p "$DEPLOY_DIRECTORY"
 mkdir -p "$LOGS_DIRECTORY"
@@ -52,7 +53,7 @@ docker run \
   -v /lib/modules:/lib/modules:ro \
   --env MENDER_ARTIFACT_NAME="${MENDER_ARTIFACT_NAME}" \
   --env MENDER_CONVERT_LOG_FILE=logs/"${LOG_FILE}" \
-  --env MENDER_CONVERT_VERSION=${GIT_PROVIDED_TAG_NAME} \
+  --env MENDER_CONVERT_VERSION=${MENDER_CONVERT_VERSION} \
   "$IMAGE_NAME" "$@"
 
 exit_code=$?
