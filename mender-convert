@@ -81,12 +81,6 @@ function trap_term() {
 trap trap_term INT TERM
 trap trap_exit EXIT
 
-source modules/git.sh
-
-if [ -z "$MENDER_CONVERT_VERSION" ]; then
-    MENDER_CONVERT_VERSION=$(git_mender_convert_version)
-fi
-
 # We only handle a selection of the arguments here, the rest are passed on
 # to the sub-scripts.
 while (("$#")); do
