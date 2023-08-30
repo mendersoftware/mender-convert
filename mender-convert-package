@@ -162,6 +162,11 @@ else
     image_name=$DEPLOY_IMAGE_NAME
 fi
 
+# NOTE: Since the data partition has a dependency on the rootfs.img checksum
+# when writing the bootstrap Artifact we have to move the datadir out of the
+# way, and write the rootfs image first.
+run_and_log_cmd "mv --force work/rootfs/data work/data"
+
 actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
 
 # KiB -> 512 sectors
@@ -199,11 +204,6 @@ else
     log_warn "$(file work/${root_part})"
     log_fatal "Could not determine root file-system type. Aborting..."
 fi
-
-# NOTE: Since the data partition has a dependency on the rootfs.img checksum
-# when writing the bootstrap Artifact we have to move the datadir out of the
-# way, and write the rootfs image first.
-run_and_log_cmd "mv --force work/rootfs/data work/data"
 
 if [[ "${MENDER_CLIENT_INSTALL}" == y ]]; then
     # If the client version is less than 3.4, then log a warning
