@@ -370,6 +370,9 @@ case "${MENDER_COMPRESS_DISK_IMAGE}" in
     none)
         :
         ;;
+    sqfs)
+        :
+        ;;
     *)
         log_fatal "Unknown MENDER_COMPRESS_DISK_IMAGE value: ${MENDER_COMPRESS_DISK_IMAGE}"
         ;;

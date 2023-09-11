@@ -39,6 +39,9 @@ function compression_type()  {
         *.xz)
             echo "lzma"
             ;;
+        *.sqsh)
+            echo "sqfs"
+            ;;
         *)
             log_fatal "Unsupported compression type: ${disk_image}. Please uncompress the image yourself."
             ;;
@@ -78,6 +81,16 @@ function decompress_image()  {
             log_info "Decompressing ${disk_image}..."
             disk_image=${disk_image%.xz}
             xzcat "${input_image}" > "${disk_image}"
+            ;;
+        sqfs)
+            log_info "mounting squashfs"
+            disk_image=${disk_image%.sqsh}
+            mount_squash=$(mktemp -d)
+            sudo mount -o loop -t squashfs "${input_image}" "$mount_squash"
+            sudo touch "${disk_image}"
+            sudo mount -o ro,bind "$mount_squash/disk.img" "${disk_image}"
+            
+            UMOUNTS_LIST+=("$disk_image" "$mount_squash")
             ;;
         *)
             log_fatal "Unsupported input image format: ${input_image}. We support: '.img', '.gz', '.zip', '.xz'."
