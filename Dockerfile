@@ -29,6 +29,8 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     e2fsprogs \
 # mkfs.xfs and family
     xfsprogs \
+# mkfs.btrfs and family
+    btrfs-progs \
 # Parallel gzip compression
     pigz \
     sudo \

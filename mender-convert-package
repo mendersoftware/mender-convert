@@ -200,8 +200,10 @@ if file ${root_part} | grep -q ext4; then
     image_fs_type="ext4"
 elif file ${root_part} | grep -q XFS; then
     image_fs_type="xfs"
+elif file ${root_part} | grep -q BTRFS; then
+    image_fs_type="btrfs"
 else
-    log_warn "$(file work/${root_part})"
+    log_warn "$(file ${root_part})"
     log_fatal "Could not determine root file-system type. Aborting..."
 fi
 

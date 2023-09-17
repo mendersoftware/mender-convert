@@ -134,6 +134,15 @@ disk_create_file_system_from_folder() {
             fi
             run_and_log_cmd "${MKFS_XFS} -q -f ${2} ${EXTRA_OPTS}"
             ;;
+
+        "btrfs")
+            MKFS_BTRFS="/usr/bin/mkfs.btrfs"
+            if [ ! -f ${MKFS_BTRFS} ]; then
+                MKFS_BTRFS="/usr/sbin/mkfs.btrfs"
+            fi
+            run_and_log_cmd "${MKFS_BTRFS} -q -f ${2} ${EXTRA_OPTS}"
+            ;;
+
         *)
             log_fatal "Unknown file system type specified: ${4}"
             ;;
