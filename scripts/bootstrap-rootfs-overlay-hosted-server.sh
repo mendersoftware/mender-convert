@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ set -o errexit
 
 tenant_token=""
 output_dir=""
+region="us"
 while (("$#")); do
     case "$1" in
         -t | --tenant-token)
@@ -28,9 +29,13 @@ while (("$#")); do
             output_dir="${2}"
             shift 2
             ;;
+        -r | --region)
+            region="${2}"
+            shift 2
+            ;;
         *)
             echo "Sorry but the provided option is not supported: $1"
-            echo "Usage:  $(basename $0) --output-dir ./input/rootfs_overlay_demo --tenant-token <paste your token here>"
+            echo "Usage:  $(basename $0) [--region 'us','eu'] --output-dir ./input/rootfs_overlay_demo --tenant-token <paste your token here>"
             exit 1
             ;;
     esac
@@ -50,10 +55,21 @@ if [ -e ${output_dir} ]; then
      sudo chown -R $(id -u) ${output_dir}
      sudo chgrp -R $(id -g) ${output_dir}
 fi
+
+# check lowercase or uppercase region
+if [ "${region}" = "eu" || "${region}" = "EU" ]; then
+    region_appendix="eu."
+elif [ "${region}" = "us" || "${region}" = "US" ]; then
+    region_appendix=""
+else
+    echo "Sorry, but the provided region is not supported: ${region} (only 'eu' and 'us' are accepted)"
+    exit 1
+fi
+
 mkdir -p ${output_dir}/etc/mender
 cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
-  "ServerURL": "https://hosted.mender.io/",
+  "ServerURL": "https://${region_appendix}hosted.mender.io/",
   "TenantToken": "${tenant_token}"
 }
 EOF
