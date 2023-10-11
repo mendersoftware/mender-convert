@@ -28,7 +28,7 @@ fi
 WORKSPACE=./tests
 
 ## Auto-update
-BBB_DEBIAN_SDCARD_IMAGE_URL="https://debian.beagleboard.org/images/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz"
+BBB_DEBIAN_SDCARD_IMAGE_URL="https://files.beagle.cc/file/beagleboard-public-2021/images/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz"
 
 # Not on official home page, but found via https://elinux.org/Beagleboard:BeagleBoneBlack_Debian:
 
