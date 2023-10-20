@@ -101,16 +101,38 @@ sudo mount ${root_part} work/rootfs
 log_info "Installing Mender client and related files"
 
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
-    log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
-    deb_get_and_install_package mender-client "${MENDER_CLIENT_VERSION}"
+    case "${MENDER_CLIENT_VERSION}" in
+        1.* | 2.* | 3.*)
+            log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
+            deb_get_and_install_package mender-client "${MENDER_CLIENT_VERSION}"
+            ;;
+        *)
+            # For 4.x, master and latest(*) install the new packages
+            # At the time of writing, this will be broken for "latest" until mender-client v4 is
+            # released. Having an special handling deemed to complex for the short time benefit.
+            log_info "Installing Mender Auth and Mender Update version ${MENDER_CLIENT_VERSION}"
+            deb_get_and_install_package mender-auth "${MENDER_CLIENT_VERSION}"
+            deb_get_and_install_package mender-update "${MENDER_CLIENT_VERSION}"
+            ;;
+    esac
 
     # Save installed client version for tests in Yocto variable format
     testscfg_add "PREFERRED_VERSION:mender-client" "$(echo ${DEB_NAME} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
 fi
 
 if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then
-    run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \
-        work/rootfs/etc/systemd/system/multi-user.target.wants/mender-client.service"
+    case "${MENDER_CLIENT_VERSION}" in
+        1.* | 2.* | 3.*)
+            run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-client.service \
+                work/rootfs/etc/systemd/system/multi-user.target.wants/mender-client.service"
+            ;;
+        *)
+            run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-auth.service \
+                work/rootfs/etc/systemd/system/multi-user.target.wants/mender-auth.service"
+            run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-update.service \
+                work/rootfs/etc/systemd/system/multi-user.target.wants/mender-update.service"
+            ;;
+    esac
 fi
 
 if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
