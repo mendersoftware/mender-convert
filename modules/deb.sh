@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 source modules/log.sh
-source modules/probe.sh .
+source modules/probe.sh
 
 # Download of latest deb package for the given distribution of an APT repository
 #
