@@ -105,6 +105,7 @@ if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
         1.* | 2.* | 3.*)
             log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
             deb_get_and_install_package mender-client "${MENDER_CLIENT_VERSION}"
+            mender_client_deb_name="${DEB_NAME}"
             ;;
         *)
             # For 4.x, master and latest(*) install the new packages
@@ -113,11 +114,15 @@ if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
             log_info "Installing Mender Auth and Mender Update version ${MENDER_CLIENT_VERSION}"
             deb_get_and_install_package mender-auth "${MENDER_CLIENT_VERSION}"
             deb_get_and_install_package mender-update "${MENDER_CLIENT_VERSION}"
+            mender_client_deb_name="${DEB_NAME}"
+
+            log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
+            deb_get_and_install_package mender-flash "${MENDER_FLASH_VERSION}"
             ;;
     esac
 
     # Save installed client version for tests in Yocto variable format
-    testscfg_add "PREFERRED_VERSION:mender-client" "$(echo ${DEB_NAME} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+    testscfg_add "PREFERRED_VERSION:mender-client" "$(echo ${mender_client_deb_name} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
 fi
 
 if [ "${MENDER_ENABLE_SYSTEMD}" == "y" ]; then

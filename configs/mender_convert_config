@@ -127,6 +127,13 @@ MENDER_CLIENT_INSTALL="y"
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_CLIENT_VERSION="latest"
 
+# Mender flash version
+#
+# This is used to fetch the correct binaries
+#
+# Valid values are "latest" (default), "master" or a specific version
+MENDER_FLASH_VERSION="latest"
+
 # Install Mender Connect addon
 #
 MENDER_ADDON_CONNECT_INSTALL="n"
