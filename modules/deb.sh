@@ -55,7 +55,7 @@ function deb_from_repo_dist_get()  {
     echo ${filename}
 }
 
-# Download a deb package direcrly from the pool of an APT repository
+# Download a deb package directly from the pool of an APT repository
 #
 #  $1 - Download directory
 #  $2 - APT repository url
