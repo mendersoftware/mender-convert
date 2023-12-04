@@ -57,9 +57,9 @@ if [ -e ${output_dir} ]; then
 fi
 
 # check lowercase or uppercase region
-if [ "${region}" = "eu" || "${region}" = "EU" ]; then
+if [ "${region}" = "eu" ] || [ "${region}" = "EU" ]; then
     region_appendix="eu."
-elif [ "${region}" = "us" || "${region}" = "US" ]; then
+elif [ "${region}" = "us" ] || [ "${region}" = "US" ]; then
     region_appendix=""
 else
     echo "Sorry, but the provided region is not supported: ${region} (only 'eu' and 'us' are accepted)"
