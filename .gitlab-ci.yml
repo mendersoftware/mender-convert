@@ -5,11 +5,26 @@ variables:
 
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
-  MENDER_ARTIFACT_VERSION: master
-  MENDER_CLIENT_VERSION: latest
-  MENDER_FLASH_VERSION: latest
-  MENDER_ADDON_CONNECT_VERSION: latest
-  MENDER_ADDON_CONFIGURE_VERSION: latest
+  MENDER_ARTIFACT_VERSION:
+    value: "master"
+    description: |-
+      Version of mender-artifact for the builder image - 'master' or a specific version
+  MENDER_CLIENT_VERSION:
+    value: "latest"
+    description: |-
+      Version of mender for the converted image- 'latest', 'master' or a specific version
+  MENDER_FLASH_VERSION:
+    value: "latest"
+    description: |-
+      Version of mender-flash for the converted image- 'latest', 'master' or a specific version
+  MENDER_ADDON_CONNECT_VERSION:
+    value: "latest"
+    description: |-
+      Version of mender-connect for the converted image- 'latest', 'master' or a specific version
+  MENDER_ADDON_CONFIGURE_VERSION:
+    value: "latest"
+    description: |-
+      Version of mender-configure for the converted image- 'latest', 'master' or a specific version
 
   ## Auto-update
   RASPBIAN_URL: "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-09-26/2022-09-22-raspios-bullseye-armhf-lite.img.xz"
@@ -21,10 +36,15 @@ variables:
   # tagged version.
   MENDER_CONVERT_PUBLISH_VERSION: ""
 
-  # Whether to run acceptance tests
-  TEST_MENDER_CONVERT: "true"
-  # Whether to publish packages automatically - they can always be published manually
-  PUBLISH_MENDER_CONVERT_AUTOMATIC: "false"
+  TEST_MENDER_CONVERT:
+    value: "true"
+    description: |-
+      Whether to run acceptance tests
+
+  PUBLISH_MENDER_CONVERT_AUTOMATIC:
+    value: "false"
+    description: |-
+      Whether to publish packages automatically - they can always be published manually
 
   TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE: "4"
 
