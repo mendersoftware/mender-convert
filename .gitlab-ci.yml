@@ -10,11 +10,11 @@ variables:
     description: |-
       Version of mender-artifact for the builder image - 'master' or a specific version
   MENDER_CLIENT_VERSION:
-    value: "latest"
+    value: "master"
     description: |-
       Version of mender for the converted image- 'latest', 'master' or a specific version
   MENDER_FLASH_VERSION:
-    value: "latest"
+    value: "master"
     description: |-
       Version of mender-flash for the converted image- 'latest', 'master' or a specific version
   MENDER_ADDON_CONNECT_VERSION:
