@@ -48,6 +48,11 @@ while [ -n "$1" ]; do
     shift
 done
 
+if [ -z "$GENERATE_VARIANT" ]; then
+    usage
+    exit 1
+fi
+
 cleanup_losetup() {
     set +e
     for dev in ${LO_DEVICE}p*; do
