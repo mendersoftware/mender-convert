@@ -66,9 +66,23 @@ cleanup_losetup() {
 generate_debian() {
     local -r image="${DEBIAN_IMAGE_ID}-x86-64.img"
 
-    mkosi --root-size=2G --distribution=debian --release="$DEBIAN_CODENAME" --format=gpt_ext4 --bootable --checksum \
-          --password password --package=openssh-server,dhcpcd5 --package grub-efi-amd64-signed \
-          --package shim-signed --package lsb-release --output="$image" build
+    mkosi --distribution=debian \
+          --release="$DEBIAN_CODENAME" \
+          --output="$image" \
+          --root-size=2G \
+          --format=gpt_ext4 \
+          --bootable \
+          --checksum \
+          --password password \
+          --package openssh-server \
+          --package dhcpcd5 \
+          --package liblmdb0 \
+          --package libarchive13 \
+          --package libboost-log1.74.0 \
+          --package grub-efi-amd64-signed \
+          --package shim-signed \
+          --package lsb-release \
+          build
 
     post_process_image "$image"
 
@@ -78,9 +92,23 @@ generate_debian() {
 generate_ubuntu() {
     local -r image="${UBUNTU_IMAGE_ID}-x86-64.img"
 
-    mkosi --root-size=2G --distribution=ubuntu --release="$UBUNTU_CODENAME" --format=gpt_ext4 --bootable --checksum \
-          --password password --package=openssh-server,dhcpcd5 --package grub-efi-amd64-signed \
-          --package shim-signed --package lsb-release --output="$image" build
+    mkosi --distribution=ubuntu \
+          --release="$UBUNTU_CODENAME"  \
+          --output="$image" \
+          --root-size=2G \
+          --format=gpt_ext4 \
+          --bootable \
+          --checksum \
+          --password password \
+          --package openssh-server \
+          --package dhcpcd5 \
+          --package liblmdb0 \
+          --package libarchive13 \
+          --package libboost-log1.74.0 \
+          --package grub-efi-amd64-signed \
+          --package shim-signed \
+          --package lsb-release \
+          build
 
     post_process_image "$image"
 
