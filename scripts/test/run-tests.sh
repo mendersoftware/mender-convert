@@ -130,8 +130,9 @@ else
                 "input/image/${UBUNTU_IMAGE_UNCOMPRESSED}" \
                 "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
     ret=0
-    test -f deploy/Ubuntu-Jammy-x86-64-qemux86-64-mender.img || ret=$?
-    assert "${ret}" "0" "Expected uncompressed file deploy/Ubuntu-Jammy-x86-64-qemux86-64-mender.img"
+    UBUNTU_IMAGE_MENDER="${UBUNTU_IMAGE_UNCOMPRESSED%.img}-qemux86-64-mender.img"
+    test -f deploy/${UBUNTU_IMAGE_MENDER} || ret=$?
+    assert "${ret}" "0" "Expected uncompressed file deploy/${UBUNTU_IMAGE_MENDER}"
   fi
 
   if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; then

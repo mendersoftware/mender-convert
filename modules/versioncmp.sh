@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 source modules/log.sh
-source modules/probe.sh .
+source modules/probe.sh
 
 # Compare the version of a string to a given minimum version requirement
 #

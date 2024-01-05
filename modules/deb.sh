@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 source modules/log.sh
-source modules/probe.sh .
+source modules/probe.sh
 
 # Download of latest deb package for the given distribution of an APT repository
 #
@@ -55,7 +55,7 @@ function deb_from_repo_dist_get()  {
     echo ${filename}
 }
 
-# Download a deb package direcrly from the pool of an APT repository
+# Download a deb package directly from the pool of an APT repository
 #
 #  $1 - Download directory
 #  $2 - APT repository url
