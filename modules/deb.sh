@@ -62,23 +62,21 @@ function deb_from_repo_dist_get()  {
 #  $3 - Debian architecture
 #  $4 - Package name
 #  $5 - Package version
-#  $6 - Component (optional, default "main")
 #
 # @return - Filename of the downloaded package
 #
 function deb_from_repo_pool_get()  {
-    if [[ $# -lt 5 || $# -gt 7 ]]; then
-        log_fatal "deb_from_repo_pool_get() requires 5 arguments. 6th is optional"
+    if [[ $# -ne 5 ]]; then
+        log_fatal "deb_from_repo_pool_get() requires 5 arguments"
     fi
     local -r download_dir="${1}"
     local -r repo_url="${2}"
     local -r architecture="${3}"
     local -r package="${4}"
     local -r version="${5}"
-    local -r component="${6:-main}"
 
     local -r initial="$(echo $package | head -c 1)"
-    local -r deb_package_path="pool/${component}/${initial}/${package}/${package}_${version}_${architecture}.deb"
+    local -r deb_package_path="pool/main/${initial}/${package}/${package}_${version}_${architecture}.deb"
 
     local -r filename=$(basename $deb_package_path)
     local -r deb_package_url=$(echo ${repo_url}/${deb_package_path} | sed 's/+/%2B/g')
