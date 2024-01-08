@@ -60,23 +60,25 @@ function deb_from_repo_dist_get()  {
 #  $1 - Download directory
 #  $2 - APT repository url
 #  $3 - Debian architecture
-#  $4 - Package name
-#  $5 - Package version
+#  $4 - Package recipe
+#  $5 - Package name
+#  $6 - Package version
 #
 # @return - Filename of the downloaded package
 #
 function deb_from_repo_pool_get()  {
-    if [[ $# -ne 5 ]]; then
-        log_fatal "deb_from_repo_pool_get() requires 5 arguments"
+    if [[ $# -ne 6 ]]; then
+        log_fatal "deb_from_repo_pool_get() requires 6 arguments"
     fi
     local -r download_dir="${1}"
     local -r repo_url="${2}"
     local -r architecture="${3}"
-    local -r package="${4}"
-    local -r version="${5}"
+    local -r recipe="${4}"
+    local -r package="${5}"
+    local -r version="${6}"
 
-    local -r initial="$(echo $package | head -c 1)"
-    local -r deb_package_path="pool/main/${initial}/${package}/${package}_${version}_${architecture}.deb"
+    local -r initial="$(echo $recipe | head -c 1)"
+    local -r deb_package_path="pool/main/${initial}/${recipe}/${package}_${version}_${architecture}.deb"
 
     local -r filename=$(basename $deb_package_path)
     local -r deb_package_url=$(echo ${repo_url}/${deb_package_path} | sed 's/+/%2B/g')
@@ -85,10 +87,10 @@ function deb_from_repo_pool_get()  {
 
     rm -f /tmp/Packages
     if [[ ${exit_code} -ne 0 ]]; then
-        log_warn "Could not download ${filename}"
+        log_warn "Could not download ${filename} from ${deb_package_url}"
         echo ""
     else
-        log_info "Successfully downloaded ${filename}"
+        log_info "Successfully downloaded ${filename} from ${deb_package_url}"
         echo ${filename}
     fi
 }
@@ -124,17 +126,19 @@ function deb_extract_package()  {
 # This is the main entry point of deb.sh
 # Defines variable DEB_NAME with the actual filename installed
 #
-#  $1 - Package name
-#  $2 - Package version
-#  $3 - Arch independent (optional, default "false")
+#  $1 - Package recipe
+#  $2 - Package name
+#  $3 - Package version
+#  $4 - Arch independent (optional, default "false")
 #
 function deb_get_and_install_package() {
-    if ! [[ $# -eq 2 || $# -eq 3 ]]; then
-        log_fatal "deb_get_and_install_package() requires 2 or 3 arguments"
+    if ! [[ $# -eq 3 || $# -eq 4 ]]; then
+        log_fatal "deb_get_and_install_package() requires 3 or 4 arguments"
     fi
-    local package="$1"
-    local version="$2"
-    local arch_indep="${3:-false}"
+    local recipe="$1"
+    local package="$2"
+    local version="$3"
+    local arch_indep="${4:-false}"
 
     mkdir -p work/deb-packages
 
@@ -161,10 +165,10 @@ function deb_get_and_install_package() {
         fi
 
         local debian_version="-1+${deb_distro}+${deb_codename}"
-        DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${package}" "${version}${debian_version}")
+        DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${recipe}" "${package}" "${version}${debian_version}")
         if [[ -z "${DEB_NAME}" ]]; then
             local debian_version_fallback="-1"
-            DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${package}" "${version}${debian_version_fallback}")
+            DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${recipe}" "${package}" "${version}${debian_version_fallback}")
             if [[ -z "${DEB_NAME}" ]]; then
                 log_fatal "Specified version for ${package} cannot be found, tried ${version}${debian_version} and ${version}${debian_version_fallback}"
             fi

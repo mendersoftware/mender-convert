@@ -104,7 +104,7 @@ if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
     case "${MENDER_CLIENT_VERSION}" in
         1.* | 2.* | 3.*)
             log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
-            deb_get_and_install_package mender-client "${MENDER_CLIENT_VERSION}"
+            deb_get_and_install_package mender-client mender-client "${MENDER_CLIENT_VERSION}"
             mender_client_deb_name="${DEB_NAME}"
             ;;
         *)
@@ -112,12 +112,12 @@ if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
             # At the time of writing, this will be broken for "latest" until mender-client v4 is
             # released. Having an special handling deemed to complex for the short time benefit.
             log_info "Installing Mender Auth and Mender Update version ${MENDER_CLIENT_VERSION}"
-            deb_get_and_install_package mender-auth "${MENDER_CLIENT_VERSION}"
-            deb_get_and_install_package mender-update "${MENDER_CLIENT_VERSION}"
+            deb_get_and_install_package mender-client mender-auth "${MENDER_CLIENT_VERSION}"
+            deb_get_and_install_package mender-client mender-update "${MENDER_CLIENT_VERSION}"
             mender_client_deb_name="${DEB_NAME}"
 
             log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
-            deb_get_and_install_package mender-flash "${MENDER_FLASH_VERSION}"
+            deb_get_and_install_package mender-flash mender-flash "${MENDER_FLASH_VERSION}"
             ;;
     esac
 
@@ -142,7 +142,7 @@ fi
 
 if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
     log_info "Installing Mender Connect addon"
-    deb_get_and_install_package mender-connect "${MENDER_ADDON_CONNECT_VERSION}"
+    deb_get_and_install_package mender-connect mender-connect "${MENDER_ADDON_CONNECT_VERSION}"
 
     run_and_log_cmd "sudo ln -sf /lib/systemd/system/mender-connect.service \
         work/rootfs/etc/systemd/system/multi-user.target.wants/mender-connect.service"
@@ -150,7 +150,7 @@ fi
 
 if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     log_info "Installing Mender Configure addon"
-    deb_get_and_install_package mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}" "true"
+    deb_get_and_install_package mender-configure mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}" "true"
 fi
 
 # Do this unconditionally even if not installing add-ons. The reason is that if
