@@ -1,6 +1,5 @@
 deploy
 input
-rootfs_overlay_demo/*
 mender_local_config
 *.xml
 *.html
