@@ -8,7 +8,7 @@
 #
 # Locally, converted with the following command:
 #
-#    MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert --disk-image input/Debian-11-x86-64.img --overlay rootfs_overlay_demo --config configs/qemux86-64_config
+#    MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert --disk-image input/Debian-11-x86-64.img --overlay input/rootfs_overlay_demo --config configs/qemux86-64_config
 #
 # and qemu is executed with the following command:
 #

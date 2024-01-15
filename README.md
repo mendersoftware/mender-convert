@@ -105,14 +105,14 @@ type you are implementing.
 #### Using the [Mender demo server](https://docs.mender.io/getting-started/on-premise-installation/create-a-test-environment)
 ```bash
 ./scripts/bootstrap-rootfs-overlay-demo-server.sh \
-    --output-dir ${PWD}/rootfs_overlay_demo \
+    --output-dir ${PWD}/input/rootfs_overlay_demo \
     --server-ip 192.168.1.1
 ```
 
 #### Using the [Mender production server](https://docs.mender.io/administration/production-installation)
 ```bash
 ./scripts/bootstrap-rootfs-overlay-production-server.sh \
-    --output-dir ${PWD}/rootfs_overlay_demo \
+    --output-dir ${PWD}/input/rootfs_overlay_demo \
     --server-url https://foobar.mender.io \
     [ --server-cert ~/server.crt ]
 ```
@@ -120,7 +120,7 @@ type you are implementing.
 #### Using [Mender Professional](https://mender.io/products/mender-professional)
 ```bash
 ./scripts/bootstrap-rootfs-overlay-hosted-server.sh \
-    --output-dir ${PWD}/rootfs_overlay_demo \
+    --output-dir ${PWD}/input/rootfs_overlay_demo \
     --tenant-token "Paste token from Mender Professional"
 ```
 
@@ -162,7 +162,7 @@ MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
    --disk-image input/image/$INPUT_DISK_IMAGE \
    --config configs/raspberrypi3_config \
    --config input/config/$CUSTOM_CONFIG \
-   --overlay rootfs_overlay_demo
+   --overlay input/rootfs_overlay_demo
 ```
 
 The container will use the `work/` directory as a temporary area to unpack and
@@ -199,7 +199,7 @@ Start the conversion process with:
 MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
    --disk-image input/$INPUT_DISK_IMAGE \
    --config configs/raspberrypi3_config \
-   --overlay rootfs_overlay_demo
+   --overlay input/rootfs_overlay_demo
 ```
 
 **NOTE!** You will be prompted to enter `sudo` password during the conversion
