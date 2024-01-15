@@ -108,16 +108,8 @@ function deb_extract_package()  {
     local -r dest_dir="$(pwd)/${2}"
 
     local -r extract_dir=$(mktemp -d)
-    cd ${extract_dir}
-    run_and_log_cmd "ar -xv ${deb_package}"
-    mkdir -p files
-
-    local -r data_archive=$(find . -maxdepth 1 -type f -regex '.*/data\.tar\.\(zst\|xz\)'  -printf '%P\n' -quit)
-    run_and_log_cmd "sudo tar xf ${data_archive} -C files"
-
-    cd - > /dev/null 2>&1
-
-    run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir}/files/ ${dest_dir}"
+    run_and_log_cmd "dpkg-deb --extract ${deb_package} ${extract_dir}"
+    run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir} ${dest_dir}"
 
     log_info "Successfully installed $(basename ${deb_package}) into ${dest_dir}"
 }
