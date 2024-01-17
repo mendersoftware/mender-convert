@@ -24,7 +24,6 @@ function grub_create_grub_config() {
     cat <<- EOF > work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}/mender_grubenv_defines
 mender_rootfsa_part=${MENDER_ROOTFS_PART_A_NUMBER}
 mender_rootfsb_part=${MENDER_ROOTFS_PART_B_NUMBER}
-mender_grub_storage_device=${MENDER_GRUB_STORAGE_DEVICE}
 kernel_imagetype=kernel
 initrd_imagetype=initrd
 EOF
