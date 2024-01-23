@@ -21,6 +21,14 @@ function run_with_chroot_setup() {
     shift
     # The rest of the arguments are the command arguments.
 
+    # Keep a copy of the resolv.conf, and copy in our own, we will need it during chroot
+    # execution. We need to check for link specifically, because we want to treat a broken symlink
+    # (which it often will be) as existing, but the normal check treats it as non-existing.
+    if [ -e "$directory/etc/resolv.conf" -o -h "$directory/etc/resolv.conf" ]; then
+        mv "$directory/etc/resolv.conf" "$directory/etc/resolv.conf.orig"
+    fi
+    cp /etc/resolv.conf "$directory/etc/resolv.conf"
+
     local ret=0
     (   
         # Mender-convert usually runs in a container. It's difficult to launch additional containers
@@ -46,6 +54,11 @@ function run_with_chroot_setup() {
     sudo umount -l $directory/dev || true
     sudo umount -l $directory/proc || true
     sudo umount -l $directory/sys || true
+
+    rm -f "$directory/etc/resolv.conf"
+    if [ -e "$directory/etc/resolv.conf.orig" -o -h "$directory/etc/resolv.conf.orig" ]; then
+        mv "$directory/etc/resolv.conf.orig" "$directory/etc/resolv.conf"
+    fi
 
     return $ret
 }
