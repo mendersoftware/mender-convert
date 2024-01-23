@@ -222,15 +222,13 @@ run_and_log_cmd "sudo chmod 600 work/rootfs/data/mender/mender.conf"
 if [ -z "${MENDER_DEVICE_TYPE}" ]; then
     # Observed systems who do not have this file, e.g images generated with mkosi
     if [ -f work/rootfs/etc/hostname ]; then
-        device_type=$(cat work/rootfs/etc/hostname)
+        MENDER_DEVICE_TYPE=$(cat work/rootfs/etc/hostname)
     else
-        device_type="default"
+        MENDER_DEVICE_TYPE="default"
     fi
-else
-    device_type="${MENDER_DEVICE_TYPE}"
 fi
 
-run_and_log_cmd "echo 'device_type=${device_type}' > work/device_type"
+run_and_log_cmd "echo 'device_type=${MENDER_DEVICE_TYPE}' > work/device_type"
 run_and_log_cmd "sudo install -m 0444 work/device_type work/rootfs/data/mender/"
 
 log_info "Creating state scripts version file."
