@@ -141,6 +141,13 @@ function deb_install_package_in_chroot() {
 
             # Try to avoid excessive repository pulling. Only update if older than one day.
             if [ ! -e "$dest_dir/var/cache/apt/pkgcache.bin" ] || [ $(date -r "$dest_dir/var/cache/apt/pkgcache.bin" +%s) -lt $(date -d 'today - 1 day' +%s) ]; then
+                if [ ! -e "$dest_dir/var/cache/apt/pkgcache.bin" ]; then
+                    # If the package cache didn't originally exist, delete it afterwards so we don't
+                    # increase space usage.
+                    mkdir -p "$dest_dir/var/cache/apt"
+                    touch "$dest_dir/var/cache/apt/mender-convert.remove-apt-cache"
+                fi
+
                 run_in_chroot_and_log_cmd "$dest_dir" "apt update"
             fi
 
@@ -212,4 +219,11 @@ function deb_get_and_install_package() {
         fi
     fi
     deb_install_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
+}
+
+function deb_cleanup_package_cache() {
+    local -r dest_dir="$(pwd)/${1}"
+    if [ -e "$dest_dir/var/cache/apt/mender-convert.remove-apt-cache" ]; then
+        rm -rf "$dest_dir/var/cache/apt"
+    fi
 }

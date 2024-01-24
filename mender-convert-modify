@@ -277,6 +277,9 @@ if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     deb_get_and_install_package mender-configure mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}" "true"
 fi
 
+# Done with package installations.
+deb_cleanup_package_cache work/rootfs
+
 #
 # Make sure to re-label rootfs when selinux is in enforcing mode
 # e.g. CentOS8 after conversion cannot start login shell due selinux
