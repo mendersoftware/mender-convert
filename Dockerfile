@@ -56,7 +56,9 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # JSON power tool
     jq \
 # GRUB command line tools, primarily grub-probe
-    grub-common
+    grub-common \
+# to be able to run package installations on foreign architectures
+    qemu-user-static
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 

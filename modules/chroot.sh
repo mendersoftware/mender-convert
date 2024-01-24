@@ -13,6 +13,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+source modules/probe.sh
+
 # Takes a directory to set up for chroot and a name of a function to run. Note that this function
 # does not run *inside* the chroot, it just runs with chroot set up. To actually run commands, use
 # one of the `run_in_chroot` functions individually for each command.
@@ -29,6 +31,13 @@ function run_with_chroot_setup() {
     fi
     cp /etc/resolv.conf "$directory/etc/resolv.conf"
 
+    local arch="$(probe_arch)"
+    if [ "$arch" != "$(uname -m)" ]; then
+        # Foreign architecture, we need to use QEMU.
+        cp "$(which "qemu-$arch-static")" "$directory/tmp/"
+        update-binfmts --enable
+    fi
+
     local ret=0
     (   
         # Mender-convert usually runs in a container. It's difficult to launch additional containers
@@ -37,7 +46,11 @@ function run_with_chroot_setup() {
         # but it is good enough for our purposes, and doesn't require special containment
         # capabilities. This will not work for foreign architectures, but we could probably use
         # something like qemu-aarch64-static to get around that.
-        run_and_log_cmd "sudo mount work/boot $directory/boot/efi -o bind"
+        if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" ]; then
+            run_and_log_cmd "sudo mount work/boot $directory/boot/efi -o bind"
+            # Could mount the boot partition somewhere else, but we don't have a standard way to
+            # specify where it should be mounted when EFI integration is off, so let's not, for now.
+        fi
         run_and_log_cmd "sudo mount /dev $directory/dev -o bind,ro"
         run_and_log_cmd "sudo mount /proc $directory/proc -o bind,ro"
         run_and_log_cmd "sudo mount /sys $directory/sys -o bind,ro"
@@ -50,10 +63,16 @@ function run_with_chroot_setup() {
     # them while tearing down the container. You can guess how I found that out... We run without
     # the logger because otherwise the message from the previous command, which is the important
     # one, is lost.
-    sudo umount -l $directory/boot/efi || true
+    if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" ]; then
+        sudo umount -l $directory/boot/efi || true
+    fi
     sudo umount -l $directory/dev || true
     sudo umount -l $directory/proc || true
     sudo umount -l $directory/sys || true
+
+    if [ "$arch" != "$(uname -m)" ]; then
+        rm -f "$directory/tmp/qemu-$arch-static"
+    fi
 
     rm -f "$directory/etc/resolv.conf"
     if [ -e "$directory/etc/resolv.conf.orig" -o -h "$directory/etc/resolv.conf.orig" ]; then
@@ -68,7 +87,14 @@ function run_in_chroot_and_log_cmd() {
     shift
     # The rest of the arguments are the command arguments.
 
-    run_and_log_cmd "sudo chroot $directory $@"
+    local arch="$(probe_arch)"
+    local maybe_qemu=
+    if [ "$arch" != "$(uname -m)" ]; then
+        # Use env, because qemu does not look in PATH.
+        maybe_qemu="/tmp/qemu-$arch-static /usr/bin/env"
+    fi
+
+    run_and_log_cmd "sudo chroot $directory $maybe_qemu $@"
 }
 
 function run_in_chroot_and_log_cmd_noexit() {
@@ -76,7 +102,14 @@ function run_in_chroot_and_log_cmd_noexit() {
     shift
     # The rest of the arguments are the command arguments.
 
+    local arch="$(probe_arch)"
+    local maybe_qemu=
+    if [ "$arch" != "$(uname -m)" ]; then
+        # Use env, because qemu does not look in PATH.
+        maybe_qemu="/tmp/qemu-$arch-static /usr/bin/env"
+    fi
+
     local ret=0
-    run_and_log_cmd_noexit "sudo chroot $directory $@" || ret=$?
+    run_and_log_cmd_noexit "sudo chroot $directory $maybe_qemu $@" || ret=$?
     return $ret
 }
