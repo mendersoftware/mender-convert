@@ -19,7 +19,7 @@ source modules/probe.sh
 # does not run *inside* the chroot, it just runs with chroot set up. To actually run commands, use
 # one of the `run_in_chroot` functions individually for each command.
 function run_with_chroot_setup() {
-    local directory="$1"
+    local -r directory="$1"
     shift
     # The rest of the arguments are the command arguments.
 
@@ -31,7 +31,7 @@ function run_with_chroot_setup() {
     fi
     cp /etc/resolv.conf "$directory/etc/resolv.conf"
 
-    local arch="$(probe_arch)"
+    local -r arch="$(probe_arch)"
     if [ "$arch" != "$(uname -m)" ]; then
         # Foreign architecture, we need to use QEMU.
         cp "$(which "qemu-$arch-static")" "$directory/tmp/"
@@ -83,11 +83,11 @@ function run_with_chroot_setup() {
 }
 
 function run_in_chroot_and_log_cmd() {
-    local directory="$1"
+    local -r directory="$1"
     shift
     # The rest of the arguments are the command arguments.
 
-    local arch="$(probe_arch)"
+    local -r arch="$(probe_arch)"
     local maybe_qemu=
     if [ "$arch" != "$(uname -m)" ]; then
         # Use env, because qemu does not look in PATH.
@@ -98,11 +98,11 @@ function run_in_chroot_and_log_cmd() {
 }
 
 function run_in_chroot_and_log_cmd_noexit() {
-    local directory="$1"
+    local -r directory="$1"
     shift
     # The rest of the arguments are the command arguments.
 
-    local arch="$(probe_arch)"
+    local -r arch="$(probe_arch)"
     local maybe_qemu=
     if [ "$arch" != "$(uname -m)" ]; then
         # Use env, because qemu does not look in PATH.
