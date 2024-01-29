@@ -1,4 +1,4 @@
-# Copyright 2023 Northern.tech AS
+# Copyright 2024 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+source modules/chroot.sh
 source modules/log.sh
 source modules/probe.sh
 
@@ -95,31 +96,74 @@ function deb_from_repo_pool_get()  {
     fi
 }
 
-# Extract the binary files of a deb package into a directory
+# Install a deb package using a chroot
 #
 #  $1 - Deb package
 #  $2 - Dest directory
 #
-function deb_extract_package()  {
+function deb_install_package() {
     if [[ $# -ne 2 ]]; then
-        log_fatal "deb_extract_package() requires 2 arguments"
+        log_fatal "deb_install_package() requires 2 arguments"
     fi
     local -r deb_package="$(pwd)/${1}"
     local -r dest_dir="$(pwd)/${2}"
 
-    local -r extract_dir=$(mktemp -d)
-    cd ${extract_dir}
-    run_and_log_cmd "ar -xv ${deb_package}"
-    mkdir -p files
+    (   
+        # Mender postinstall script uses this variable.
+        export DEVICE_TYPE="${MENDER_DEVICE_TYPE}"
 
-    local -r data_archive=$(find . -maxdepth 1 -type f -regex '.*/data\.tar\.\(zst\|xz\)'  -printf '%P\n' -quit)
-    run_and_log_cmd "sudo tar xf ${data_archive} -C files"
+        run_with_chroot_setup "$dest_dir" deb_install_package_in_chroot "$@"
+    )
+}
 
-    cd - > /dev/null 2>&1
+function deb_install_package_in_chroot() {
+    if [[ $# -ne 2 ]]; then
+        log_fatal "deb_install_package() requires 2 arguments"
+    fi
+    local -r deb_package="$(pwd)/${1}"
+    local -r dest_dir="$(pwd)/${2}"
 
-    run_and_log_cmd "sudo rsync --archive --keep-dirlinks --verbose ${extract_dir}/files/ ${dest_dir}"
+    # Copy package to somewhere reachable from within the chroot.
+    cp "$deb_package" "$dest_dir/tmp/"
 
-    log_info "Successfully installed $(basename ${deb_package}) into ${dest_dir}"
+    local ret=0
+    run_in_chroot_and_log_cmd_noexit "$dest_dir" "env \
+        DEBIAN_FRONTEND=noninteractive \
+        DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
+        dpkg --install /tmp/$(basename $deb_package)" || ret=$?
+    rm -f "$dest_dir/tmp/$(basename $deb_package)"
+    case $ret in
+        0)
+            # Success
+            ;;
+        1)
+            log_info "Installing dependencies for $deb_package"
+
+            # Try to avoid excessive repository pulling. Only update if older than one day.
+            if [ ! -e "$dest_dir/var/cache/apt/pkgcache.bin" ] || [ $(date -r "$dest_dir/var/cache/apt/pkgcache.bin" +%s) -lt $(date -d 'today - 1 day' +%s) ]; then
+                if [ ! -e "$dest_dir/var/cache/apt/pkgcache.bin" ]; then
+                    # If the package cache didn't originally exist, delete it afterwards so we don't
+                    # increase space usage.
+                    mkdir -p "$dest_dir/var/cache/apt"
+                    touch "$dest_dir/var/cache/apt/mender-convert.remove-apt-cache"
+                fi
+
+                run_in_chroot_and_log_cmd "$dest_dir" "apt update"
+            fi
+
+            # It's ok if dpkg fails, as long as a subsequent "apt install" succeeds. This happens
+            # when we try to install a package and its dependencies are not immediately
+            # satisfied. Then we need to run apt afterwards to remedy the problem.
+            run_in_chroot_and_log_cmd "$dest_dir" "env \
+                DEBIAN_FRONTEND=noninteractive \
+                DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
+                apt --fix-broken --assume-yes install"
+            ;;
+        *)
+            # Other return codes are not expected.
+            log_error "dpkg returned unexpected return code: $ret"
+            ;;
+    esac
 }
 
 # Download and install the binary files of a deb package into work/deb-packages
@@ -174,5 +218,12 @@ function deb_get_and_install_package() {
             fi
         fi
     fi
-    deb_extract_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
+    deb_install_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
+}
+
+function deb_cleanup_package_cache() {
+    local -r dest_dir="$(pwd)/${1}"
+    if [ -e "$dest_dir/var/cache/apt/mender-convert.remove-apt-cache" ]; then
+        rm -rf "$dest_dir/var/cache/apt"
+    fi
 }

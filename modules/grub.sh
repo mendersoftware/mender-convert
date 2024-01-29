@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2023 Northern.tech AS
+# Copyright 2024 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+
+source modules/chroot.sh
 
 # grub_create_grub_config
 #
@@ -95,50 +97,24 @@ function grub_install_grub_d_config() {
         run_and_log_cmd "sudo make DESTDIR=$PWD/../rootfs install-offline-files"
     )
 
-    # Mender-convert usually runs in a container. It's difficult to launch
-    # additional containers from within an existing one, but we need to run
-    # `update-grub` on a simulated device using some sort of container. Use good
-    # old `chroot`, which doesn't provide perfect containment, but it is good
-    # enough for our purposes, and doesn't require special containment
-    # capabilities. This will not work for foreign architectures, but we could
-    # probably use something like qemu-aarch64-static to get around that.
-    run_and_log_cmd "sudo mount work/boot work/rootfs/boot/efi -o bind"
-    run_and_log_cmd "sudo mount /dev work/rootfs/dev -o bind,ro"
-    run_and_log_cmd "sudo mount /proc work/rootfs/proc -o bind,ro"
-    run_and_log_cmd "sudo mount /sys work/rootfs/sys -o bind,ro"
-
-    local ret=0
-
-    # Use `--no-nvram`, since we cannot update firmware memory in an offline
-    # build. Instead, use `--removable`, which creates entries that automate
-    # booting if you put the image into a new device, which you almost certainly
-    # will after using mender-convert.
-    local -r target_name=$(probe_grub_install_target)
-    run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --target=${target_name} --removable --no-nvram" || ret=$?
-    if [ $ret -eq 0 ]; then
-        run_and_log_cmd_noexit "sudo chroot work/rootfs grub-install --target=${target_name} --no-nvram" || ret=$?
-    fi
-
-    if [ $ret -eq 0 ]; then
-        run_and_log_cmd_noexit "sudo chroot work/rootfs update-grub" || ret=$?
-    fi
-
-    # Very important that these are unmounted, otherwise Docker may start to
-    # remove files inside them while tearing down the container. You can guess
-    # how I found that out... We run without the logger because otherwise the
-    # message from the previous command, which is the important one, is lost.
-    sudo umount -l work/rootfs/boot/efi || true
-    sudo umount -l work/rootfs/dev || true
-    sudo umount -l work/rootfs/proc || true
-    sudo umount -l work/rootfs/sys || true
-
-    [ $ret -ne 0 ] && exit $ret
+    run_with_chroot_setup work/rootfs grub_install_in_chroot
 
     (   
         cd work/grub-mender-grubenv-${MENDER_GRUBENV_VERSION}
         # Should be removed after running.
         run_and_log_cmd "sudo make DESTDIR=$PWD/../rootfs uninstall-offline-files"
     )
+}
+
+function grub_install_in_chroot() {
+    # Use `--no-nvram`, since we cannot update firmware memory in an offline
+    # build. Instead, use `--removable`, which creates entries that automate
+    # booting if you put the image into a new device, which you almost certainly
+    # will after using mender-convert.
+    local -r target_name=$(probe_grub_install_target)
+    run_in_chroot_and_log_cmd work/rootfs "grub-install --target=${target_name} --removable --no-nvram"
+    run_in_chroot_and_log_cmd work/rootfs "grub-install --target=${target_name} --no-nvram"
+    run_in_chroot_and_log_cmd work/rootfs "update-grub"
 }
 
 # grub_install_grub_editenv_binary
