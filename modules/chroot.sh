@@ -52,6 +52,8 @@ function run_with_chroot_setup() {
             # specify where it should be mounted when EFI integration is off, so let's not, for now.
         fi
         run_and_log_cmd "sudo mount /dev $directory/dev -o bind,ro"
+        # Bind mounting does not work recursively, so we still need this mount.
+        run_and_log_cmd "sudo mount /dev/pts $directory/dev/pts -o bind,ro"
         run_and_log_cmd "sudo mount /proc $directory/proc -o bind,ro"
         run_and_log_cmd "sudo mount /sys $directory/sys -o bind,ro"
 
@@ -66,6 +68,7 @@ function run_with_chroot_setup() {
     if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" ]; then
         sudo umount -l $directory/boot/efi || true
     fi
+    sudo umount -l $directory/dev/pts || true
     sudo umount -l $directory/dev || true
     sudo umount -l $directory/proc || true
     sudo umount -l $directory/sys || true
