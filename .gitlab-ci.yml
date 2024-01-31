@@ -38,11 +38,17 @@ variables:
 
   TEST_MENDER_CONVERT:
     value: "true"
+    options:
+      - "true"
+      - "false"
     description: |-
       Whether to run acceptance tests
 
   PUBLISH_MENDER_CONVERT_AUTOMATIC:
     value: "false"
+    options:
+      - "true"
+      - "false"
     description: |-
       Whether to publish packages automatically - they can always be published manually
 
