@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "bent": "^7.3.12",
-    "jsdom": "^23.0.1"
+    "jsdom": "^24.0.0"
   },
   "scripts": {
     "start": "node index.js",
