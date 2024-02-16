@@ -29,10 +29,6 @@ MENDER_GRUB_KERNEL_BOOT_ARGS=""
 MENDER_GRUBENV_VERSION="64e32b01d1bf54784d2a290ad0469c583e843864"
 MENDER_GRUBENV_URL="${MENDER_GITHUB_ORG}/grub-mender-grubenv/archive/${MENDER_GRUBENV_VERSION}.tar.gz"
 
-# Name of the storage device containing root filesystem partitions in GRUB
-# format.
-MENDER_GRUB_STORAGE_DEVICE=hd0
-
 # Type of kernel (bzImage or zImage)
 #
 # mender-convert will try to determine this value on its own, only set this
