@@ -225,19 +225,32 @@ EOF
 log_info "Installing Mender client and related files"
 
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
+    mender_client_deb_version="$MENDER_CLIENT_VERSION"
+    if [ "$MENDER_CLIENT_VERSION" = "auto" ]; then
+        deb_distro=$(probe_debian_distro_name)
+        deb_codename=$(probe_debian_distro_codename)
+        if ([ "$deb_distro" = "debian" ] && [ "$deb_codename" = "bullseye" ]) \
+            || ([ "$deb_distro" = "debian" ] && [ "$deb_codename" = "buster" ]) \
+            || ([ "$deb_distro" = "ubuntu" ] && [ "$deb_codename" = "jammy" ]) \
+            || ([ "$deb_distro" = "ubuntu" ] && [ "$deb_codename" = "focal" ]); then
+            MENDER_CLIENT_VERSION="3.5.x"
+            mender_client_deb_version="latest"
+        else
+            MENDER_CLIENT_VERSION="latest"
+            mender_client_deb_version="latest"
+        fi
+    fi
     case "${MENDER_CLIENT_VERSION}" in
         1.* | 2.* | 3.*)
-            log_info "Installing Mender client version ${MENDER_CLIENT_VERSION}"
-            deb_get_and_install_package mender-client mender-client "${MENDER_CLIENT_VERSION}"
+            log_info "Installing Mender client version ${mender_client_deb_version}"
+            deb_get_and_install_package mender-client mender-client "${mender_client_deb_version}"
             mender_client_deb_name="${DEB_NAME}"
             ;;
         *)
             # For 4.x, master and latest(*) install the new packages
-            # At the time of writing, this will be broken for "latest" until mender-client v4 is
-            # released. Having an special handling deemed to complex for the short time benefit.
-            log_info "Installing Mender Auth and Mender Update version ${MENDER_CLIENT_VERSION}"
-            deb_get_and_install_package mender-client mender-auth "${MENDER_CLIENT_VERSION}"
-            deb_get_and_install_package mender-client mender-update "${MENDER_CLIENT_VERSION}"
+            log_info "Installing Mender Auth and Mender Update version ${mender_client_deb_version}"
+            deb_get_and_install_package mender-client mender-auth "${mender_client_deb_version}"
+            deb_get_and_install_package mender-client mender-update "${mender_client_deb_version}"
             mender_client_deb_name="${DEB_NAME}"
 
             log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
