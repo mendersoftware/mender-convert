@@ -124,9 +124,13 @@ MENDER_CLIENT_INSTALL="y"
 #
 # This is used to fetch the correct binaries
 #
-# Valid values are "latest" (default), "master" or a specific version
-# MEN-6948 mender-convert is not yet integrated with latest mender-client 4.0.0
-MENDER_CLIENT_VERSION="3.5.2"
+# Valid values are "auto" (default), "latest", "master" or a specific version
+# If set to "auto" then the Mender Client 4.0 or later will be installed unless
+# the distribution is Ubuntu jammy or older or Debian bullseye or older;
+# the latest Mender 3.x client will be installed in those cases.
+# If set to "latest", it will install the latest version of the Mender Client
+# from the 4.x series.
+MENDER_CLIENT_VERSION="auto"
 
 # Mender flash version
 #
