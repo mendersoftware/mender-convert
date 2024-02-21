@@ -124,8 +124,13 @@ MENDER_CLIENT_INSTALL="y"
 #
 # This is used to fetch the correct binaries
 #
-# Valid values are "latest" (default), "master" or a specific version
-MENDER_CLIENT_VERSION="latest"
+# Valid values are "auto" (default), "latest", "master" or a specific version
+# If set to "auto" then the Mender Client 4.0 or later will be installed unless
+# the distribution is Ubuntu jammy or older or Debian bullseye or older;
+# the latest Mender 3.x client will be installed in those cases.
+# If set to "latest", it will install the latest version of the Mender Client
+# from the 4.x series.
+MENDER_CLIENT_VERSION="auto"
 
 # Mender flash version
 #
@@ -151,6 +156,30 @@ MENDER_ADDON_CONFIGURE_INSTALL="n"
 #
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_ADDON_CONFIGURE_VERSION="latest"
+
+# Install Mender-setup
+# If set to "auto" then it is installed if Mender client 4.0 or later is
+# installed. Otherwise it is not installed, but the same functionality is built
+# into Mender client 3.x and earlier.
+#
+MENDER_SETUP_INSTALL="auto"
+
+# Mender-setup version
+#
+# Valid values are "latest" (default), "master" or a specific version
+MENDER_SETUP_VERSION="latest"
+
+# Install Mender-snapshot
+# If set to "auto" then it is installed if Mender client 4.0 or later is
+# installed. Otherwise it is not installed, but the same functionality is built
+# into Mender client 3.x and earlier.
+#
+MENDER_SNAPSHOT_INSTALL="auto"
+
+# Mender-snapshot version
+#
+# Valid values are "latest" (default), "master" or a specific version
+MENDER_SNAPSHOT_VERSION="latest"
 
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.

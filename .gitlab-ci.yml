@@ -27,8 +27,8 @@ variables:
       Version of mender-configure for the converted image- 'latest', 'master' or a specific version
 
   ## Auto-update
-  RASPBIAN_URL: "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-09-26/2022-09-22-raspios-bullseye-armhf-lite.img.xz"
-  RASPBIAN_NAME: 2022-09-22-raspios-bullseye-armhf-lite
+  RASPBIAN_URL: "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2023-05-03/2023-05-03-raspios-bullseye-armhf-lite.img.xz"
+  RASPBIAN_NAME: 2023-05-03-raspios-bullseye-armhf-lite
 
   # Which version of mender-convert to use in published image name. Normally
   # empty, in which case the branch or tag name will be used, but this variable
@@ -38,11 +38,17 @@ variables:
 
   TEST_MENDER_CONVERT:
     value: "true"
+    options:
+      - "true"
+      - "false"
     description: |-
       Whether to run acceptance tests
 
   PUBLISH_MENDER_CONVERT_AUTOMATIC:
     value: "false"
+    options:
+      - "true"
+      - "false"
     description: |-
       Whether to publish packages automatically - they can always be published manually
 

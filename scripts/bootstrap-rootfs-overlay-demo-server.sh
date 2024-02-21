@@ -30,7 +30,7 @@ while (("$#")); do
             ;;
         *)
             echo "Sorry but the provided option is not supported: $1"
-            echo "Usage:  $(basename $0) --output-dir <rootfs overlay dir> --server-ip <your server IP address>"
+            echo "Usage:  $(basename $0) --output-dir ./input/rootfs_overlay_demo --server-ip <your server IP address>"
             exit 1
             ;;
     esac

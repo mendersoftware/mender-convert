@@ -34,7 +34,7 @@ while (("$#")); do
             ;;
         *)
             echo "Sorry but the provided option is not supported: $1"
-            echo "Usage:  $(basename $0) --output-dir ./rootfs_overlay_demo --server-url <your server URL> [--server-cert <path to your server.crt file>]"
+            echo "Usage:  $(basename $0) --output-dir ./input/rootfs_overlay_demo --server-url <your server URL> [--server-cert <path to your server.crt file>]"
             exit 1
             ;;
     esac
