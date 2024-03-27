@@ -125,8 +125,7 @@ MENDER_CLIENT_INSTALL="y"
 # This is used to fetch the correct binaries
 #
 # Valid values are "latest" (default), "master" or a specific version
-# MEN-6948 mender-convert is not yet integrated with latest mender-client 4.0.0
-MENDER_CLIENT_VERSION="3.5.2"
+MENDER_CLIENT_VERSION="latest"
 
 # Install Mender Connect addon
 #
