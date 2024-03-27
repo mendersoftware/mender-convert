@@ -440,10 +440,10 @@ test:hardware:convert:
       --config configs/testing/hardware-testing
       --overlay tests/ssh-public-key-overlay
     # Collect artifacts.
-    - mv deploy ${RASPBERRYPI_PLATFORM}
-    - tar czf ${RASPBERRYPI_PLATFORM}.tar.gz ${RASPBERRYPI_PLATFORM}
+    - mv deploy ${RASPBERRYPI_PLATFORM}-hardware-test
+    - tar czf ${RASPBERRYPI_PLATFORM}-hardware-test.tar.gz ${RASPBERRYPI_PLATFORM}-hardware-test
     # Upload to temporary S3 bucket
-    - mender_ci_save_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
+    - mender_ci_save_tmp_artifact ${RASPBERRYPI_PLATFORM}-hardware-test.tar.gz
   artifacts:
     paths:
       - checksums
@@ -460,10 +460,10 @@ test:hardware:flash:
   script:
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
     # Fetch artifacts from temporary S3 bucket
-    - mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
+    - mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}-hardware-test.tar.gz
     # Flash and boot the device under test
     - slave-control mode flash
-    - tar -xvzf ${RASPBERRYPI_PLATFORM}.tar.gz --wildcards --no-anchored '*.img' --to-stdout | dd of=/dev/sdmux bs=8M
+    - tar -xvzf ${RASPBERRYPI_PLATFORM}-hardware-test.tar.gz --wildcards --no-anchored '*.img' --to-stdout | dd of=/dev/sdmux bs=8M
     - slave-control mode test
 
 test:hardware:acceptance:
@@ -481,10 +481,10 @@ test:hardware:acceptance:
   script:
     # Fetch artifacts from temporary S3 bucket
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
-    - mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
+    - mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}-hardware-test.tar.gz
     # Extract the configuration
-    - tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
-    - mv ${RASPBERRYPI_PLATFORM} deploy
+    - tar xzf ${RASPBERRYPI_PLATFORM}-hardware-test.tar.gz
+    - mv ${RASPBERRYPI_PLATFORM}-hardware-test deploy
     # Run the tests
     - ./scripts/test/run-tests.sh
       --prebuilt-image raspberrypi4
