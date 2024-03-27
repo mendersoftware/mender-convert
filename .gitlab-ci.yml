@@ -487,10 +487,10 @@ test:hardware:acceptance:
     - mv ${RASPBERRYPI_PLATFORM} deploy
     # Run the tests
     - ./scripts/test/run-tests.sh
-      --prebuilt-image
-      raspberrypi4
-      "${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+      --prebuilt-image raspberrypi4
+      ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
       --
       --hardware-testing
-      --host ${SSH_JUMP_HOST_IP}:${SSH_JUMP_HOST_PORT} mender-image-tests -k 'not test_network_based_image_update and not test_image_update_broken_kernel'"
+      --host ${SSH_JUMP_HOST_IP}:${SSH_JUMP_HOST_PORT}
+      -k "'not test_network_based_image_update and not test_image_update_broken_kernel'"
       -n 1
