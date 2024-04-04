@@ -96,7 +96,7 @@ function platform_modify() {
     # for files. Modify the hard-coded mount point for the partition from /boot to /uboot.
 
     # Integrate with systemd services with "/boot/" hardcoded
-    files_to_modify=$(find work/rootfs/lib/ -type f -name "*.service" | xargs grep '/boot/' | cut -d: -f1 | uniq)
+    files_to_modify="$(find work/rootfs/lib/ -type f -name "*.service" -exec grep -l '/boot/' '{}' ';')"
 
     # MEN-5944: Integrate with raspberrypi-sys-mods/firstboot
     # See: https://github.com/RPi-Distro/raspberrypi-sys-mods
