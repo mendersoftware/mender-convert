@@ -14,6 +14,11 @@ RASPBERRYPI_BINARIES="${RASPBERRYPI_CONFIG}-2020.01.tar.gz"
 RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi/${RASPBERRYPI_BINARIES}"
 
 function platform_modify() {
+    if file -L work/rootfs/bin/sh | grep -qF "ELF 64-bit"; then
+        echo "There is no 64-bit support for Raspberry Pi yet, please use a 32-bit image".
+        exit 1
+    fi
+
     mkdir -p work/rpi/binaries
 
     run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
@@ -84,6 +89,15 @@ function platform_modify() {
     run_and_log_cmd "sudo cp work/rpi/binaries/boot.scr work/boot"
     run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
     run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
+
+    # Disable 64-bit mode and force 32-bit mode. Even though we check for 32-bit binaries at the
+    # start of this function, some images use a 64-bit kernel even with 32-bit userspace. Due to our
+    # custom U-Boot bootloader we need to stick to 32-bit for now.
+    if ! grep -q '^arm_64bit=0' work/boot/config.txt; then
+        log_info "Forcing 32-bit kernel"
+        sed -i -e '/^arm_64bit=/d' work/boot/config.txt
+        echo "arm_64bit=0" >> work/boot/config.txt
+    fi
 
     # Raspberry Pi applications expect to find this on the device and in some
     # cases parse the options to determine the functionality. Create symlinks
