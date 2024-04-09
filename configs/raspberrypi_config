@@ -14,6 +14,11 @@ RASPBERRYPI_BINARIES="${RASPBERRYPI_CONFIG}-2020.01.tar.gz"
 RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi/${RASPBERRYPI_BINARIES}"
 
 function platform_modify() {
+    if file -L work/rootfs/bin/sh | grep -qF "ELF 64-bit"; then
+        echo "There is no 64-bit support for Raspberry Pi yet, please use a 32-bit image".
+        exit 1
+    fi
+
     mkdir -p work/rpi/binaries
 
     run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
@@ -78,6 +83,10 @@ function platform_modify() {
         run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
     fi
 
+    # Make sure the on-board bootloader boots our bootloader (which we do via the kernel option).
+    sed -i -e '/^kernel=/d' work/boot/config.txt
+    echo "kernel=${RASPBERRYPI_BOOTLOADER_IMAGE}" >> work/boot/config.txt
+
     # Replace kernel with U-boot and add boot script
     run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
     run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
@@ -85,18 +94,29 @@ function platform_modify() {
     run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
     run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
 
+    # Disable 64-bit mode and force 32-bit mode. Even though we check for 32-bit binaries at the
+    # start of this function, some images use a 64-bit kernel even with 32-bit userspace. Due to our
+    # custom U-Boot bootloader we need to stick to 32-bit for now.
+    if ! grep -q '^arm_64bit=0' work/boot/config.txt; then
+        log_info "Forcing 32-bit kernel"
+        sed -i -e '/^arm_64bit=/d' work/boot/config.txt
+        echo "arm_64bit=0" >> work/boot/config.txt
+    fi
+
     # Raspberry Pi applications expect to find this on the device and in some
     # cases parse the options to determine the functionality. Create symlinks
-    # to all files
+    # to all files that don't already exist.
     for f in $(ls -1 work/boot); do
-        run_and_log_cmd "sudo ln -fs /uboot/${f} work/rootfs/boot/${f}"
+        if [ ! -f "work/rootfs/boot/${f}" ]; then
+            run_and_log_cmd "sudo ln -fs /uboot/${f} work/rootfs/boot/${f}"
+        fi
     done
 
     # Raspberry Pi headless configuration and other first boot scripts inspect the boot partition
     # for files. Modify the hard-coded mount point for the partition from /boot to /uboot.
 
     # Integrate with systemd services with "/boot/" hardcoded
-    files_to_modify=$(find work/rootfs/lib/ -type f -name "*.service" | xargs grep '/boot/' | cut -d: -f1 | uniq)
+    files_to_modify="$(find work/rootfs/lib/ -type f -name "*.service" -exec grep -l '/boot/' '{}' ';')"
 
     # MEN-5944: Integrate with raspberrypi-sys-mods/firstboot
     # See: https://github.com/RPi-Distro/raspberrypi-sys-mods
