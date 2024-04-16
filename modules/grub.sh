@@ -181,5 +181,11 @@ function grub_install_mender_grub() {
                 break
             fi
         done
+    elif [ -d work/rootfs/boot/dtb ]; then
+        # For armbian, dietpi and similar
+        # Keep the existing dtb directory structure as known by u-boot
+        if [ $(find -L work/rootfs/boot/dtb -name '*.dtb' | wc -l) -gt 0 ]; then
+            run_and_log_cmd "sudo cp -rL work/rootfs/boot/dtb work/boot/dtb"
+        fi
     fi
 }
