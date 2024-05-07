@@ -384,7 +384,7 @@ test_acceptance_ubuntu_raspberrypi3:
 .template:publish:docker-image:
   stage: publish
   tags:
-    - docker
+    - hetzner-amd-beefy
   image: docker
   services:
     - name: docker:20.10.21-dind
