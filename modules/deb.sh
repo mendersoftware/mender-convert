@@ -49,7 +49,7 @@ function deb_from_repo_dist_get()  {
 
     local -r filename=$(basename $deb_package_path)
     local -r deb_package_url=$(echo ${repo_url}/${deb_package_path} | sed 's/+/%2B/g')
-    run_and_log_cmd "wget -Nq ${deb_package_url} -P ${download_dir}"
+    run_and_log_cmd "wget -Nv ${deb_package_url} -P ${download_dir}"
 
     rm -f /tmp/Packages
     log_info "Successfully downloaded ${filename}"
