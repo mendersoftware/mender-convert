@@ -25,4 +25,4 @@ fi
 
 IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_PROVIDED_TAG_NAME:+:$GIT_PROVIDED_TAG_NAME}"}
 
-eval docker build . -t "${IMAGE_NAME}" "$*"
+eval docker buildx build . -t "${IMAGE_NAME}" "$*"
