@@ -2,6 +2,8 @@
 FROM ubuntu:20.04 AS build
 
 ARG MENDER_ARTIFACT_VERSION=master
+ARG TARGETARCH
+
 
 RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential \
@@ -12,7 +14,7 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 	wget
 
 # install go
-RUN wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz && tar -C /usr/local -xzf go1.22.3.linux-amd64.tar.gz
+RUN wget https://go.dev/dl/go1.22.3.linux-${TARGETARCH}.tar.gz && tar -C /usr/local -xzf go1.22.3.linux-${TARGETARCH}.tar.gz
 ENV PATH="${PATH}:/usr/local/go/bin"
 
 # Parallel xz (LZMA) compression
