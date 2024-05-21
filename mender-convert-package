@@ -167,6 +167,9 @@ fi
 # way, and write the rootfs image first.
 run_and_log_cmd "mv --force work/rootfs/data work/data"
 
+# Make a folder we can mount it on though.
+run_and_log_cmd "mkdir work/rootfs/data"
+
 actual_rootfs_size=$(sudo du -s --block-size=512 work/rootfs | cut -f 1)
 
 # KiB -> 512 sectors
