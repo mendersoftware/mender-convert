@@ -246,8 +246,8 @@ if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
         *)
             # For 4.x, master and latest(*) install the new packages
             log_info "Installing Mender Auth and Mender Update version ${mender_client_deb_version}"
-            deb_get_and_install_package mender-client mender-auth "${mender_client_deb_version}"
-            deb_get_and_install_package mender-client mender-update "${mender_client_deb_version}"
+            deb_get_and_install_package mender-client4 mender-auth "${mender_client_deb_version}"
+            deb_get_and_install_package mender-client4 mender-update "${mender_client_deb_version}"
             mender_client_deb_name="${DEB_NAME}"
 
             log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
