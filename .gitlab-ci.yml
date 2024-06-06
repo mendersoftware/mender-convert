@@ -10,21 +10,21 @@ variables:
     description: |-
       Version of mender-artifact for the builder image - 'master' or a specific version
   MENDER_CLIENT_VERSION:
-    value: "master"
+    value: "latest"
     description: |-
-      Version of mender for the converted image- 'latest', 'master' or a specific version
+      Version of mender for the converted image - 'latest', 'auto', 'master' or a specific version
   MENDER_FLASH_VERSION:
-    value: "master"
+    value: "latest"
     description: |-
-      Version of mender-flash for the converted image- 'latest', 'master' or a specific version
+      Version of mender-flash for the converted image - 'latest', 'master' or a specific version
   MENDER_ADDON_CONNECT_VERSION:
     value: "latest"
     description: |-
-      Version of mender-connect for the converted image- 'latest', 'master' or a specific version
+      Version of mender-connect for the converted image - 'latest', 'master' or a specific version
   MENDER_ADDON_CONFIGURE_VERSION:
     value: "latest"
     description: |-
-      Version of mender-configure for the converted image- 'latest', 'master' or a specific version
+      Version of mender-configure for the converted image - 'latest', 'master' or a specific version
 
   ## Auto-update
   RASPBIAN_URL: "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2023-05-03/2023-05-03-raspios-bullseye-armhf-lite.img.xz"
