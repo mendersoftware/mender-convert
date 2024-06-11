@@ -66,7 +66,7 @@ These configurations have been submitted by community contributors.
 | :------------ | :---------------------- |
 | comfile_pi_config | Comfile Pi, Raspbian 32bit |
 | rockpro64_emmc_config | RockPro64, Debian 32bit on internal eMMC storage |
-| rockpro64_sd_config | BeagleBone Black, Debian 32bit on external SD card storage |
+| rockpro64_sd_config | RockPro64, Debian 32bit on external SD card storage |
 
 ## Example usage: Raspberry Pi 3, Raspbian 32bit
 
