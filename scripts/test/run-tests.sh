@@ -28,14 +28,6 @@ fi
 WORKSPACE=./tests
 
 ## Auto-update
-BBB_DEBIAN_SDCARD_IMAGE_URL="https://files.beagle.cc/file/beagleboard-public-2021/images/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz"
-
-# Not on official home page, but found via https://elinux.org/Beagleboard:BeagleBoneBlack_Debian:
-
-## Auto-update
-BBB_DEBIAN_EMMC_IMAGE_URL="http://rcn-ee.com/rootfs/bb.org/testing/2023-04-06/buster-console-armhf/bone-debian-10.13-console-armhf-2023-04-06-1gb.img.xz"
-
-## Auto-update
 RASPBIAN_IMAGE_URL="https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2023-05-03/2023-05-03-raspios-bullseye-armhf-lite.img.xz"
 
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Jammy-x86-64.img.gz"
@@ -163,33 +155,6 @@ else
                      "release-1" \
                      "input/image/${RASPBIAN_IMAGE_COMPRESSED}" \
                      "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
-                     "--" \
-                     "$@" \
-                     || test_result=$?
-  fi
-
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "beaglebone" ]; then
-    wget --progress=dot:giga -N ${BBB_DEBIAN_SDCARD_IMAGE_URL} -P input/image/
-    BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_URL##*/}"
-    BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED="${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED%.xz}"
-    unxz --force "input/image/${BBB_DEBIAN_SDCARD_IMAGE_COMPRESSED}"
-    convert_and_test "beaglebone-sdcard" \
-                     "release-1" \
-                     "input/image/${BBB_DEBIAN_SDCARD_IMAGE_UNCOMPRESSED}" \
-                     "--config configs/beaglebone_black_debian_sdcard_config $EXTRA_CONFIG" \
-                     "--" \
-                     "$@" \
-                     || test_result=$?
-
-    rm -rf deploy
-    wget --progress=dot:giga -N ${BBB_DEBIAN_EMMC_IMAGE_URL} -P input/image/
-    BBB_DEBIAN_EMMC_IMAGE_COMPRESSED="${BBB_DEBIAN_EMMC_IMAGE_URL##*/}"
-    BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED="${BBB_DEBIAN_EMMC_IMAGE_COMPRESSED%.xz}"
-    unxz --force "input/image/${BBB_DEBIAN_EMMC_IMAGE_COMPRESSED}"
-    convert_and_test "beaglebone-emmc" \
-                     "release-1" \
-                     "input/image/${BBB_DEBIAN_EMMC_IMAGE_UNCOMPRESSED}" \
-                     "--config configs/beaglebone_black_debian_emmc_config $EXTRA_CONFIG" \
                      "--" \
                      "$@" \
                      || test_result=$?

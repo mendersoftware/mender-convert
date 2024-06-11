@@ -329,17 +329,6 @@ test_acceptance_raspberrypi:
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_beaglebone:
-  <<: *test_acceptance
-  script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
-      --only beaglebone
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
-
 test_acceptance_ubuntu_raspberrypi3:
   <<: *test_acceptance
   script:

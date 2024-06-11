@@ -1,4 +1,0 @@
-source configs/beaglebone_black_base_config
-MENDER_STORAGE_TOTAL_SIZE_MB="3648"
-MENDER_DEVICE_TYPE="beaglebone-emmc"
-MENDER_STORAGE_DEVICE_BASE="/dev/mmcblk1p"

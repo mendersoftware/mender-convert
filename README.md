@@ -64,8 +64,6 @@ These configurations have been submitted by community contributors.
 
 | Configuration | Supported OS / hardware |
 | :------------ | :---------------------- |
-| beaglebone_black_debian_emmc_config | BeagleBone Black 4GB, Debian 32bit on internal eMMC storage |
-| beaglebone_black_debian_sdcard_config | BeagleBone Black, Debian 32bit on external SD card storage |
 | comfile_pi_config | Comfile Pi, Raspbian 32bit |
 | rockpro64_emmc_config | RockPro64, Debian 32bit on internal eMMC storage |
 | rockpro64_sd_config | BeagleBone Black, Debian 32bit on external SD card storage |
