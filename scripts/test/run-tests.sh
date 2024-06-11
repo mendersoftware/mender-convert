@@ -27,13 +27,9 @@ fi
 
 WORKSPACE=./tests
 
-## Auto-update
-BBB_DEBIAN_SDCARD_IMAGE_URL="https://files.beagle.cc/file/beagleboard-public-2021/images/bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz"
-
-# Not on official home page, but found via https://elinux.org/Beagleboard:BeagleBoneBlack_Debian:
-
-## Auto-update
-BBB_DEBIAN_EMMC_IMAGE_URL="http://rcn-ee.com/rootfs/bb.org/testing/2023-04-06/buster-console-armhf/bone-debian-10.13-console-armhf-2023-04-06-1gb.img.xz"
+# Not official images, but found at https://forum.beagleboard.org/tag/latest-images
+BBB_DEBIAN_SDCARD_IMAGE_URL="https://rcn-ee.com/rootfs/release/2023-10-07/bullseye-minimal-armhf/am335x-debian-11.8-minimal-armhf-2023-10-07-2gb.img.xz"
+BBB_DEBIAN_EMMC_IMAGE_URL="https://rcn-ee.com/rootfs/release/2023-10-07/bullseye-minimal-armhf/am335x-eMMC-flasher-debian-11.8-minimal-armhf-2023-10-07-2gb.img.xz"
 
 ## Auto-update
 RASPBIAN_IMAGE_URL="https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2023-05-03/2023-05-03-raspios-bullseye-armhf-lite.img.xz"
