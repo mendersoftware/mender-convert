@@ -329,16 +329,21 @@ test_acceptance_raspberrypi:
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_beaglebone:
-  <<: *test_acceptance
-  script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
-      --only beaglebone
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
+# Disable testing this platform. See commit 7ad9b414ed3231 in master. We do not intend to fix this
+# problem, therefore there is no ticket number attached. However, we don't want to remove the
+# platform in a patch release either, since technically it is still working for those who are still
+# using Debian Buster, and old Mender packages. Hence we comment out the tests (which do not work,
+# because we have no packages for buster) for 4.2.x specifically.
+# test_acceptance_beaglebone:
+#   <<: *test_acceptance
+#   script:
+#     - mkdir -p input/config
+#     - cp versions_override_config input/config/versions_override_config
+#     - ./scripts/test/run-tests.sh
+#       --config input/config/versions_override_config
+#       --only beaglebone
+#       --
+#       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
 test_acceptance_ubuntu_raspberrypi3:
   <<: *test_acceptance
