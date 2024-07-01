@@ -130,8 +130,8 @@ function deb_install_package_in_chroot() {
     run_in_chroot_and_log_cmd_noexit "$dest_dir" "env \
         DEBIAN_FRONTEND=noninteractive \
         DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
-        dpkg --install /tmp/$(basename $deb_package)" || ret=$?
-    rm -f "$dest_dir/tmp/$(basename $deb_package)"
+        dpkg --install \"/tmp/$(basename "$deb_package")\"" || ret=$?
+    rm -f "$dest_dir/tmp/$(basename "$deb_package")"
     case $ret in
         0)
             # Success
