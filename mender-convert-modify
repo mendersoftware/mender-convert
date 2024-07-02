@@ -287,6 +287,10 @@ if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     deb_get_and_install_package mender-configure mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}" "true"
 fi
 
+if [ "${MENDER_INSTALL_INPUT_PACKAGES}" = "y" ]; then
+    deb_get_and_install_input_package ${MENDER_INSTALL_INPUT_PACKAGES_PATH}
+fi
+
 # Done with package installations.
 deb_cleanup_package_cache work/rootfs
 

@@ -157,6 +157,19 @@ MENDER_ADDON_CONFIGURE_INSTALL="n"
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_ADDON_CONFIGURE_VERSION="latest"
 
+# Install arbitrary debian packages by placing them in
+# MENDER_INSTALL_INPUT_PACKAGES_PATH. Specify the order
+# of installation (in case of dependencies where package
+# B depends on A) by adding a file called `order` to the directory.
+#
+# Directory containing deb packages to be installed in the image
+#
+MENDER_INSTALL_INPUT_PACKAGES_PATH="input/deb"
+
+# Install deb packages located in MENDER_INSTALL_INPUT_PACKAGES_PATH
+#
+MENDER_INSTALL_INPUT_PACKAGES="n"
+
 # Install Mender-setup
 # If set to "auto" then it is installed if Mender client 4.0 or later is
 # installed. Otherwise it is not installed, but the same functionality is built

@@ -130,8 +130,8 @@ function deb_install_package_in_chroot() {
     run_in_chroot_and_log_cmd_noexit "$dest_dir" "env \
         DEBIAN_FRONTEND=noninteractive \
         DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
-        dpkg --install /tmp/$(basename $deb_package)" || ret=$?
-    rm -f "$dest_dir/tmp/$(basename $deb_package)"
+        dpkg --install \"/tmp/$(basename "$deb_package")\"" || ret=$?
+    rm -f "$dest_dir/tmp/$(basename "$deb_package")"
     case $ret in
         0)
             # Success
@@ -219,6 +219,45 @@ function deb_get_and_install_package() {
         fi
     fi
     deb_install_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
+}
+
+#  Install binary files of a deb package into work/deb-packages from a local directory
+#  $1 - Directory path
+#
+function deb_get_and_install_input_package() {
+    if ! [[ $# -eq 1 ]]; then
+        log_fatal "deb_get_and_install_input_package() requires 1 argument"
+    fi
+
+    local -r package_path="$1"
+    local -r package_order_file="${package_path}/order"
+    local -a order=()
+
+    # Install packages by set order if file exists
+    if [ -f "${package_order_file}" ]; then
+        while read package; do
+            order+=("${package_path}/${package}")
+        done < "$package_order_file"
+    fi
+
+    # Add the rest of the packages to the order array
+    while read -r -d $'\0' package; do
+        # Match `order packages` with `package` to
+        # to avoid duplication in the array
+        if ! [[ " ${order[@]} " =~ " ${package} " ]]; then
+            order+=("$package")
+        fi
+    done < <(find "${package_path}" -name "*.deb" -type f -print0)
+
+    # Install packages
+    for package in "${order[@]}"; do
+        if ! [ -e "${package}" ]; then
+            log_fatal "Debian package '${package}' does not exist"
+            continue
+        fi
+        log_info "Installing ${package}"
+        deb_install_package "${package}" "work/rootfs/"
+    done
 }
 
 function deb_cleanup_package_cache() {
