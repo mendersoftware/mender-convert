@@ -1,0 +1,111 @@
+# Binaries generated with the following script:
+#    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi64.sh
+
+ASSETS_PATH="rpi_arm64"
+
+# in the Aarch64 case, it seems to always be "kernel8.img"
+RASPBERRYPI_KERNEL_IMAGE="kernel8.img"
+
+RASPBERRYPI_BINARIES="raspberrypi_arm64-2024.04.tar.gz"
+RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi/${RASPBERRYPI_BINARIES}"
+
+RASPBERRYPI_OS_REQUIRED_ID="debian"     # also applies to the "Raspberry Pi OS" images
+RASPBERRYPI_OS_MINIMAL_VERSION=12       # this is "bookworm" or later, as it changed the boot partition mount directory
+
+source configs/raspberrypi_common_config
+
+function platform_modify() {
+    if file -L work/rootfs/bin/sh | grep -qF "ELF 32-bit"; then
+        echo "This configuration requires a 64-bit image for Raspberry Pi.".
+        exit 1
+    fi
+
+    if ! check_image_os; then
+        echo "This configuration requires an image based on $RASPBERRYPI_OS_REQUIRED_ID, version $RASPBERRYPI_OS_MINIMAL_VERSION or later."
+        exit 1
+    fi
+    
+    mkdir -p work/rpi/binaries
+
+    if [ -f "assets/${RASPBERRYPI_BINARIES}" ]; then
+        run_and_log_cmd "cp assets/${RASPBERRYPI_BINARIES} work/rpi/binaries"
+    else
+        run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
+    fi
+    run_and_log_cmd "tar xzvf work/rpi/binaries/${RASPBERRYPI_BINARIES} -C work/rpi/binaries"
+
+    # By default, we modify cmdline.txt.
+    #
+    # In Ubuntu, the file is called btcmd.txt; if this file exists, use it instead
+    CMDLINE="cmdline.txt"
+
+    # Make a copy of Linux kernel arguments and modify.
+    run_and_log_cmd "cp work/boot/$CMDLINE work/rpi/$CMDLINE"
+
+    # Set a dynamic rootfs part (required for Mender A/B update strategy)
+    run_and_log_cmd "sed -i 's/\b[ ]root=[^ ]*/ root=\${mender_kernel_root}/' work/rpi/$CMDLINE"
+
+    # Root filesystem can not be resized when the disk is partition according
+    # to Mender layout, where the rootfs partition is the not last one which
+    # is a requirement to be able to do an "online" resize.
+    #
+    # This disables resize of rootfs on boot but applies the changes to
+    # cmdline.txt that are performed in the init_resize.sh script.
+    #
+    # Extracted from /usr/lib/raspi-config/init_resize.sh
+    run_and_log_cmd "sed -i 's| init=/usr/lib/raspi-config/init_resize\.sh||' work/rpi/$CMDLINE"
+    run_and_log_cmd "sed -i 's| sdhci\.debug_quirks2=4||' work/rpi/$CMDLINE"
+    if ! grep -q splash work/rpi/$CMDLINE; then
+        run_and_log_cmd "sed -i 's/ quiet//g' work/rpi/$CMDLINE"
+    fi
+
+    # Update Linux kernel command arguments with our custom configuration
+    run_and_log_cmd "sudo cp work/rpi/$CMDLINE work/boot/"
+
+    # Mask udisks2.service, otherwise it will mount the inactive part and we
+    # might write an update while it is mounted which often result in
+    # corruptions.
+    #
+    # TODO: Find a way to only blacklist mmcblk0pX devices instead of masking
+    # the service.
+    run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
+
+    # Extract Linux kernel and install to /boot directory. In the 64bit case, the previously existing kernel file
+	# is actually a gzipped vmlinux file. Hence, extract and copy as such
+    RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
+	# this is required because gunzip is very picky about the filename!
+    run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE}.gz"
+    run_and_log_cmd "sudo gunzip work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE}.gz"
+    run_and_log_cmd "sudo mv work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/vmlinux"
+
+    # Make sure the on-board bootloader boots our bootloader (which we do via the kernel option).
+    sed -i -e '/^kernel=/d' work/boot/config.txt
+    echo "kernel=${RASPBERRYPI_BOOTLOADER_IMAGE}" >> work/boot/config.txt
+
+    # Replace kernel with U-boot and add boot script
+    run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
+    run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
+    run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
+    
+    # In order to have the DTBs inside the root filesystem and accessible from u-boot,
+    # copy all *.dtb files from the boot partition into the /boot directory
+    run_and_log_cmd "sudo cp work/boot/*.dtb work/rootfs/boot/"
+
+    run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
+    run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+
+    # Remove original 'resize2fs_once' script and its symbolic link.
+    if [ -L work/rootfs/etc/rc3.d/S01resize2fs_once ]; then
+        run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
+    fi
+    run_and_log_cmd "sudo rm -f work/rootfs/etc/init.d/resize2fs_once"
+
+    # Enable UART. This is required for U-Boot to operate correctly, see
+    # https://source.denx.de/u-boot/u-boot/-/blob/master/arch/arm/mach-bcm283x/Kconfig
+    log_info "Enabling UART in U-Boot configuration"
+    cat <<- EOF >> work/boot/config.txt
+
+# Enable UART
+enable_uart=1
+EOF
+}
