@@ -24,6 +24,7 @@ if [ -z "$IMAGE_NAME" -a -z "$GIT_TAG_OR_BRANCH_NAME" ]; then
 fi
 
 IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_TAG_OR_BRANCH_NAME:+:$GIT_TAG_OR_BRANCH_NAME}"}
+ASSETS_DIRECTORY=${ASSETS_DIRECTORY:-"$(pwd)/assets"}
 CONFIGS_DIRECTORY=${CONFIGS_DIRECTORY:-"$(pwd)/configs"}
 DEPLOY_DIRECTORY=${DEPLOY_DIRECTORY:-"$(pwd)/deploy"}
 INPUT_DIRECTORY=${INPUT_DIRECTORY:-"$(pwd)/input"}
@@ -42,6 +43,7 @@ echo "using log file at: ${LOGS_DIRECTORY}/${LOG_FILE}"
 set +e
 docker run \
   --rm \
+  -v "$ASSETS_DIRECTORY":/mender-convert/assets \
   -v "$CONFIGS_DIRECTORY":/mender-convert/configs \
   -v "$INPUT_DIRECTORY":/mender-convert/input \
   -v "$LOGS_DIRECTORY":/mender-convert/logs \
