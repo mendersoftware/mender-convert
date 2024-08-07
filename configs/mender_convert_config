@@ -230,6 +230,20 @@ MENDER_ENABLE_PARTUUID="n"
 # Partition used as the boot partition.
 MENDER_BOOT_PART=""
 
+# Path to mount the boot partition in the root filesystem
+#
+# In order to access the boot partition from the running system,
+# it needs to be mounted to a defined directory location.
+# By default, this is
+# - /boot/efi: for GRUB-EFI based integrations
+# - /uboot: for all other integrations
+#
+# The value of this variable overrides all defaults.
+# Example:
+#   MENDER_BOOT_PART_MOUNT_LOCATION="/boot/firmware"
+#
+#MENDER_BOOT_PART_MOUNT_LOCATION=""
+
 # Partition used as the first (A) rootfs partition.
 MENDER_ROOTFS_PART_A=""
 
