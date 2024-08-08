@@ -1,19 +1,37 @@
+# Raspberry Pi does not support GRUB bootloader integration, fallback to U-boot.
+MENDER_GRUB_EFI_INTEGRATION=n
+
+# Nothing to copy
+MENDER_COPY_BOOT_GAP=n
+
+# 4MB alignment
+MENDER_PARTITION_ALIGNMENT="4194304"
+
+# compress the images to save some space
+MENDER_COMPRESS_DISK_IMAGE="gzip"
+
+# from the "bookworm" release onwards, the Raspberry Pi OS
+# specific modifications expect the boot partition to be mounted
+# at /boot/firmware
+MENDER_BOOT_PART_MOUNTPOINT="/boot/firmware"
+
 # the functions below are not exactly great, but should do the job well enough:
 # extract one key from /etc/os-release of the image in question, and check it against
 # the required value. The return values are meant to be used directly.
 
-RASPBERRYPI_OS_REQUIRED_ID="debian"     # also applies to the "Raspberry Pi OS" images
-RASPBERRYPI_OS_MINIMAL_VERSION=12       # this is "bookworm" or later, as it changed the boot partition mount directory
-
 function check_image_os_id() {
-    if [ $(awk -F= '$1=="ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release) != ${RASPBERRYPI_OS_REQUIRED_ID} ]; then
+    extracted_id=$(awk -F= '$1=="ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release)
+    if [ ${extracted_id} != ${RASPBERRYPI_OS_REQUIRED_ID} ]; then
+        echo "expected ${RASPBERRYPI_OS_REQUIRED_ID}, but found ${extracted_id}"
         return 1
     fi
     return 0
 }
 
 function check_image_os_minimal_version() {
-    if [ $(awk -F= '$1=="VERSION_ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release) -lt ${RASPBERRYPI_OS_MINIMAL_VERSION} ]; then
+    extracted_version=$(awk -F= '$1=="VERSION_ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release)
+    if [ ${extracted_version} -lt ${RASPBERRYPI_OS_MINIMAL_VERSION} ]; then
+        echo "expected ${RASPBERRYPI_OS_MINIMAL_VERSION}, but found ${extracted_version}"
         return 1
     fi
     return 0

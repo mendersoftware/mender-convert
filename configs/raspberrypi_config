@@ -1,21 +1,24 @@
 # Binaries generated with the following script:
 #    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi.sh
 
-# Raspberry Pi does not support GRUB bootloader integration, fallback to U-boot.
-MENDER_GRUB_EFI_INTEGRATION=n
-
-# Nothing to copy
-MENDER_COPY_BOOT_GAP=n
-
-# 4MB alignment
-MENDER_PARTITION_ALIGNMENT="4194304"
 
 RASPBERRYPI_BINARIES="${RASPBERRYPI_CONFIG}-2020.01.tar.gz"
 RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi/${RASPBERRYPI_BINARIES}"
 
+
+RASPBERRYPI_OS_REQUIRED_ID="raspbian"   # historical distro name of the Raspberry Pi OS Debian derivative
+RASPBERRYPI_OS_MINIMAL_VERSION=12       # this is "bookworm" or later, as it changed the boot partition mount directory
+
+source configs/raspberrypi_common_config
+
 function platform_modify() {
     if file -L work/rootfs/bin/sh | grep -qF "ELF 64-bit"; then
         echo "There is no 64-bit support for Raspberry Pi yet, please use a 32-bit image".
+        exit 1
+    fi
+
+    if ! check_image_os; then
+        echo "This configuration requires an image based on $RASPBERRYPI_OS_REQUIRED_ID, version $RASPBERRYPI_OS_MINIMAL_VERSION or later."
         exit 1
     fi
 
@@ -88,7 +91,6 @@ function platform_modify() {
     echo "kernel=${RASPBERRYPI_BOOTLOADER_IMAGE}" >> work/boot/config.txt
 
     # Replace kernel with U-boot and add boot script
-    run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
     run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
     run_and_log_cmd "sudo cp work/rpi/binaries/boot.scr work/boot"
     run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
@@ -103,46 +105,9 @@ function platform_modify() {
         echo "arm_64bit=0" >> work/boot/config.txt
     fi
 
-    # Raspberry Pi applications expect to find this on the device and in some
-    # cases parse the options to determine the functionality. Create symlinks
-    # to all files that don't already exist.
-    for f in $(ls -1 work/boot); do
-        if [ ! -f "work/rootfs/boot/${f}" ]; then
-            run_and_log_cmd "sudo ln -fs /uboot/${f} work/rootfs/boot/${f}"
-        fi
-    done
-
-    # Raspberry Pi headless configuration and other first boot scripts inspect the boot partition
-    # for files. Modify the hard-coded mount point for the partition from /boot to /uboot.
-
-    # Integrate with systemd services with "/boot/" hardcoded
-    files_to_modify="$(find work/rootfs/lib/ -type f -name "*.service" -exec grep -l '/boot/' '{}' ';')"
-
-    # MEN-5944: Integrate with raspberrypi-sys-mods/firstboot
-    # See: https://github.com/RPi-Distro/raspberrypi-sys-mods
-    if [ -f "work/rootfs/usr/lib/raspberrypi-sys-mods/firstboot" ]; then
-        files_to_modify="$files_to_modify work/rootfs/usr/lib/raspberrypi-sys-mods/firstboot"
-    fi
-
-    # MEN-5954: Integrate with userconf-pi/userconf-service
-    # See: https://github.com/RPi-Distro/userconf-pi
-    if [ -f "work/rootfs/usr/lib/userconf-pi/userconf-service" ]; then
-        files_to_modify="$files_to_modify work/rootfs/usr/lib/userconf-pi/userconf-service"
-    fi
-
-    # MEN-5955: Integrate with raspberrypi-net-mods/wpa_copy
-    # See: https://github.com/RPi-Distro/raspberrypi-net-mods
-    if [ -f "work/rootfs/usr/lib/raspberrypi-net-mods/wpa_copy" ]; then
-        files_to_modify="$files_to_modify work/rootfs/usr/lib/raspberrypi-net-mods/wpa_copy"
-    fi
-
-    # Modify the files and log the changes
-    for f in $files_to_modify; do
-        run_and_log_cmd "sed -i.bak 's|/boot|/uboot|g' ${f}"
-        log_debug "Modified file ${f}\n$(diff -u ${f}.bak ${f})"
-        rm ${f}.bak
-    done
-    log_info "Certain service files have been changed to align with our /uboot boot partition mount point. See convert.log for more information"
+    # In order to have the DTBs inside the root filesystem and accessible from u-boot,
+    # copy all *.dtb files from the boot partition into the /boot directory
+    run_and_log_cmd "sudo cp work/boot/*.dtb work/rootfs/boot/"
 
     run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
     run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
