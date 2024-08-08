@@ -186,10 +186,14 @@ run_and_log_cmd "echo -n ${VERSION_STRING} | sudo tee work/rootfs/etc/mender/scr
 
 log_info "Installing a custom /etc/fstab (see ${MENDER_CONVERT_LOG_FILE} for more info)"
 
-if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-    boot_part_mountpoint="/boot/efi"
+if [ ! -z "${MENDER_BOOT_PART_MOUNTPOINT}" ]; then
+    boot_part_mountpoint="${MENDER_BOOT_PART_MOUNTPOINT}"
 else
-    boot_part_mountpoint="/uboot"
+    if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+        boot_part_mountpoint="/boot/efi"
+    else
+        boot_part_mountpoint="/uboot"
+    fi
 fi
 
 run_and_log_cmd "sudo mkdir -p work/rootfs/${boot_part_mountpoint}"
