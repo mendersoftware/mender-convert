@@ -1,0 +1,28 @@
+# the functions below are not exactly great, but should do the job well enough:
+# extract one key from /etc/os-release of the image in question, and check it against
+# the required value. The return values are meant to be used directly.
+
+RASPBERRYPI_OS_REQUIRED_ID="debian"     # also applies to the "Raspberry Pi OS" images
+RASPBERRYPI_OS_MINIMAL_VERSION=12       # this is "bookworm" or later, as it changed the boot partition mount directory
+
+function check_image_os_id() {
+    if [ $(awk -F= '$1=="ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release) != ${RASPBERRYPI_OS_REQUIRED_ID} ]; then
+        return 1
+    fi
+    return 0
+}
+
+function check_image_os_minimal_version() {
+    if [ $(awk -F= '$1=="VERSION_ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release) -lt ${RASPBERRYPI_OS_MINIMAL_VERSION} ]; then
+        return 1
+    fi
+    return 0
+}
+
+# convenience wrapper
+function check_image_os() {
+    if ( ! check_image_os_id ) || ( ! check_image_os_minimal_version ); then
+        return 1
+    fi
+    return 0
+}
