@@ -100,26 +100,26 @@ Professional.
 **NOTE!** Only run one of these three steps depending on the server
 type you are implementing.
 
-#### Using the [Mender demo server](https://docs.mender.io/getting-started/on-premise-installation/create-a-test-environment)
+#### Using [hosted Mender](https://mender.io/pricing/plans)
+```bash
+./scripts/bootstrap-rootfs-overlay-hosted-server.sh \
+    --output-dir ${PWD}/input/rootfs_overlay_demo \
+    --tenant-token "Paste token from Mender Professional"
+```
+
+#### Using the [Mender demo server](https://docs.mender.io/development/server-installation/evaluation-with-docker-compose)
 ```bash
 ./scripts/bootstrap-rootfs-overlay-demo-server.sh \
     --output-dir ${PWD}/input/rootfs_overlay_demo \
     --server-ip 192.168.1.1
 ```
 
-#### Using the [Mender production server](https://docs.mender.io/administration/production-installation)
+#### Using the [Mender on-premise server](https://docs.mender.io/development/server-installation)
 ```bash
 ./scripts/bootstrap-rootfs-overlay-production-server.sh \
     --output-dir ${PWD}/input/rootfs_overlay_demo \
     --server-url https://foobar.mender.io \
     [ --server-cert ~/server.crt ]
-```
-
-#### Using [Mender Professional](https://mender.io/products/mender-professional)
-```bash
-./scripts/bootstrap-rootfs-overlay-hosted-server.sh \
-    --output-dir ${PWD}/input/rootfs_overlay_demo \
-    --tenant-token "Paste token from Mender Professional"
 ```
 
 
