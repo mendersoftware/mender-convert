@@ -17,7 +17,7 @@
 set -e
 
 GIT_PROVIDED_TAG_NAME="$(git describe --exact HEAD 2>/dev/null || \
-    git for-each-ref "refs/heads/*" --format '%(refname:short)' --points-at HEAD 2>/dev/null)"
+    git for-each-ref "refs/heads/*" --format '%(refname:short)' --points-at HEAD 2>/dev/null | head -n1)"
 
 if [ -z "$IMAGE_NAME" -a -z "$GIT_PROVIDED_TAG_NAME" ]; then
   echo "Could not deduce mendersoftware/mender-convert container version from currently checked out commit. Using latest." 1>&2
@@ -25,4 +25,11 @@ fi
 
 IMAGE_NAME=${IMAGE_NAME:-"mendersoftware/mender-convert${GIT_PROVIDED_TAG_NAME:+:$GIT_PROVIDED_TAG_NAME}"}
 
-eval docker build . -t "${IMAGE_NAME}" "$*"
+MENDER_ARTIFACT_VERSION=$(sed -n '/MENDER_ARTIFACT_VERSION:/{n;s/.*value: "\(.*\)".*/\1/p;}' .gitlab-ci.yml)
+if [ -z "$MENDER_ARTIFACT_VERSION" ]; then
+  echo "Could not parse  MENDER_ARTIFACT_VERSION from .gitlab-ci.yml" 1>&2
+  exit 1
+fi
+
+echo "Building ${IMAGE_NAME} for local development" 1>&2
+docker build -t "${IMAGE_NAME}" --build-arg MENDER_ARTIFACT_VERSION="${MENDER_ARTIFACT_VERSION}" .

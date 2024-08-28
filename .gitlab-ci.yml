@@ -1,14 +1,16 @@
 
 variables:
   DOCKER_REPOSITORY: mendersoftware/mender-convert
+  MULTIPLATFORM_BUILD: "true"
+  MULTIPLATFORM_PLATFORMS: "linux/amd64,linux/arm64"
   S3_BUCKET_NAME: mender-convert-images
 
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION:
-    value: "master"
+    value: "3.11.2"
     description: |-
-      Version of mender-artifact for the builder image - 'master' or a specific version
+      Version of mender-artifact for the builder image - a specific version
   MENDER_CLIENT_VERSION:
     value: "latest"
     description: |-
@@ -71,13 +73,12 @@ variables:
 
 include:
   - project: 'Northern.tech/Mender/mendertesting'
-    file: '.gitlab-ci-check-commits.yml'
-  - project: 'Northern.tech/Mender/mendertesting'
-    file: '.gitlab-ci-check-license.yml'
-  - project: 'Northern.tech/Mender/mendertesting'
-    file: '.gitlab-ci-github-status-updates.yml'
-  - project: 'Northern.tech/Mender/mendertesting'
-    file: '.gitlab-ci-check-shell-format.yml'
+    file:
+      - '.gitlab-ci-check-commits.yml'
+      - '.gitlab-ci-check-license.yml'
+      - '.gitlab-ci-github-status-updates.yml'
+      - '.gitlab-ci-check-shell-format.yml'
+      - '.gitlab-ci-check-docker-build.yml'
 
 stages:
   - test
@@ -106,25 +107,17 @@ test:check-shell-formatting:
             -not -path "scripts/linkbot/*"
             -not -wholename "scripts/test/*")
 
-build:
-  stage: build
-  needs: []
-  image: docker:git
-  services:
-    - docker:20.10.21-dind
-  script:
-    - IMAGE_NAME=$DOCKER_REPOSITORY:pr ./docker-build --build-arg MENDER_ARTIFACT_VERSION=${MENDER_ARTIFACT_VERSION}
-    - docker save $DOCKER_REPOSITORY:pr > image.tar
-  artifacts:
-    expire_in: 2w
-    paths:
-      - image.tar
+build:docker-multiplatform:
+  variables:
+    DOCKER_BUILDKIT: 1
+    GITLAB_REGISTRY_TAG: '${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}'
+    EXTRA_DOCKER_ARGS: "--build-arg MENDER_ARTIFACT_VERSION=${MENDER_ARTIFACT_VERSION}"
 
 .template_convert_raspbian: &convert_raspbian
   stage: convert
   needs:
-    - job: build
-      artifacts: true
+    - job: build:docker-multiplatform
+      artifacts: false
   image: ubuntu:22.04
   services:
     - docker:dind
@@ -133,8 +126,8 @@ build:
   before_script:
     - apt update && apt install -yy bash wget xz-utils awscli docker.io curl
 
-    - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
-    - docker load -i image.tar
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+    - export IMAGE_NAME=${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
 
     - mkdir -p input
     - cd input
@@ -185,8 +178,8 @@ convert_raspbian_raspberrypi4:
 .template_test_acceptance: &test_acceptance
   stage: test_acceptance
   needs:
-    - job: build
-      artifacts: true
+    - job: build:docker-multiplatform
+      artifacts: false
   image: ubuntu:${ACC_TESTS_UBUNTU_DISTRO}
   services:
     - docker:dind
@@ -204,8 +197,8 @@ convert_raspbian_raspberrypi4:
     - python3 -m pip install -U pip
     - pip3 install --ignore-installed -r tests/requirements_py3.txt
     # Load image under test
-    - export IMAGE_NAME=$DOCKER_REPOSITORY:pr
-    - docker load -i image.tar
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+    - export IMAGE_NAME=${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
     # Set mender-image-tests submodule to correct version
     - git submodule update --init --recursive
     # Get mender-artifact for the tests
@@ -268,8 +261,8 @@ convert_raspbian_raspberrypi4:
 test_acceptance_prebuilt_raspberrypi3:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
-    - job: build
-      artifacts: true
+    - job: build:docker-multiplatform
+      artifacts: false
     - job: convert_raspbian_raspberrypi3
       artifacts: true
   variables:
@@ -278,8 +271,8 @@ test_acceptance_prebuilt_raspberrypi3:
 test_acceptance_prebuilt_raspberrypi4:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
-    - job: build
-      artifacts: true
+    - job: build:docker-multiplatform
+      artifacts: false
     - job: convert_raspbian_raspberrypi4
       artifacts: true
   variables:
@@ -370,27 +363,6 @@ test_acceptance_ubuntu_raspberrypi3:
           --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
     - done
 
-.template:publish:docker-image:
-  stage: publish
-  tags:
-    - hetzner-amd-beefy
-  image: docker
-  services:
-    - name: docker:20.10.21-dind
-      alias: docker
-  before_script:
-    - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
-    - docker load -i image.tar
-  script:
-    - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
-
-    - docker tag $DOCKER_REPOSITORY:pr $DOCKER_REPOSITORY:$IMAGE_VERSION
-    - docker push $DOCKER_REPOSITORY:$IMAGE_VERSION
-    - echo "PUBLISH_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $DOCKER_REPOSITORY:$IMAGE_VERSION)" >> publish.env
-  artifacts:
-    reports:
-      dotenv: publish.env
-
 publish:s3:manual:
   when: manual
   extends: .template:publish:s3
@@ -400,14 +372,25 @@ publish:s3:automatic:
     - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
   extends: .template:publish:s3
 
-publish:docker-image:manual:
-  when: manual
-  extends: .template:publish:docker-image
-
-publish:docker-image:automatic:
+# excludes non multiplatform build job
+build:docker:
   rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^(master|staging|production|feature-.+|[0-9]+\.[0-9]+\.([0-9]+|x))$/'
-  extends: .template:publish:docker-image
+    - when: never
+
+# excludes non multiplatform build job
+publish:image:
+  rules:
+    - when: never
+
+# excludes non multiplatform build job
+publish:image:mender:
+  rules:
+    - when: never
+
+# excludes non multiplatform build job
+publish:image:saas:
+  rules:
+    - when: never
 
 ####################
 # Hardware testing #
@@ -459,10 +442,9 @@ test:hardware:acceptance:
   variables:
     RASPBERRYPI_PLATFORM: raspberrypi4
   stage: test_acceptance
-  needs: []
   needs:
-    - job: build
-      artifacts: true
+    - job: build:docker-multiplatform
+      artifacts: false
     - job: test:hardware:convert
       artifacts: true
     - job: test:hardware:flash
