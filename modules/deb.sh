@@ -190,8 +190,9 @@ function deb_get_and_install_package() {
     local deb_distro=$(probe_debian_distro_name)
     local deb_codename=$(probe_debian_distro_codename)
     if ! [[ "$MENDER_APT_REPO_DISTS" == *"${deb_distro}/${deb_codename}"* ]]; then
+        log_warn "OS Distribution ${deb_distro}/${deb_codename} not supported, defaulting to debian/bullseye"
         deb_distro="debian"
-        deb_codename="buster"
+        deb_codename="bullseye"
     fi
 
     DEB_NAME=""
