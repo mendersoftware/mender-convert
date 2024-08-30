@@ -1,17 +1,21 @@
-# Build pxz in separate image to avoid big image size
-FROM ubuntu:20.04 AS build
-RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+# Cross-compile pxz (Parallel LZMA compression) in separate image
+FROM --platform=$BUILDPLATFORM debian:12 AS build
+ARG TARGETARCH
+RUN dpkg --add-architecture ${TARGETARCH} && \
+    apt-get update && \
+    env DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes \
     build-essential \
+    gcc-aarch64-linux-gnu \
     git \
-    liblzma-dev
-
-# Parallel xz (LZMA) compression
+    liblzma-dev:${TARGETARCH}
 RUN git clone https://github.com/jnovy/pxz.git /root/pxz
-RUN cd /root/pxz && make
+WORKDIR /root/pxz
+RUN if [ "$TARGETARCH" = "arm64" ]; then CC=aarch64-linux-gnu-gcc; else CC=cc; fi; env CC=$CC make
 
-FROM ubuntu:20.04
-
-ARG MENDER_ARTIFACT_VERSION=master
+FROM ubuntu:24.04
+ARG TARGETARCH
+ARG MENDER_ARTIFACT_VERSION
+RUN if [ "$MENDER_ARTIFACT_VERSION" = "" ]; then echo "MENDER_ARTIFACT_VERSION must be set!" 1>&2; exit 1; fi
 
 RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # For 'ar' command to unpack .deb
@@ -58,6 +62,7 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # GRUB command line tools, primarily grub-probe
     grub-common \
 # to be able to run package installations on foreign architectures
+    binfmt-support \
     qemu-user-static
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
@@ -66,8 +71,9 @@ COPY --from=build /root/pxz/pxz /usr/bin/pxz
 RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
 RUN chmod 0440 /etc/sudoers.d/secure_path_override
 
-RUN wget -q -O /usr/bin/mender-artifact https://downloads.mender.io/mender-artifact/$MENDER_ARTIFACT_VERSION/linux/mender-artifact \
-    && chmod +x /usr/bin/mender-artifact
+RUN deb_filename=mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2Bnoble_${TARGETARCH}.deb && \
+    wget "https://downloads.mender.io/repos/debian/pool/main/m/mender-artifact/${deb_filename}" \
+    --output-document=/mender-artifact.deb && apt install /mender-artifact.deb && rm /mender-artifact.deb
 
 WORKDIR /
 
