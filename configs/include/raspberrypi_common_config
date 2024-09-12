@@ -41,6 +41,18 @@ function check_image_os_version_less_than() {
     return 0
 }
 
+# expects two parameters: 1. filename 2. download path
+function check_and_extract_asset() {
+    asset_filename="$1"
+    asset_download_url="$2"
+    if [ -f assets/${asset_filename} ]; then
+        run_and_log_cmd "cp assets/${asset_filename} work/rpi/binaries"
+    else
+        run_and_log_cmd "wget -q ${asset_download_url} -P work/rpi/binaries"
+    fi
+    run_and_log_cmd "tar xzvf work/rpi/binaries/${asset_filename} -C work/rpi/binaries"
+}
+
 # this is required up to including Debian 11 "bullseye"
 function fixup_boot_part_path_references() {
     # Raspberry Pi applications expect to find this on the device and in some

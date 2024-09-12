@@ -33,9 +33,8 @@ function platform_modify() {
 
     mkdir -p work/rpi/binaries
 
-    run_and_log_cmd "wget -q ${RASPBERRYPI_BINARIES_URL} -P work/rpi/binaries"
-    run_and_log_cmd "tar xzvf work/rpi/binaries/${RASPBERRYPI_BINARIES} -C work/rpi/binaries"
-
+    check_and_extract_asset $RASPBERRYPI_BINARIES $RASPBERRYPI_BINARIES_URL
+    
     # By default, we modify cmdline.txt.
     #
     # In Ubuntu, the file is called btcmd.txt; if this file exists, use it instead
