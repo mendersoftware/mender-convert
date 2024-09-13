@@ -17,10 +17,9 @@ ARG TARGETARCH
 ARG MENDER_ARTIFACT_VERSION
 RUN if [ "$MENDER_ARTIFACT_VERSION" = "" ]; then echo "MENDER_ARTIFACT_VERSION must be set!" 1>&2; exit 1; fi
 
-RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-# For 'ar' command to unpack .deb
-    binutils \
-    xz-utils \
+RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes \
+    sudo \
+# to extract binaries from .deb
     zstd \
 # to be able to detect file system types of extracted images
     file \
@@ -35,9 +34,8 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     xfsprogs \
 # mkfs.btrfs and family
     btrfs-progs \
-# Parallel gzip compression
+# parallel gzip compression
     pigz \
-    sudo \
 # mkfs.vfat (required for boot partition)
     dosfstools \
 # to download Mender binaries
@@ -52,9 +50,10 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     u-boot-tools \
 # needed to run pxz
     libgomp1  \
-# zip and unzip archive
+# artifact compression
     zip  \
     unzip \
+    xz-utils \
 # manipulate binary and hex
     xxd \
 # JSON power tool
