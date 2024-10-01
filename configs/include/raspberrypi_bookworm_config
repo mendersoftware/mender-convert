@@ -1,0 +1,7 @@
+# this is "bookworm" or later, as it changed the boot partition mount directory
+RASPBERRYPI_OS_MIN_VERSION=12       
+
+# from the "bookworm" release onwards, the Raspberry Pi OS
+# specific modifications expect the boot partition to be mounted
+# at /boot/firmware
+MENDER_BOOT_PART_MOUNT_LOCATION="/boot/firmware"
