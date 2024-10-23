@@ -127,6 +127,14 @@ disk_create_file_system_from_folder() {
             run_and_log_cmd "${MKFS_EXT4} -q -F ${2} ${EXTRA_OPTS}"
             ;;
 
+        "ext3")
+            MKFS_EXT3="/usr/bin/mkfs.ext3"
+            if [ ! -f ${MKFS_EXT3} ]; then
+                MKFS_EXT3="/sbin/mkfs.ext3"
+            fi
+            run_and_log_cmd "${MKFS_EXT3} -q -F ${2} ${EXTRA_OPTS}"
+            ;;
+
         "xfs")
             MKFS_XFS="/usr/bin/mkfs.xfs"
             if [ ! -f ${MKFS_XFS} ]; then

@@ -201,6 +201,8 @@ log_info "Rootfs filesystem size will be $(disk_sectors_to_mb ${rootfs_image_sec
 # Extract file-system type from rootfs
 if file ${root_part} | grep -q ext4; then
     image_fs_type="ext4"
+elif file ${root_part} | grep -q ext3; then
+    image_fs_type="ext3"
 elif file ${root_part} | grep -q XFS; then
     image_fs_type="xfs"
 elif file ${root_part} | grep -q BTRFS; then
