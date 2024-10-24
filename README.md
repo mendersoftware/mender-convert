@@ -25,7 +25,7 @@ on your device.
 
 `mender-convert` is supported on the following development platform(s):
 
-	- Ubuntu 18.04 x86, 64bit
+	- Ubuntu 22.04 x86, 64bit
 
 Other platforms may work, but are not under active testing. Patches to add additional
 platforms or fix compatibility issues are welcome.
@@ -55,7 +55,10 @@ These configurations are officially supported.
 | generic_x86-64_config | Generic x86, 64bit distribution *use this as a starting point only!*  |
 | raspberrypi0w_config | RaspberryPi 0w, Raspbian 32bit |
 | raspberrypi3_config | RaspberryPi 3, Raspbian 32bit |
-| raspberrypi4_config | RaspberryPi 4, Raspbian 32bit |
+| raspberrypi4_bullseye_32bit_config | RaspberryPi 4, Raspberry Pi OS "bullseye" 32bit |
+| raspberrypi4_bullseye_64bit_config | RaspberryPi 4, Raspberry Pi OS "bullseye" 64bit |
+| raspberrypi4_bookworm_32bit_config | RaspberryPi 4, Raspberry Pi OS "bookworm" 32bit |
+| raspberrypi4_bookworm_64bit_config | RaspberryPi 4, Raspberry Pi OS "bookworm" 64bit |
 | raspberrypi4_ubuntu_config | RaspberryPi 4, Ubuntu 32bit |
 
 ### Contributed configurations
@@ -68,7 +71,7 @@ These configurations have been submitted by community contributors.
 | rockpro64_emmc_config | RockPro64, Debian 32bit on internal eMMC storage |
 | rockpro64_sd_config | RockPro64, Debian 32bit on external SD card storage |
 
-## Example usage: Raspberry Pi 3, Raspbian 32bit
+## Example usage: Raspberry Pi 4, Raspberry Pi OS 64bit
 
 ### Prepare image and configuration
 
@@ -80,14 +83,14 @@ Download the raw Raspberry Pi disk image into a subdirectory input:
 ```bash
 mkdir -p input
 cd input
-wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-06-24/2019-06-20-raspbian-buster-lite.zip
+wget https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz
 ```
 
 Extract the raw Raspberry Pi disk image:
 
 ```bash
-unzip 2019-06-20-raspbian-buster-lite.zip
-INPUT_DISK_IMAGE=$(ls *raspbian-buster*.img)
+unzip 2024-07-04-raspios-bookworm-arm64-lite.img.xz
+INPUT_DISK_IMAGE=$(ls *raspios-bookworm*.img)
 cd ..
 ```
 
@@ -158,7 +161,7 @@ cp $PATH_TO_MY_OWN_CONFIG/$CUSTOM_CONFIG input/config
 
 MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
    --disk-image input/image/$INPUT_DISK_IMAGE \
-   --config configs/raspberrypi3_config \
+   --config configs/raspberrypi4_bookworm_64bit_config \
    --config input/config/$CUSTOM_CONFIG \
    --overlay input/rootfs_overlay_demo
 ```
@@ -196,7 +199,7 @@ Start the conversion process with:
 ```bash
 MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
    --disk-image input/$INPUT_DISK_IMAGE \
-   --config configs/raspberrypi3_config \
+   --config configs/raspberrypi4_bookworm_64bit_config \
    --overlay input/rootfs_overlay_demo
 ```
 
