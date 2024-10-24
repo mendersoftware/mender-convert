@@ -29,8 +29,14 @@ variables:
       Version of mender-configure for the converted image - 'latest', 'master' or a specific version
 
   ## Auto-update
-  RASPBIAN_URL: "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2023-05-03/2023-05-03-raspios-bullseye-armhf-lite.img.xz"
-  RASPBIAN_NAME: 2023-05-03-raspios-bullseye-armhf-lite
+  RASPBIAN_URL_BOOKWORM_64: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz"
+  RASPBIAN_NAME_BOOKWORM_64: 2024-07-04-raspios-bookworm-arm64-lite
+  RASPBIAN_URL_BOOKWORM_32: "https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-07-04/2024-07-04-raspios-bookworm-armhf-lite.img.xz"
+  RASPBIAN_NAME_BOOKWORM_32: 2024-07-04-raspios-bookworm-armhf-lite
+  RASPBIAN_URL_BOOKWORM_64: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bullseye-arm64-lite.img.xz"
+  RASPBIAN_NAME_BOOKWORM_64: 2024-07-04-raspios-bookworm-arm64-lite
+  RASPBIAN_URL_BOOKWORM_32: "https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-07-04/2024-07-04-raspios-bullseye-armhf-lite.img.xz"
+  RASPBIAN_NAME_BOOKWORM_32: 2024-07-04-raspios-bookworm-armhf-lite
 
   # Which version of mender-convert to use in published image name. Normally
   # empty, in which case the branch or tag name will be used, but this variable
@@ -131,15 +137,15 @@ build:docker-multiplatform:
 
     - mkdir -p input
     - cd input
-    - wget -q ${RASPBIAN_URL}
-    - unxz ${RASPBIAN_NAME}.img.xz
+    - wget -q ${RASPBIAN_DOWNLOAD_CONVERT}
+    - unxz ${RASPBIAN_NAME_CONVERT}.img.xz
     - cd ..
 
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
 
   script:
-    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME}-mender 
-      ./docker-mender-convert --disk-image input/${RASPBIAN_NAME}.img
+    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME_CONVERT}-mender 
+      ./docker-mender-convert --disk-image input/${RASPBIAN_NAME_CONVERT}.img
       --config configs/${RASPBERRYPI_PLATFORM}_config
       --config configs/images/raspberrypi_raspbian_config
 
@@ -153,15 +159,33 @@ build:docker-multiplatform:
     paths:
       - checksums
 
-convert_raspbian_raspberrypi3:
+convert_raspbian_raspberrypi4_bookworm_64bit:
   <<: *convert_raspbian
   variables:
-    RASPBERRYPI_PLATFORM: raspberrypi3
+    RASPBERRYPI_PLATFORM: raspberrypi4_bookworm_64bit
+    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bookworm-arm64-lite
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz
 
-convert_raspbian_raspberrypi4:
+convert_raspbian_raspberrypi4_bookworm_32bit:
   <<: *convert_raspbian
   variables:
-    RASPBERRYPI_PLATFORM: raspberrypi4
+    RASPBERRYPI_PLATFORM: raspberrypi4_bookworm_32bit
+    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bookworm-armhf-lite
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-07-04/2024-07-04-raspios-bookworm-armhf-lite.img.xz
+
+convert_raspbian_raspberrypi4_bullseye_64bit:
+  <<: *convert_raspbian
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4_bullseye_64bit
+    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bullseye-arm64-lite
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_oldstable_lite_arm64/images/raspios_oldstable_lite_arm64-2024-07-04/2024-07-04-raspios-bullseye-arm64-lite.img.xz
+
+convert_raspbian_raspberrypi4_bullseye_32bit:
+  <<: *convert_raspbian
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4_bullseye_32bit
+    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bullseye-armhf-lite
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_oldstable_lite_armhf/images/raspios_oldstable_lite_armhf-2024-07-04/2024-07-04-raspios-bullseye-armhf-lite.img.xz
 
 .bash_helpers: &bash_helpers |
   # Bash function to check if the string is a final tag
@@ -251,32 +275,60 @@ convert_raspbian_raspberrypi4:
     - tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
     - mv ${RASPBERRYPI_PLATFORM} deploy
     # Extract converted Raspbian artifacts
-    - unxz deploy/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
+    - unxz deploy/${RASPBIAN_NAME_ACCEPTANCE}-${MENDER_DEVICE_TYPE}-mender.img.xz
     - ./scripts/test/run-tests.sh
-      --prebuilt-image raspberrypi
-      ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
+      --prebuilt-image ${MENDER_DEVICE_TYPE}
+      ${RASPBIAN_NAME_ACCEPTANCE}-${MENDER_DEVICE_TYPE}-mender
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_prebuilt_raspberrypi3:
+test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-    - job: convert_raspbian_raspberrypi3
+    - job: convert_raspbian_raspberrypi4_bookworm_64bit
       artifacts: true
   variables:
-    RASPBERRYPI_PLATFORM: raspberrypi3
+    RASPBERRYPI_PLATFORM: raspberrypi4_bookworm_64bit
+    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bookworm-arm64-lite
+    MENDER_DEVICE_TYPE: raspberrypi4_64
 
-test_acceptance_prebuilt_raspberrypi4:
+test_acceptance_prebuilt_raspberrypi4_bookworm_32bit:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-    - job: convert_raspbian_raspberrypi4
+    - job: convert_raspbian_raspberrypi4_bookworm_32bit
       artifacts: true
   variables:
-    RASPBERRYPI_PLATFORM: raspberrypi4
+    RASPBERRYPI_PLATFORM: raspberrypi4_bookworm_32bit
+    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bookworm-armhf-lite
+    MENDER_DEVICE_TYPE: raspberrypi4
+
+test_acceptance_prebuilt_raspberrypi4_bullseye_64bit:
+  <<: *test_acceptance_prebuilt_raspberrypi
+  needs:
+    - job: build:docker-multiplatform
+      artifacts: false
+    - job: convert_raspbian_raspberrypi4_bullseye_64bit
+      artifacts: true
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4_bullseye_64bit
+    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bullseye-arm64-lite
+    MENDER_DEVICE_TYPE: raspberrypi4_64
+
+test_acceptance_prebuilt_raspberrypi4_bullseye_32bit:
+  <<: *test_acceptance_prebuilt_raspberrypi
+  needs:
+    - job: build:docker-multiplatform
+      artifacts: false
+    - job: convert_raspbian_raspberrypi4_bullseye_32bit
+      artifacts: true
+  variables:
+    RASPBERRYPI_PLATFORM: raspberrypi4_bullseye_32bit
+    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bullseye-armhf-lite
+    MENDER_DEVICE_TYPE: raspberrypi4
 
 test_acceptance_ubuntu_qemux86_64:
   <<: *test_acceptance
@@ -311,25 +363,14 @@ test_acceptance_debian_qemux86_64:
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_raspberrypi:
+test_acceptance_raspberrypi4_bookworm_64bit:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
-      --only raspberrypi3
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
-
-test_acceptance_ubuntu_raspberrypi3:
-  <<: *test_acceptance
-  script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
-      --only ubuntu-raspberrypi3
+      --only raspberrypi4_bookworm_64bit
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
@@ -340,37 +381,41 @@ test_acceptance_ubuntu_raspberrypi3:
     - apt update && apt install -yyq awscli curl
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
     # Fetch artifacts from temporary S3 bucket
-    - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
+    - for RASPBERRYPI_PLATFORM in raspberrypi4_bookworm_64bit raspberrypi4_bookworm_32bit raspberrypi4_bullseye_64bit raspberrypi4_bullseye_32bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_PLATFORM}.tar.gz
     -   tar xzf ${RASPBERRYPI_PLATFORM}.tar.gz
     - done
   script:
     - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
 
-    - for RASPBERRYPI_PLATFORM in raspberrypi3 raspberrypi4; do
-    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-convert-${IMAGE_VERSION}.img.xz
+    - for RASPBERRYPI_PLATFORM in raspberrypi4_bookworm_64bit raspberrypi4_bookworm_32bit raspberrypi4_bullseye_64bit raspberrypi4_bullseye_32bit; do
+    -   PUBLISH_NAME=${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_PLATFORM}-mender-convert-${IMAGE_VERSION}.img.xz
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.img.xz
-          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_PLATFORM}-mender.img.xz
+          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+          --key ${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
 
-    -   PUBLISH_NAME=${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender-convert-${IMAGE_VERSION}.mender
+    -   PUBLISH_NAME=${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_PLATFORM}-mender-convert-${IMAGE_VERSION}.mender
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender.mender
-          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+    -   aws s3 cp ${RASPBERRYPI_PLATFORM}/${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_PLATFORM}-mender.mender
+          s3://$S3_BUCKET_NAME/${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBIAN_NAME}/arm/${PUBLISH_NAME}
+          --key ${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
     - done
 
 publish:s3:manual:
   when: manual
   extends: .template:publish:s3
+  variables:
+    RASPBIAN_NAME_PUBLISH: 2024-07-04-raspios-bookworm-arm64-lite
 
 publish:s3:automatic:
   rules:
     - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
   extends: .template:publish:s3
+  variables:
+    RASPBIAN_NAME_PUBLISH: ${RASPBIAN_NAME_PUBLISH}
 
 # excludes non multiplatform build job
 build:docker:
@@ -399,7 +444,7 @@ publish:image:saas:
 test:hardware:convert:
   <<: *convert_raspbian
   variables:
-    RASPBERRYPI_PLATFORM: raspberrypi4
+    RASPBERRYPI_PLATFORM: raspberrypi4_bookworm_64bit
   when: manual
   stage: convert
   script:
@@ -424,7 +469,7 @@ test:hardware:flash:
     - job: test:hardware:convert
       artifacts: true
   variables:
-    RASPBERRYPI_PLATFORM: raspberrypi4
+    RASPBERRYPI_PLATFORM: raspberrypi4_bookworm_64bit
   tags:
     - hw
   stage: flash
@@ -440,7 +485,7 @@ test:hardware:flash:
 test:hardware:acceptance:
   <<: *test_acceptance
   variables:
-    RASPBERRYPI_PLATFORM: raspberrypi4
+    RASPBERRYPI_PLATFORM: raspberrypi4_64
   stage: test_acceptance
   needs:
     - job: build:docker-multiplatform
@@ -457,7 +502,7 @@ test:hardware:acceptance:
     - mv ${RASPBERRYPI_PLATFORM}-hardware-test deploy
     # Run the tests
     - ./scripts/test/run-tests.sh
-      --prebuilt-image raspberrypi4
+      --prebuilt-image raspberrypi4_64
       ${RASPBIAN_NAME}-${RASPBERRYPI_PLATFORM}-mender
       --
       --hardware-testing
