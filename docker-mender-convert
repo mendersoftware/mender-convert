@@ -17,7 +17,7 @@
 set -e
 
 GIT_TAG_OR_BRANCH_NAME="$(git describe --exact HEAD 2>/dev/null || \
-    git for-each-ref "refs/heads/*" --format '%(refname:short)' --points-at HEAD 2>/dev/null)"
+    git for-each-ref "refs/heads/*" --format '%(refname:short)' --points-at HEAD 2>/dev/null | head -n1)"
 
 if [ -z "$IMAGE_NAME" -a -z "$GIT_TAG_OR_BRANCH_NAME" ]; then
   echo "Could not deduce mendersoftware/mender-convert container version from currently checked out commit. Using latest." 1>&2
