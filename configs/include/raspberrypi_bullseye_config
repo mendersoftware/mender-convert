@@ -1,0 +1,3 @@
+# this is "bullseye" or earlier
+RASPBERRYPI_OS_MAX_VERSION=11
+RPI_FIXUP_UBOOT_PATH="y"

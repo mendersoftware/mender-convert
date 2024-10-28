@@ -1,10 +1,15 @@
 # Binaries generated with the following script:
-#    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi.sh
+#    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi64.sh
 
-RASPBERRYPI_BINARIES="${RASPBERRYPI_CONFIG}-2020.01.tar.gz"
-RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi/${RASPBERRYPI_BINARIES}"
+# in the Aarch64 case, it seems to always be "kernel8.img"
+RASPBERRYPI_KERNEL_IMAGE="kernel8.img"
 
-RASPBERRYPI_OS_NEEDS_32BIT="y"
+RASPBERRYPI_BINARIES="raspberrypi_arm64-2024.04.tar.gz"
+RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi64/${RASPBERRYPI_BINARIES}"
+
+RASPBERRYPI_OS_REQUIRED_ID="debian"     # also applies to the "Raspberry Pi OS" images
+
+RASPBERRYPI_OS_NEEDS_64BIT="y"
 
 source configs/include/raspberrypi_common_config
 
@@ -34,9 +39,6 @@ function platform_modify() {
     #
     # In Ubuntu, the file is called btcmd.txt; if this file exists, use it instead
     CMDLINE="cmdline.txt"
-    if [ -f work/boot/btcmd.txt ]; then
-        CMDLINE="btcmd.txt"
-    fi
 
     # Make a copy of Linux kernel arguments and modify.
     run_and_log_cmd "cp work/boot/$CMDLINE work/rpi/$CMDLINE"
@@ -69,25 +71,13 @@ function platform_modify() {
     # the service.
     run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
 
-    # Ubuntu Server images actually use U-boot by default on RPi3 and the
-    # layout is slightly different on the boot partition. That is why we need
-    # additional logic here to determine what we are converting.
-    if [ -e work/boot/uboot_rpi_4_32b.bin ] && [ -e work/boot/vmlinuz ]; then
-        RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
-        RASPBERRYPI_BOOTLOADER_IMAGE="uboot_rpi_4_32b.bin"
-    elif [ -e work/boot/uboot.bin ] && [ -e work/boot/vmlinuz ]; then
-        RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
-        RASPBERRYPI_BOOTLOADER_IMAGE="uboot.bin"
-    else
-        RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
-    fi
-
-    # Extract Linux kernel and install to /boot directory on rootfs if it doesn't already exist.
-    # If it already exists, the input image is likely already converted so we just want to use
-    # the existing kernel image.
-    if [ ! -f "work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}" ]; then
-        run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${MENDER_KERNEL_IMAGETYPE}"
-    fi
+    # Extract Linux kernel and install to /boot directory. In the 64bit case, the previously existing kernel file
+    # is actually a gzipped vmlinux file. Hence, extract and copy as such
+    RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
+    # this is required because gunzip is very picky about the filename!
+    run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE}.gz"
+    run_and_log_cmd "sudo gunzip work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE}.gz"
+    run_and_log_cmd "sudo mv work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/vmlinux"
 
     # Make sure the on-board bootloader boots our bootloader (which we do via the kernel option).
     sed -i -e '/^kernel=/d' work/boot/config.txt
@@ -95,18 +85,8 @@ function platform_modify() {
 
     # Replace kernel with U-boot and add boot script
     run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
-    run_and_log_cmd "sudo cp work/rpi/binaries/boot.scr work/boot"
     run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
     run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
-
-    # Disable 64-bit mode and force 32-bit mode. Even though we check for 32-bit binaries at the
-    # start of this function, some images use a 64-bit kernel even with 32-bit userspace. Due to our
-    # custom U-Boot bootloader we need to stick to 32-bit for now.
-    if ! grep -q '^arm_64bit=0' work/boot/config.txt; then
-        log_info "Forcing 32-bit kernel"
-        sed -i -e '/^arm_64bit=/d' work/boot/config.txt
-        echo "arm_64bit=0" >> work/boot/config.txt
-    fi
 
     # In order to have the DTBs inside the root filesystem and accessible from u-boot,
     # copy all *.dtb files from the boot partition into the /boot directory
