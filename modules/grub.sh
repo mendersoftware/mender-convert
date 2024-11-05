@@ -83,8 +83,11 @@ function grub_install_grub_d_config() {
         run_and_log_cmd "sudo mkdir work/rootfs/boot/efi"
     fi
     run_and_log_cmd "sudo mkdir work/boot/grub-mender-grubenv"
-    run_and_log_cmd "sudo mv work/rootfs/boot/grub/* work/boot/grub-mender-grubenv/"
-    run_and_log_cmd "sudo rmdir work/rootfs/boot/grub"
+    if [ -e work/rootfs/boot/grub ]; then
+        # Move this to the EFI partition.
+        run_and_log_cmd "sudo mv work/rootfs/boot/grub/* work/boot/grub-mender-grubenv/"
+        run_and_log_cmd "sudo rmdir work/rootfs/boot/grub"
+    fi
     run_and_log_cmd "sudo ln -s efi/grub-mender-grubenv work/rootfs/boot/grub"
 
     (   
