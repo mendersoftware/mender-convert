@@ -88,6 +88,12 @@ probe_grub_install_target() {
         "i386")
             target_name="i386-efi"
             ;;
+        "armhf")
+            target_name="arm-efi"
+            ;;
+        "aarch64")
+            target_name="arm64-efi"
+            ;;
         *)
             log_fatal "Unsupported arch: ${arch}"
             ;;
