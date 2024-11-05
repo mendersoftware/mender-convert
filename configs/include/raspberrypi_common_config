@@ -7,9 +7,6 @@ MENDER_COPY_BOOT_GAP=n
 # 4MB alignment
 MENDER_PARTITION_ALIGNMENT="4194304"
 
-# compress the images to save some space
-MENDER_COMPRESS_DISK_IMAGE="gzip"
-
 # the functions below are not exactly great, but should do the job well enough:
 # extract one key from /etc/os-release of the image in question, and check it against
 # the required value. The return values are meant to be used directly.
