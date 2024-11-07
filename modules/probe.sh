@@ -378,10 +378,5 @@ supports_grub_d_and_efi() {
     test -d "$2"/boot/efi || return 1
     test -d "$2"/etc/grub.d || return 1
 
-    # Because we are executing programs inside a chroot in the image, we cannot
-    # currently convert non-native architectures to use grub.d integration. See
-    # relevant section on chroot inside grub_install_grub_d_config.
-    [ "$(probe_arch)" = "$(uname -m)" ] || return 1
-
     return 0
 }
