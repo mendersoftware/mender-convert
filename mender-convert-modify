@@ -194,17 +194,15 @@ run_and_log_cmd "echo -n ${VERSION_STRING} | sudo tee work/rootfs/etc/mender/scr
 
 log_info "Installing a custom /etc/fstab (see ${MENDER_CONVERT_LOG_FILE} for more info)"
 
-if [ -n "${MENDER_BOOT_PART_MOUNT_LOCATION:-}" ]; then
-    boot_part_mountpoint="${MENDER_BOOT_PART_MOUNT_LOCATION}"
-else
+if [ -z "${MENDER_BOOT_PART_MOUNT_LOCATION:-}" ]; then
     if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-        boot_part_mountpoint="/boot/efi"
+        MENDER_BOOT_PART_MOUNT_LOCATION="/boot/efi"
     else
-        boot_part_mountpoint="/uboot"
+        MENDER_BOOT_PART_MOUNT_LOCATION="/uboot"
     fi
 fi
 
-run_and_log_cmd "sudo mkdir -p work/rootfs/${boot_part_mountpoint}"
+run_and_log_cmd "sudo mkdir -p work/rootfs/${MENDER_BOOT_PART_MOUNT_LOCATION}"
 
 if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
     MENDER_DATA_PART_FSTAB_OPTS="${MENDER_DATA_PART_FSTAB_OPTS},x-systemd.growfs"
@@ -222,7 +220,7 @@ log_info "Using data partition device in fstab: $data_part_device"
 fstab=$(sed '/\/boot/d' work/rootfs/etc/fstab)
 fstab=$(sed '/.*\s\/\s.*/d' <<< "$fstab")
 cat <<- EOF > work/rootfs/etc/fstab
-${boot_part_device}   ${boot_part_mountpoint}          auto       ${MENDER_BOOT_PART_FSTAB_OPTS}    0  0
+${boot_part_device}   ${MENDER_BOOT_PART_MOUNT_LOCATION}          auto       ${MENDER_BOOT_PART_FSTAB_OPTS}    0  0
 /dev/root            /                    auto       ${MENDER_ROOT_PART_FSTAB_OPTS} 1  ${MENDER_ROOT_PART_FS_PASSNO}
 
 ${data_part_device}   /data          auto       ${MENDER_DATA_PART_FSTAB_OPTS}      0  0

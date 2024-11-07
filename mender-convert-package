@@ -388,14 +388,18 @@ log_info "Conversion has completed! \o/"
 
 mender_features="mender-convert"
 
-if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-    boot_part_mountpoint="/boot/efi"
+if [ -z "${MENDER_BOOT_PART_MOUNT_LOCATION:-}" ]; then
+    if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+        MENDER_BOOT_PART_MOUNT_LOCATION="/boot/efi"
+    else
+        MENDER_BOOT_PART_MOUNT_LOCATION="/uboot"
+    fi
+fi
 
+if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # This is the name of the MENDER_FEATURES in Yocto
     bootloader_feature="mender-grub"
 else
-    boot_part_mountpoint="/uboot"
-
     # This is the name of the MENDER_FEATURES in Yocto
     bootloader_feature="mender-uboot"
 fi
@@ -409,7 +413,7 @@ testscfg_add "MENDER_BOOT_PART" "${boot_part_device}"
 testscfg_add "MENDER_ROOTFS_PART_A" "${root_part_a_device}"
 testscfg_add "MENDER_ROOTFS_PART_B" "${root_part_b_device}"
 testscfg_add "MENDER_DATA_PART" "${data_part_device}"
-testscfg_add "MENDER_BOOT_PART_MOUNT_LOCATION" "${boot_part_mountpoint}"
+testscfg_add "MENDER_BOOT_PART_MOUNT_LOCATION" "${MENDER_BOOT_PART_MOUNT_LOCATION}"
 testscfg_add "MENDER_BOOT_PART_SIZE_MB" "$(disk_sectors_to_mb ${boot_part_sectors})"
 testscfg_add "MENDER_DATA_PART_SIZE_MB" "${MENDER_DATA_PART_SIZE_MB}"
 testscfg_add "MENDER_DEVICE_TYPE" "${device_type}"
