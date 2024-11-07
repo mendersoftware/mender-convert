@@ -1,0 +1,75 @@
+# These configurations are using U-Boot without UEFI.
+MENDER_GRUB_EFI_INTEGRATION=n
+
+# expects two parameters: 1. filename 2. download path
+function check_and_extract_asset() {
+    mkdir -p work/rpi/binaries
+
+    asset_filename="$1"
+    asset_download_url="$2"
+    if [ -f assets/${asset_filename} ]; then
+        run_and_log_cmd "cp assets/${asset_filename} work/rpi/binaries"
+    else
+        run_and_log_cmd "wget -q ${asset_download_url} -P work/rpi/binaries"
+    fi
+    run_and_log_cmd "tar xzvf work/rpi/binaries/${asset_filename} -C work/rpi/binaries"
+}
+
+function raspberrypi_update_cmdline() {
+    # By default, we modify cmdline.txt.
+    #
+    # In Ubuntu, the file is called btcmd.txt; if this file exists, use it instead
+    CMDLINE="cmdline.txt"
+    if [ -f work/boot/btcmd.txt ]; then
+        CMDLINE="btcmd.txt"
+    fi
+
+    # Make a copy of Linux kernel arguments and modify.
+    run_and_log_cmd "cp work/boot/$CMDLINE work/rpi/$CMDLINE"
+
+    # Set a dynamic rootfs part (required for Mender A/B update strategy)
+    run_and_log_cmd "sed -i 's/\b[ ]root=[^ ]*/ root=\${mender_kernel_root}/' work/rpi/$CMDLINE"
+
+    # Root filesystem can not be resized when the disk is partition according
+    # to Mender layout, where the rootfs partition is the not last one which
+    # is a requirement to be able to do an "online" resize.
+    #
+    # This disables resize of rootfs on boot but applies the changes to
+    # cmdline.txt that are performed in the init_resize.sh script.
+    #
+    # Extracted from /usr/lib/raspi-config/init_resize.sh
+    run_and_log_cmd "sed -i 's| init=/usr/lib/raspi-config/init_resize\.sh||' work/rpi/$CMDLINE"
+    run_and_log_cmd "sed -i 's| sdhci\.debug_quirks2=4||' work/rpi/$CMDLINE"
+    if ! grep -q splash work/rpi/$CMDLINE; then
+        run_and_log_cmd "sed -i 's/ quiet//g' work/rpi/$CMDLINE"
+    fi
+
+    # Update Linux kernel command arguments with our custom configuration
+    run_and_log_cmd "sudo cp work/rpi/$CMDLINE work/boot/"
+}
+
+function raspberrypi_generic_bootloader_setup() {
+    # In order to have the DTBs inside the root filesystem and accessible from u-boot,
+    # copy all *.dtb files from the boot partition into the /boot directory
+    run_and_log_cmd "sudo cp work/boot/*.dtb work/rootfs/boot/"
+
+    # having the boot partition mounted at /uboot means that we have
+    # to adjust all (known) references to it accordingly
+    if [ "${RPI_FIXUP_UBOOT_PATH:-}" == "y" ]; then
+        log_info "Adjusting /uboot directory references"
+        run_and_log_cmd "sudo mkdir -p work/rootfs/uboot"
+        fixup_boot_part_path_references
+    fi
+
+    run_and_log_cmd "sudo install -m 755 work/rpi/binaries/fw_printenv work/rootfs/sbin/fw_printenv"
+    run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+
+    # Enable UART. This is required for U-Boot to operate correctly, see
+    # https://source.denx.de/u-boot/u-boot/-/blob/master/arch/arm/mach-bcm283x/Kconfig
+    log_info "Enabling UART in U-Boot configuration"
+    cat <<- EOF >> work/boot/config.txt
+
+# Enable UART
+enable_uart=1
+EOF
+}

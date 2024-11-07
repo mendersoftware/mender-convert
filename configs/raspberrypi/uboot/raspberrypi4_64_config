@@ -1,0 +1,4 @@
+MENDER_DEVICE_TYPE="raspberrypi4_64"
+
+source configs/raspberrypi/uboot/include/raspberrypi_64_config
+PLATFORM_MODIFY_HOOKS+=(raspberrypi_64_platform_modify)

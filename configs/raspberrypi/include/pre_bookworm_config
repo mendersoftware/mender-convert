@@ -1,0 +1,47 @@
+# this is "bullseye" or earlier
+RASPBERRYPI_OS_MAX_VERSION=11
+RPI_FIXUP_UBOOT_PATH="y"
+
+# this is required up to including Debian 11 "bullseye"
+function fixup_boot_part_path_references() {
+    # Raspberry Pi applications expect to find this on the device and in some
+    # cases parse the options to determine the functionality. Create symlinks
+    # to all files that don't already exist.
+    for f in $(ls -1 work/boot); do
+        if [ ! -f "work/rootfs/boot/${f}" ]; then
+            run_and_log_cmd "sudo ln -fs /uboot/${f} work/rootfs/boot/${f}"
+        fi
+    done
+
+    # Raspberry Pi headless configuration and other first boot scripts inspect the boot partition
+    # for files. Modify the hard-coded mount point for the partition from /boot to /uboot.
+
+    # Integrate with systemd services with "/boot/" hardcoded
+    files_to_modify="$(find work/rootfs/lib/ -type f -name "*.service" -exec grep -l '/boot/' '{}' ';')"
+
+    # MEN-5944: Integrate with raspberrypi-sys-mods/firstboot
+    # See: https://github.com/RPi-Distro/raspberrypi-sys-mods
+    if [ -f "work/rootfs/usr/lib/raspberrypi-sys-mods/firstboot" ]; then
+        files_to_modify="$files_to_modify work/rootfs/usr/lib/raspberrypi-sys-mods/firstboot"
+    fi
+
+    # MEN-5954: Integrate with userconf-pi/userconf-service
+    # See: https://github.com/RPi-Distro/userconf-pi
+    if [ -f "work/rootfs/usr/lib/userconf-pi/userconf-service" ]; then
+        files_to_modify="$files_to_modify work/rootfs/usr/lib/userconf-pi/userconf-service"
+    fi
+
+    # MEN-5955: Integrate with raspberrypi-net-mods/wpa_copy
+    # See: https://github.com/RPi-Distro/raspberrypi-net-mods
+    if [ -f "work/rootfs/usr/lib/raspberrypi-net-mods/wpa_copy" ]; then
+        files_to_modify="$files_to_modify work/rootfs/usr/lib/raspberrypi-net-mods/wpa_copy"
+    fi
+
+    # Modify the files and log the changes
+    for f in $files_to_modify; do
+        run_and_log_cmd "sed -i.bak 's|/boot|/uboot|g' ${f}"
+        log_debug "Modified file ${f}\n$(diff -u ${f}.bak ${f})"
+        rm ${f}.bak
+    done
+    log_info "Certain service files have been changed to align with our /uboot boot partition mount point. See convert.log for more information"
+}
