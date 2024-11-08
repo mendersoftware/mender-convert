@@ -16,7 +16,7 @@ source configs/include/raspberrypi_common_config
 function platform_modify() {
     check_image_bitsize
 
-    if [ ${RASPBERRYPI_OS_REQUIRED_ID:-0} -ne 0 ] && ! check_image_os_id; then
+    if [ -n "${RASPBERRYPI_OS_REQUIRED_ID:+x}" ] && ! check_image_os_id; then
         echo "This configuration requires an image based on $RASPBERRYPI_OS_REQUIRED_ID."
         exit 1
     fi
