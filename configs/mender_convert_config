@@ -303,6 +303,9 @@ IMAGE_ROOTFS_EXTRA_SPACE="0"
 # why it is missing a "MENDER_" prefix.
 IMAGE_OVERHEAD_FACTOR="1.5"
 
+MENDER_CLIENT_DATA_DIR_SERVICE_URL="https://raw.githubusercontent.com/mendersoftware/\
+meta-mender/ab9c1e65abf73cde1065e2a4c2005cfe61ee6e3d/meta-mender-core/recipes-mender/mender-client/files/mender-data-dir.service"
+
 source configs/mender_grub_config
 
 # Function to create Mender Artifact

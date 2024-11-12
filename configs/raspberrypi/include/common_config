@@ -1,0 +1,88 @@
+# Nothing to copy
+MENDER_COPY_BOOT_GAP=n
+
+# 4MB alignment
+MENDER_PARTITION_ALIGNMENT="4194304"
+
+# the functions below are not exactly great, but should do the job well enough:
+# extract one key from /etc/os-release of the image in question, and check it against
+# the required value. The return values are meant to be used directly.
+
+function check_image_os_id() {
+    extracted_id=$(awk -F= '$1=="ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release)
+    if [ ${extracted_id} != ${RASPBERRYPI_OS_REQUIRED_ID} ]; then
+        echo "expected ${RASPBERRYPI_OS_REQUIRED_ID}, but found ${extracted_id}"
+        return 1
+    fi
+    return 0
+}
+
+# expects one parameter!
+function check_image_os_version_greater_than() {
+    extracted_version=$(awk -F= '$1=="VERSION_ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release)
+    if [ ${extracted_version} -gt $1 ]; then
+        return 1
+    fi
+    return 0
+}
+
+# expects one parameter!
+function check_image_os_version_less_than() {
+    extracted_version=$(awk -F= '$1=="VERSION_ID" { gsub(/"/, "", $2); print $2 ;}' work/rootfs/etc/os-release)
+    if [ ${extracted_version} -lt $1 ]; then
+        return 1
+    fi
+    return 0
+}
+
+function check_image_bitsize() {
+    if [ "${RASPBERRYPI_OS_NEEDS_32BIT:-}" == "y" ]; then
+        if file -L work/rootfs/bin/sh | grep -qF "ELF 64-bit"; then
+            echo "This configuration requires a 32-bit image for Raspberry Pi, usally named 'armhf'-variant."
+            exit 1
+        fi
+    elif [ "${RASPBERRYPI_OS_NEEDS_64BIT:-}" == "y" ]; then
+        if file -L work/rootfs/bin/sh | grep -qF "ELF 32-bit"; then
+            echo "This configuration requires a 64-bit image for Raspberry Pi, usally named 'arm64'-variant."
+            exit 1
+        fi
+    else
+        echo "Bitsize check not defined, please set either RASPBERRYPI_OS_NEEDS_32BIT or RASPBERRYPI_OS_NEEDS_64BIT"
+        exit 1
+    fi
+}
+
+raspberrypi_check_requirements() {
+    check_image_bitsize
+
+    if [ -n "${RASPBERRYPI_OS_REQUIRED_ID:+x}" ] && ! check_image_os_id; then
+        echo "This configuration requires an image based on $RASPBERRYPI_OS_REQUIRED_ID."
+        exit 1
+    fi
+
+    if [ ${RASPBERRYPI_OS_MIN_VERSION:-0} -ne 0 ] && ! check_image_os_version_less_than ${RASPBERRYPI_OS_MIN_VERSION}; then
+        echo "This configuration requires an image based on $RASPBERRYPI_OS_REQUIRED_ID, version $RASPBERRYPI_OS_MIN_VERSION or later."
+        exit 1
+    fi
+
+    if [ ${RASPBERRYPI_OS_MAX_VERSION:-0} -ne 0 ] && ! check_image_os_version_greater_than ${RASPBERRYPI_OS_MAX_VERSION}; then
+        echo "This configuration requires an image based on $RASPBERRYPI_OS_REQUIRED_ID, version $RASPBERRYPI_OS_MAX_VERSION or later."
+        exit 1
+    fi
+}
+
+function raspberrypi_adjust_services() {
+    # Mask udisks2.service, otherwise it will mount the inactive part and we
+    # might write an update while it is mounted which often result in
+    # corruptions.
+    #
+    # TODO: Find a way to only blacklist mmcblk0pX devices instead of masking
+    # the service.
+    run_and_log_cmd "sudo ln -sf /dev/null work/rootfs/etc/systemd/system/udisks2.service"
+
+    # Remove original 'resize2fs_once' script and its symbolic link.
+    if [ -L work/rootfs/etc/rc3.d/S01resize2fs_once ]; then
+        run_and_log_cmd "sudo unlink work/rootfs/etc/rc3.d/S01resize2fs_once"
+    fi
+    run_and_log_cmd "sudo rm -f work/rootfs/etc/init.d/resize2fs_once"
+}

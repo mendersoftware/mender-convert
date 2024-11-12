@@ -136,9 +136,6 @@ if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
 
 fi
 
-MENDER_CLIENT_DATA_DIR_SERVICE_URL="https://raw.githubusercontent.com/mendersoftware/\
-meta-mender/ab9c1e65abf73cde1065e2a4c2005cfe61ee6e3d/meta-mender-core/recipes-mender/mender-client/files/mender-data-dir.service"
-
 run_and_log_cmd "wget --quiet -O work/mender-data-dir.service $MENDER_CLIENT_DATA_DIR_SERVICE_URL"
 run_and_log_cmd "sudo install -m 644 work/mender-data-dir.service work/rootfs/lib/systemd/system/mender-data-dir.service"
 for service_name in mender-client mender-updated; do

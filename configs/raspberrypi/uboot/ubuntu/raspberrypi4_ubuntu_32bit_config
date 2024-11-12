@@ -3,4 +3,5 @@ RASPBERRYPI_KERNEL_IMAGE="vmlinuz"
 MENDER_KERNEL_IMAGETYPE="zImage"
 MENDER_DEVICE_TYPE="raspberrypi4"
 
-source configs/raspberrypi_config
+source configs/raspberrypi/uboot/include/raspberrypi_32_config
+PLATFORM_MODIFY_HOOKS+=(raspberrypi_32_platform_modify)

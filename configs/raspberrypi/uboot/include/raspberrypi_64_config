@@ -1,0 +1,48 @@
+# Binaries generated with the following script:
+#    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi64.sh
+
+# in the Aarch64 case, it seems to always be "kernel8.img"
+RASPBERRYPI_KERNEL_IMAGE="kernel8.img"
+
+RASPBERRYPI_BINARIES="raspberrypi_arm64-2024.04.tar.gz"
+RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi64/${RASPBERRYPI_BINARIES}"
+
+RASPBERRYPI_OS_REQUIRED_ID="debian"     # also applies to the "Raspberry Pi OS" images
+
+RASPBERRYPI_OS_NEEDS_64BIT="y"
+
+source configs/raspberrypi/include/common_config
+source configs/raspberrypi/uboot/include/common_config
+
+function raspberrypi_64_setup_bootloader_and_kernel() {
+    # Extract Linux kernel and install to /boot directory. In the 64bit case, the previously existing kernel file
+    # is actually a gzipped vmlinux file. Hence, extract and copy as such
+    RASPBERRYPI_BOOTLOADER_IMAGE="${RASPBERRYPI_KERNEL_IMAGE}"
+    # this is required because gunzip is very picky about the filename!
+    run_and_log_cmd "sudo cp work/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE}.gz"
+    run_and_log_cmd "sudo gunzip work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE}.gz"
+    run_and_log_cmd "sudo mv work/rootfs/boot/${RASPBERRYPI_KERNEL_IMAGE} work/rootfs/boot/vmlinux"
+
+    # Make sure the on-board bootloader boots our bootloader (which we do via the kernel option).
+    sed -i -e '/^kernel=/d' work/boot/config.txt
+    echo "kernel=${RASPBERRYPI_BOOTLOADER_IMAGE}" >> work/boot/config.txt
+
+    # Replace kernel with U-boot and add boot script
+    run_and_log_cmd "sudo cp work/rpi/binaries/u-boot.bin work/boot/${RASPBERRYPI_BOOTLOADER_IMAGE}"
+    run_and_log_cmd "sudo cp work/rpi/binaries/fw_env.config work/rootfs/etc/"
+    run_and_log_cmd "sudo cp work/rpi/binaries/uboot-git-log.txt work/boot"
+
+    raspberrypi_generic_bootloader_setup
+}
+
+function raspberrypi_64_platform_modify() {
+    raspberrypi_check_requirements
+
+    check_and_extract_asset $RASPBERRYPI_BINARIES $RASPBERRYPI_BINARIES_URL
+
+    raspberrypi_update_cmdline
+
+    raspberrypi_64_setup_bootloader_and_kernel
+
+    raspberrypi_adjust_services
+}

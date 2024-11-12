@@ -1,0 +1,2 @@
+source configs/raspberrypi/include/pre_bookworm_config
+source configs/raspberrypi/uboot/raspberrypi4_64_config
