@@ -379,25 +379,32 @@ test_acceptance_raspberrypi4_bookworm_64bit:
 
 .template:publish:s3:
   stage: publish
+  needs:
+    - job: convert_raspbian_raspberrypi4_bookworm_64bit
+      artifacts: true
+    - job: convert_raspbian_raspberrypi4_bookworm_32bit
+      artifacts: true
+    - job: convert_raspbian_raspberrypi4_bullseye_64bit
+      artifacts: true
+    - job: convert_raspbian_raspberrypi4_bullseye_32bit
+      artifacts: true
   image: debian:buster
   before_script:
     - apt update && apt install -yyq awscli curl
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
-    # Fetch artifacts from temporary S3 bucket
+    - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
+  script:
+    # One by one, fetch artifacts from temporary S3 bucket and publish to production S3 bucket
     - for RASPBERRYPI_CONFIG_NAME in raspberrypi4_bookworm_64bit raspberrypi4_bookworm_32bit raspberrypi4_bullseye_64bit raspberrypi4_bullseye_32bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
-    - done
-  script:
-    - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
-
-    - for RASPBERRYPI_CONFIG_NAME in raspberrypi4_bookworm_64bit raspberrypi4_bookworm_32bit raspberrypi4_bullseye_64bit raspberrypi4_bullseye_32bit; do
     -   PUBLISH_NAME=${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
     -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_CONFIG_NAME}-mender.img.xz
           s3://$S3_BUCKET_NAME/${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
+    -   rm ${RASPBERRYPI_CONFIG_NAME}/${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_CONFIG_NAME}-mender.img.xz
 
     -   PUBLISH_NAME=${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.mender
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
@@ -405,6 +412,7 @@ test_acceptance_raspberrypi4_bookworm_64bit:
           s3://$S3_BUCKET_NAME/${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBIAN_NAME_PUBLISH}/arm/${PUBLISH_NAME}
+    -   rm ${RASPBERRYPI_CONFIG_NAME}/${RASPBIAN_NAME_PUBLISH}-${RASPBERRYPI_CONFIG_NAME}-mender.mender
     - done
 
 publish:s3:manual:
