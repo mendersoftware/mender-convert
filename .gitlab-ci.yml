@@ -407,7 +407,6 @@ test_acceptance_raspberrypi4_bookworm_64bit:
           s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
-    -   rm ${RASPBERRYPI_CONFIG_NAME}/${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender.img.xz
 
     -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.mender
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
@@ -415,7 +414,9 @@ test_acceptance_raspberrypi4_bookworm_64bit:
           s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
-    -   rm ${RASPBERRYPI_CONFIG_NAME}/${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender.mender
+
+    #   Remove after upload to free disk space for the next board
+    -   rm -rf ${RASPBERRYPI_CONFIG_NAME}.tar.gz ${RASPBERRYPI_CONFIG_NAME}/
     - done
 
 publish:s3:manual:
