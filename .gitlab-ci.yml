@@ -401,8 +401,9 @@ test_acceptance_raspberrypi4_bookworm_64bit:
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    #   RASPBERRY_PI_OS_PREFIX does not match the upstream image prefix, use a wildcard (same below)
-    -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-${RASPBERRYPI_CONFIG_NAME}-mender.img.xz
+    #   It is not possible deduce filename from RASPBERRY_PI_OS_PREFIX and RASPBERRYPI_CONFIG_NAME,
+    #   so use a wildcard and assume that there is only one conversion per directory (same below)
+    -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-mender.img.xz
           s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
@@ -410,7 +411,7 @@ test_acceptance_raspberrypi4_bookworm_64bit:
 
     -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.mender
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-${RASPBERRYPI_CONFIG_NAME}-mender.mender
+    -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-mender.mender
           s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
