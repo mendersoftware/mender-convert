@@ -8,3 +8,56 @@ MENDER_DEVICE_TYPE=raspberrypi4_64_uefi
 
 RPI_UEFI_FIRMWARE_URL="https://github.com/pftf/RPi4/releases/download/v1.38/RPi4_UEFI_Firmware_v1.38.zip"
 RPI_UEFI_FIRMWARE_CHKSUM=f82404a1f52497308aaed69040baa663a2d8c5c4fd78edddc6132ee8ca62ae2b
+
+# --- Custom variables ---
+#
+# We want to change a few variables in the UEFI configuration in order to facilitate immediate
+# successful booting. Otherwise the users first need to enter the Setup menu and change a few
+# things.
+#
+# In some UEFI implementations (x86), the UEFI variables are stored in a separate fd file. In the
+# RPi case however, the UEFI code and the variables are stored in the same file. This is a bit
+# unfortunate because every upgrade requires us to update the settings in that file as well.
+#
+# In order to minimize the chance of the original files (which consist of many files in addition to
+# the fd file) and the fd file versions getting out of sync, we repeat the checksum of the original
+# zip file below, and check it again. Yes, this is redundant, but it's in the name of grouping
+# things together logically, and minimizing the risk of forgetting something.
+#
+# --- Upgrading ---
+#
+# When upgrading the original software, this is what needs to be done to upgrade the convenience
+# file:
+#
+# 1. Perform a mender-conversion with MENDER_RPI_PRECONFIGURED_UEFIVARS turned off.
+#
+# 2. Flash to an SD card and boot the Raspberry Pi. Enter the Setup menu, change the options
+#    mentioned below, and save.
+#
+# 3. Make sure it boots and runs with no further configuration.
+#
+# 4. Extract the `RPI_EFI.fd` file from the SD card, save it in a tarball like the one below, and
+#    upload to S3.
+#
+# 5. Update the checksums, turn MENDER_RPI_PRECONFIGURED_UEFIVARS back on, and do another conversion
+#    and test to verify.
+#
+# --- Specific compatibility options ---
+#
+# These are the settings that are adjusted (both options are under UEFI Setup (Esc key) -> Device
+# Manager -> Raspberry Pi Configuration):
+#
+# 1. Limit RAM to 3GB = Disabled. This is a compatibility option, but the kernels that require it
+#    are already quite old, and none of the OSes we are going to support need it. Better to enable
+#    access to all the available RAM.
+#
+# 2. System Table Selection = ACPI + Devicetree. At least the kernels in Raspberry Pi OS (last
+#    checked with 2024-10-22-raspios-bookworm) do not come with ACPI support, so make the UEFI
+#    firmware provide both.
+#
+# See https://developer.arm.com/documentation/102677/0100/Set-up-the-Raspberry-Pi for more
+# information on these compatibility options.
+RPI_UEFIVAR_BLOB_URL="https://downloads.mender.io/mender-convert/edk2/raspberrypi4_64/RPi4_UEFI_Firmware_v1.38.tar.xz"
+RPI_UEFIVAR_BLOB_CHKSUM=6769518638a2ff2404a06fcfbaab6522ed015d3ca0f4af0746a5280034918b53
+RPI_UEFIVAR_ORIG_FIRMWARE_CHKSUM=f82404a1f52497308aaed69040baa663a2d8c5c4fd78edddc6132ee8ca62ae2b
+MENDER_RPI_PRECONFIGURED_UEFIVARS=y

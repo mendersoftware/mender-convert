@@ -98,6 +98,21 @@ EOF
     #
     # Note: `-o` means "overwrite", not "output file".
     run_and_log_cmd "( cd work/boot && unzip -o ../../RPi_UEFI_Firmware.zip )"
+
+    if [ "$MENDER_RPI_PRECONFIGURED_UEFIVARS" = "y" -a -n "$RPI_UEFIVAR_BLOB_URL" ]; then
+        if [ -n "$RPI_UEFIVAR_ORIG_FIRMWARE_CHKSUM" ]; then
+            run_and_log_cmd "sha256sum -c -" << EOF
+$RPI_UEFIVAR_ORIG_FIRMWARE_CHKSUM  RPi_UEFI_Firmware.zip
+EOF
+        fi
+
+        run_and_log_cmd "wget -O UEFI-Vars.tar.xz $RPI_UEFIVAR_BLOB_URL"
+        run_and_log_cmd "sha256sum -c -" << EOF
+$RPI_UEFIVAR_BLOB_CHKSUM  UEFI-Vars.tar.xz
+EOF
+
+        run_and_log_cmd "( cd work/boot && tar -xJf ../../UEFI-Vars.tar.xz --no-same-owner )"
+    fi
 }
 
 function rpi_uefi_platform_pre_modify() {
