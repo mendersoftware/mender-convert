@@ -1,5 +1,7 @@
 source configs/raspberrypi/uefi/include/common_config
 
+MENDER_RPI_EFI_LOGGING_WORKAROUND=y
+
 # This device type is not compatible with the "raspberrypi4_64" device type, which predates UEFI
 # support and is based on U-Boot. Therefore we use a "uefi" suffix in this device type.
 MENDER_DEVICE_TYPE=raspberrypi4_64_uefi

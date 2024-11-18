@@ -1,9 +1,27 @@
+# Enable extra boot parameters which force logging to work during the early stages of a UEFI
+# boot. Defaults to off, but is enabled on the platform combinations where it is known to be a
+# problem.
+MENDER_RPI_EFI_LOGGING_WORKAROUND=n
+
 # Force this to on. "auto" doesn't work because there is no existing grub.d installation in the
 # image, so it is detected as not present. This is because by default it uses the Raspberry Pi
 # specific firmware bootloader.
 MENDER_GRUB_D_INTEGRATION=y
 
 . modules/chroot.sh
+
+function rpi_enable_kernel_logging() {
+    # As of 2024-10-22-raspios-bookworm, the kernel is not able to pick up that it needs to log to
+    # UEFI, even when running under the kernel EFI stub. The result is that nothing is printed to
+    # the console until much later in the boot process, when the final console mode is set. To fix
+    # this we need to specify EFI specifically. See kernel-parameters.txt (available online and in
+    # the linux kernel repo) for more information. Note that there may still be a "quiet" argument
+    # present which will still prevent output.
+    log_info "Enabling kernel console logging fix for Raspberry Pi"
+    mkdir -p work/rootfs/etc/default/grub.d
+    echo 'GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT earlycon=efifb keep_bootcon"' \
+        > work/rootfs/etc/default/grub.d/mender_rpi_kernel_logging.cfg
+}
 
 function rpi_prepare_uefi_firmware() {
     run_and_log_cmd "wget -O RPi_UEFI_Firmware.zip $RPI_UEFI_FIRMWARE_URL"
@@ -33,5 +51,9 @@ function rpi_uefi_platform_pre_modify() {
     }
 
     run_with_chroot_setup work/rootfs rpi_install_grub
+
+    if [ "$MENDER_RPI_EFI_LOGGING_WORKAROUND" = "y" ]; then
+        rpi_enable_kernel_logging
+    fi
 }
 PLATFORM_PRE_MODIFY_HOOKS+=(rpi_uefi_platform_pre_modify)
