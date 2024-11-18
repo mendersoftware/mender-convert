@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# Copyright 2024 Northern.tech AS
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# This is part of a bigger workaround. To fully understand it, it is advised to read the explanation
+# in the `rpi_cmdline_txt_workaround` function in the mender-convert repository.
+
+reboot() {
+    # RPi scripts call `reboot` with the `-f` argument, because it ordinarily expects to be run
+    # without systemd present. But when using this init-runner, we are running under systemd. We
+    # could reboot, but that does not play nicely during upgrades, because the bootloader expects
+    # exactly one reboot only, so that might end up rolling back. However, at this point we should
+    # still be very early in the boot, so just switch over to the normal environment instead, which
+    # should be almost like a reboot. At the time of writing, the Raspberry Pi OS's `firstboot`
+    # script does a change to the partition UUID, which might not get picked up this way. However,
+    # Mender does not use this, so it should be fine to ignore.
+    #
+    # However, one thing we should do is to run `update-grub` to make sure that the changes that the
+    # `firstboot` script does to `cmdline.txt` are picked up. Let's do that using the dedicated
+    # service (better logging).
+    systemctl restart mender-update-grub-at-reboot
+
+    # Now switch to an ordinary boot.
+    systemctl default --no-block
+}
+
+# Export the custom `reboot` function to prevent the RPi scripts from calling it directly. This
+# won't work if the recipient is not a shell script.
+export -f reboot
+
+CMD=$(cat /var/lib/mender-rpi-grub-integration/init-argument)
+if [ $? -ne 0 ]; then
+    # If the argument grabbing failed, fall back to the standard boot.
+    systemctl default --no-block
+    exit 0
+fi
+
+eval exec "$CMD"

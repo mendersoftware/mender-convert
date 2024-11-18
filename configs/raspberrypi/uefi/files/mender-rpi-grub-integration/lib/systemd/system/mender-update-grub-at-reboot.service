@@ -1,0 +1,27 @@
+# This is part of a bigger workaround. To fully understand it, it is advised to read the explanation
+# in the `rpi_cmdline_txt_workaround` function in the mender-convert repository.
+
+[Unit]
+Description=Mender service which ensures update-grub is run before reboot
+Wants=local-fs.target
+After=local-fs.target
+DefaultDependencies=no
+Conflicts=shutdown.target umount.target
+Before=shutdown.target umount.target
+
+[Service]
+RemainAfterExit=yes
+
+# These are needed because the RPi scripts may unmount/remount these outside of systemd.
+ExecStop=-mount / remount,rw
+ExecStop=-mount /boot/efi
+
+ExecStop=/usr/share/mender-rpi-grub-integration/grub-updater
+
+# update-grub can in some cases take quite long (40s+), and is dependent on SD card
+# performance. So the 90s default timeout feels a bit close for something as important
+# as updating the bootloader. Raise it a little to be safer.
+TimeoutStopSec=300
+
+[Install]
+WantedBy=sysinit.target

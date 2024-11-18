@@ -10,6 +10,65 @@ MENDER_GRUB_D_INTEGRATION=y
 
 . modules/chroot.sh
 
+function rpi_cmdline_txt_workaround() {
+    # Raspberry Pi OS uses an incredibly hacky method to run first boot initialization: They replace
+    # the init process (so basically the entire operating system) with a custom bash script. Once it
+    # has run it removes the special init parameter to the kernel. All of this happens through the
+    # `cmdline.txt` file. The ideal thing would be for GRUB to read this file during boot and use
+    # its arguments, which would make it behave more or less like Raspberry Pi OS, but unfortunately
+    # GRUB does not support reading of arbitrary files (other than environment files, which have a
+    # special format). So to make GRUB respect `cmdline.txt`, we need to make sure that
+    # `update-grub` is run while the OS is still running.
+    #
+    # The workaround consists of several components:
+    #
+    # 1. To make sure that the arguments from `cmdline.txt` are imported into GRUB's boot files with
+    #    `update-grub`, we use the `GRUB_CMDLINE_LINUX_DEFAULT` configuration setting, with some
+    #    additional logic around it to grab the setting from `cmdline.txt` and tweak it. This
+    #    resides under `/etc/default/grub.d`.
+    #
+    # 2. We introduce a systemd service, `mender-update-grub-at-reboot.service`, which always runs,
+    #    and if necessary, runs `update-grub` whenever we are shutting down and `cmdline.txt` has
+    #    changed. This is not a full proof method, since it will not work if `cmdline.txt` is
+    #    changed, and then the system is not shut down cleanly. But it's much better than nothing.
+    #
+    # 3. We also rely on the (already existing) platform hooks to run `update-grub` after a kernel
+    #    or GRUB update. We don't have to do anything to make this work, but it's nice to know that
+    #    these mechanisms are working as intended, even on this Raspberry Pi port. These hooks
+    #    mainly rely on scripts in `/etc/kernel`, as well as the kernel and GRUB package scripts.
+    #
+    # 4. We introduce a another systemd service, `mender-init-runner.service`, whose task it is to
+    #    run the script which is passed in via the `init=` kernel parameter. On the actual kernel
+    #    command line, we replace the `init=<CMDLINE>` argument with
+    #    `systemd.unit=mender-init-runner.service` and we put `<CMDLINE>` in a file. It runs early
+    #    in the boot process, but not immediately after kernel start, as `init=` would do. There are
+    #    multiple reasons why this is done:
+    #
+    #        a) It allows us to reuse the service from point 2, which would not be possible if the
+    #           script was called directly (systemd would not be running).
+    #
+    #        b) For some reason logging (or any output) doesn't work correctly until the framebuffer
+    #           is initialized properly. Although the script still runs correctly, there is no
+    #           output at all, which is quite confusing, and near impossible to debug. Instead of
+    #           attempting the framebuffer reset manually, let systemd do it in the early boot steps.
+    #
+    #        c) In general it just feels safer to have a safety net with a system manager running,
+    #           and knowing that the most important things are properly initialized (as the logging
+    #           from the previous point shows).
+
+    # All of mechanics described above are hosted in the package we build here.
+    run_and_log_cmd "dpkg-deb --root-owner-group --build configs/raspberrypi/uefi/files/mender-rpi-grub-integration"
+    run_and_log_cmd "mv configs/raspberrypi/uefi/files/mender-rpi-grub-integration.deb work/rootfs/"
+
+    run_with_chroot_setup work/rootfs rpi_install_rpi_grub_integration
+    run_and_log_cmd "rm -f work/rootfs/mender-rpi-grub-integration.deb"
+}
+
+function rpi_install_rpi_grub_integration() {
+    log_info "Installing cmdline.txt/GRUB integration..."
+    run_in_chroot_and_log_cmd work/rootfs "dpkg --install /mender-rpi-grub-integration.deb"
+}
+
 function rpi_enable_kernel_logging() {
     # As of 2024-10-22-raspios-bookworm, the kernel is not able to pick up that it needs to log to
     # UEFI, even when running under the kernel EFI stub. The result is that nothing is printed to
@@ -51,6 +110,8 @@ function rpi_uefi_platform_pre_modify() {
     }
 
     run_with_chroot_setup work/rootfs rpi_install_grub
+
+    rpi_cmdline_txt_workaround
 
     if [ "$MENDER_RPI_EFI_LOGGING_WORKAROUND" = "y" ]; then
         rpi_enable_kernel_logging
