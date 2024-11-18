@@ -1,1 +1,2 @@
 source configs/raspberrypi/uefi/include/raspberrypi4_64_config
+source configs/raspberrypi/uefi/include/bookworm_config
