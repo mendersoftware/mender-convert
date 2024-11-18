@@ -1,0 +1,8 @@
+source configs/raspberrypi/uefi/include/common_config
+
+# This device type is not compatible with the "raspberrypi4_64" device type, which predates UEFI
+# support and is based on U-Boot. Therefore we use a "uefi" suffix in this device type.
+MENDER_DEVICE_TYPE=raspberrypi4_64_uefi
+
+RPI_UEFI_FIRMWARE_URL="https://github.com/pftf/RPi4/releases/download/v1.38/RPi4_UEFI_Firmware_v1.38.zip"
+RPI_UEFI_FIRMWARE_CHKSUM=f82404a1f52497308aaed69040baa663a2d8c5c4fd78edddc6132ee8ca62ae2b

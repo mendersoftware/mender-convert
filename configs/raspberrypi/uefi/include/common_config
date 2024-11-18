@@ -1,0 +1,37 @@
+# Force this to on. "auto" doesn't work because there is no existing grub.d installation in the
+# image, so it is detected as not present. This is because by default it uses the Raspberry Pi
+# specific firmware bootloader.
+MENDER_GRUB_D_INTEGRATION=y
+
+. modules/chroot.sh
+
+function rpi_prepare_uefi_firmware() {
+    run_and_log_cmd "wget -O RPi_UEFI_Firmware.zip $RPI_UEFI_FIRMWARE_URL"
+    run_and_log_cmd "sha256sum -c -" << EOF
+$RPI_UEFI_FIRMWARE_CHKSUM  RPi_UEFI_Firmware.zip
+EOF
+
+    # This mixes the UEFI boot files with the existing Raspberry Pi specific boot loader files, but
+    # it's probably better to keep both, since the OS updater may expect them to be present. They
+    # will be largely inert files though, because `config.txt` is used to select the UEFI
+    # bootloader, not the kernel image as the Raspberry Pi stock boot process does. I have not found
+    # an authoritative source that says that `config.txt` won't be modified, but it seems to be
+    # "collectively understood" as such, based on both forum posts and ChatGPT. This should be
+    # enough to keep the updater from messing with the UEFI setup.
+    #
+    # Note: `-o` means "overwrite", not "output file".
+    run_and_log_cmd "( cd work/boot && unzip -o ../../RPi_UEFI_Firmware.zip )"
+}
+
+function rpi_uefi_platform_pre_modify() {
+    rpi_prepare_uefi_firmware
+
+    function rpi_install_grub() {
+        log_info "Installing GRUB..."
+        run_in_chroot_and_log_cmd work/rootfs "apt update"
+        run_in_chroot_and_log_cmd work/rootfs "DEBIAN_FRONTEND=noninteractive apt install -yy grub-efi"
+    }
+
+    run_with_chroot_setup work/rootfs rpi_install_grub
+}
+PLATFORM_PRE_MODIFY_HOOKS+=(rpi_uefi_platform_pre_modify)
