@@ -93,105 +93,102 @@ if [ -n "$PREBUILT_IMAGE" ]; then
   run_tests $PREBUILT_IMAGE "$@" \
             || test_result=$?
   exit $test_result
-
-else
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
-    # For this test, we explicitly test compressed and uncompressed image conversion
-    # For most of the other tests, we just test the uncompressed image conversion to
-    # speed up the process
-    wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
-    UBUNTU_IMAGE_COMPRESSED="${UBUNTU_IMAGE_URL##*/}"
-    mkdir -p input/tests
-    sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
-    convert_and_test "qemux86-64" \
-                     "release-1" \
-                     "input/image/${UBUNTU_IMAGE_COMPRESSED}" \
-                     "--overlay input/tests/ssh-public-key-overlay" \
-                     "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" \
-                     "--" \
-                     "$@" \
-                     || test_result=$?
-
-    echo >&2 "----------------------------------------"
-    echo >&2 "Running the uncompressed test"
-    echo >&2 "----------------------------------------"
-    rm -rf deploy
-    UBUNTU_IMAGE_UNCOMPRESSED=${UBUNTU_IMAGE_COMPRESSED%.gz}
-    gunzip --force "input/image/${UBUNTU_IMAGE_COMPRESSED}"
-    run_convert "release-2" \
-                "input/image/${UBUNTU_IMAGE_UNCOMPRESSED}" \
-                "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
-    ret=0
-    UBUNTU_IMAGE_MENDER="${UBUNTU_IMAGE_UNCOMPRESSED%.img}-qemux86-64-mender.img"
-    test -f deploy/${UBUNTU_IMAGE_MENDER} || ret=$?
-    assert "${ret}" "0" "Expected uncompressed file deploy/${UBUNTU_IMAGE_MENDER}"
-  fi
-
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; then
-    wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
-    UBUNTU_IMAGE_COMPRESSED="${UBUNTU_IMAGE_URL##*/}"
-    UBUNTU_IMAGE_UNCOMPRESSED=${UBUNTU_IMAGE_COMPRESSED%.gz}
-    gunzip --force "input/image/${UBUNTU_IMAGE_COMPRESSED}"
-    mkdir -p input/tests
-    sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
-    QEMU_NO_SECURE_BOOT=1 \
-                     convert_and_test \
-                     "qemux86-64" \
-                     "release-1" \
-                     "input/image/${UBUNTU_IMAGE_UNCOMPRESSED}" \
-                     "--overlay input/tests/ssh-public-key-overlay" \
-                     "--config configs/ubuntu-qemux86-64_config" \
-                     "--config configs/testing/no-grub.d_config $EXTRA_CONFIG" \
-                     "--" \
-                     "$@" \
-                     || test_result=$?
-  fi
-
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
-    # For this test we test compressed image to verify xz compression
-    wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/image/
-    RASPBIAN_IMAGE_COMPRESSED="${RASPBIAN_IMAGE_URL##*/}"
-    convert_and_test "raspberrypi3" \
-                     "release-1" \
-                     "input/image/${RASPBIAN_IMAGE_COMPRESSED}" \
-                     "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
-                     "--" \
-                     "$@" \
-                     || test_result=$?
-  fi
-
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-raspberrypi3" ]; then
-    wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/image/
-    UBUNTU_SERVER_RPI_IMAGE_COMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_URL##*/}"
-    UBUNTU_SERVER_RPI_IMAGE_UNCOMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED%.xz}"
-    unxz --force "input/image/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}"
-    convert_and_test "raspberrypi3" \
-                     "release-1" \
-                     "input/image/${UBUNTU_SERVER_RPI_IMAGE_UNCOMPRESSED}" \
-                     "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
-                     "--" \
-                     "$@" \
-                     || test_result=$?
-  fi
-
-  if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
-    wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/image/
-    DEBIAN_IMAGE_COMPRESSED="${DEBIAN_IMAGE_URL##*/}"
-    DEBIAN_IMAGE_UNCOMPRESSED=${DEBIAN_IMAGE_COMPRESSED%.gz}
-    gunzip --force "input/image/${DEBIAN_IMAGE_COMPRESSED}"
-    mkdir -p input/tests
-    sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
-    convert_and_test "qemux86-64" \
-                     "release-1" \
-                     "input/image/${DEBIAN_IMAGE_UNCOMPRESSED}" \
-                     "--overlay input/tests/ssh-public-key-overlay" \
-                     "--config configs/debian-qemux86-64_config $EXTRA_CONFIG" \
-                     "--" \
-                     "$@" \
-                     || test_result=$?
-  fi
-
-
-
-  exit $test_result
 fi
+
+if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
+  # For this test, we explicitly test compressed and uncompressed image conversion
+  # For most of the other tests, we just test the uncompressed image conversion to
+  # speed up the process
+  wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
+  UBUNTU_IMAGE_COMPRESSED="${UBUNTU_IMAGE_URL##*/}"
+  mkdir -p input/tests
+  sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
+  convert_and_test "qemux86-64" \
+                   "release-1" \
+                   "input/image/${UBUNTU_IMAGE_COMPRESSED}" \
+                   "--overlay input/tests/ssh-public-key-overlay" \
+                   "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" \
+                   "--" \
+                   "$@" \
+                   || test_result=$?
+
+  echo >&2 "----------------------------------------"
+  echo >&2 "Running the uncompressed test"
+  echo >&2 "----------------------------------------"
+  rm -rf deploy
+  UBUNTU_IMAGE_UNCOMPRESSED=${UBUNTU_IMAGE_COMPRESSED%.gz}
+  gunzip --force "input/image/${UBUNTU_IMAGE_COMPRESSED}"
+  run_convert "release-2" \
+              "input/image/${UBUNTU_IMAGE_UNCOMPRESSED}" \
+              "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
+  ret=0
+  UBUNTU_IMAGE_MENDER="${UBUNTU_IMAGE_UNCOMPRESSED%.img}-qemux86-64-mender.img"
+  test -f deploy/${UBUNTU_IMAGE_MENDER} || ret=$?
+  assert "${ret}" "0" "Expected uncompressed file deploy/${UBUNTU_IMAGE_MENDER}"
+fi
+
+if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; then
+  wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
+  UBUNTU_IMAGE_COMPRESSED="${UBUNTU_IMAGE_URL##*/}"
+  UBUNTU_IMAGE_UNCOMPRESSED=${UBUNTU_IMAGE_COMPRESSED%.gz}
+  gunzip --force "input/image/${UBUNTU_IMAGE_COMPRESSED}"
+  mkdir -p input/tests
+  sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
+  QEMU_NO_SECURE_BOOT=1 \
+                   convert_and_test \
+                   "qemux86-64" \
+                   "release-1" \
+                   "input/image/${UBUNTU_IMAGE_UNCOMPRESSED}" \
+                   "--overlay input/tests/ssh-public-key-overlay" \
+                   "--config configs/ubuntu-qemux86-64_config" \
+                   "--config configs/testing/no-grub.d_config $EXTRA_CONFIG" \
+                   "--" \
+                   "$@" \
+                   || test_result=$?
+fi
+
+if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
+  # For this test we test compressed image to verify xz compression
+  wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/image/
+  RASPBIAN_IMAGE_COMPRESSED="${RASPBIAN_IMAGE_URL##*/}"
+  convert_and_test "raspberrypi3" \
+                   "release-1" \
+                   "input/image/${RASPBIAN_IMAGE_COMPRESSED}" \
+                   "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
+                   "--" \
+                   "$@" \
+                   || test_result=$?
+fi
+
+if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-raspberrypi3" ]; then
+  wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/image/
+  UBUNTU_SERVER_RPI_IMAGE_COMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_URL##*/}"
+  UBUNTU_SERVER_RPI_IMAGE_UNCOMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED%.xz}"
+  unxz --force "input/image/${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED}"
+  convert_and_test "raspberrypi3" \
+                   "release-1" \
+                   "input/image/${UBUNTU_SERVER_RPI_IMAGE_UNCOMPRESSED}" \
+                   "--config configs/raspberrypi3_config $EXTRA_CONFIG" \
+                   "--" \
+                   "$@" \
+                   || test_result=$?
+fi
+
+if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
+  wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/image/
+  DEBIAN_IMAGE_COMPRESSED="${DEBIAN_IMAGE_URL##*/}"
+  DEBIAN_IMAGE_UNCOMPRESSED=${DEBIAN_IMAGE_COMPRESSED%.gz}
+  gunzip --force "input/image/${DEBIAN_IMAGE_COMPRESSED}"
+  mkdir -p input/tests
+  sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
+  convert_and_test "qemux86-64" \
+                   "release-1" \
+                   "input/image/${DEBIAN_IMAGE_UNCOMPRESSED}" \
+                   "--overlay input/tests/ssh-public-key-overlay" \
+                   "--config configs/debian-qemux86-64_config $EXTRA_CONFIG" \
+                   "--" \
+                   "$@" \
+                   || test_result=$?
+fi
+
+exit $test_result
