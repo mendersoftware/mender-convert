@@ -95,7 +95,10 @@ if [ -n "$PREBUILT_IMAGE" ]; then
   exit $test_result
 fi
 
+MATCHED_A_TEST=0
+
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
+  MATCHED_A_TEST=1
   # For this test, we explicitly test compressed and uncompressed image conversion
   # For most of the other tests, we just test the uncompressed image conversion to
   # speed up the process
@@ -128,6 +131,7 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; then
+  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
   UBUNTU_IMAGE_COMPRESSED="${UBUNTU_IMAGE_URL##*/}"
   UBUNTU_IMAGE_UNCOMPRESSED=${UBUNTU_IMAGE_COMPRESSED%.gz}
@@ -148,6 +152,7 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; 
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
+  MATCHED_A_TEST=1
   # For this test we test compressed image to verify xz compression
   wget --progress=dot:giga -N ${RASPBIAN_IMAGE_URL} -P input/image/
   RASPBIAN_IMAGE_COMPRESSED="${RASPBIAN_IMAGE_URL##*/}"
@@ -161,6 +166,7 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi3" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-raspberrypi3" ]; then
+  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${UBUNTU_SERVER_RPI_IMAGE_URL} -P input/image/
   UBUNTU_SERVER_RPI_IMAGE_COMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_URL##*/}"
   UBUNTU_SERVER_RPI_IMAGE_UNCOMPRESSED="${UBUNTU_SERVER_RPI_IMAGE_COMPRESSED%.xz}"
@@ -175,6 +181,7 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-raspberrypi3" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
+  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${DEBIAN_IMAGE_URL} -P input/image/
   DEBIAN_IMAGE_COMPRESSED="${DEBIAN_IMAGE_URL##*/}"
   DEBIAN_IMAGE_UNCOMPRESSED=${DEBIAN_IMAGE_COMPRESSED%.gz}
@@ -189,6 +196,11 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
                    "--" \
                    "$@" \
                    || test_result=$?
+fi
+
+if [ "$MATCHED_A_TEST" = 0 ]; then
+  echo "No test matched!" 1>&2
+  exit 1
 fi
 
 exit $test_result
