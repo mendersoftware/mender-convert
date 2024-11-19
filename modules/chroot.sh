@@ -35,7 +35,24 @@ function run_with_chroot_setup() {
     if [ "$arch" != "$(uname -m)" ]; then
         # Foreign architecture, we need to use QEMU.
         cp "$(which "qemu-$arch-static")" "$directory/tmp/"
+
+        # A note about this next section, because there is high breakage potential here in later OS
+        # versions. This enables binfmt integration, which means foreign binaries can be
+        # run. Between Ubuntu 22 and 24, the framework for how this is set up changed. Previously
+        # the "binfmt-support" package and its associated `update-binfmts` tool was used. In Ubuntu
+        # 24, this was replaced with `systemd-binfmt`. However, the binfmt-support package is still
+        # available. The problem with `systemd-binfmt` is that it requires the "binfmt_misc"
+        # filesystem to be mounted on `/proc/sys/fs/binfmt_misc`. Normally this is provided by
+        # systemd itself, but it is not running inside a container. The `update-binfmts` by itself
+        # does not work anymore in Ubuntu 24, because the format of the binfmt config files has
+        # changed, but it does mount/unmount the binfmt_misc filesystem when calling with
+        # `--enable/--disable`, so we use that to be able to run systemd-binfmt after it. But this
+        # might stop working if the "binfmt-support" package is later removed from the package
+        # repos. Perhaps then the filesystem needs to be mounted manually.
         update-binfmts --enable
+        if [ -x /usr/lib/systemd/systemd-binfmt ]; then
+            /usr/lib/systemd/systemd-binfmt
+        fi
     fi
 
     local ret=0
