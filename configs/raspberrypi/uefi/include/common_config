@@ -56,6 +56,10 @@ function rpi_cmdline_txt_workaround() {
     #           and knowing that the most important things are properly initialized (as the logging
     #           from the previous point shows).
 
+    # This will be turned into a package owned by root, so make sure it is only writable by its
+    # owner.
+    run_and_log_cmd "chmod -R go-w configs/raspberrypi/uefi/files/mender-rpi-grub-integration"
+
     # All of mechanics described above are hosted in the package we build here.
     run_and_log_cmd "dpkg-deb --root-owner-group --build configs/raspberrypi/uefi/files/mender-rpi-grub-integration"
     run_and_log_cmd "mv configs/raspberrypi/uefi/files/mender-rpi-grub-integration.deb work/rootfs/"
