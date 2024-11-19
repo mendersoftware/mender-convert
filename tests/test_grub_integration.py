@@ -79,21 +79,21 @@ def check_all_root_occurrences_valid(grub_cfg):
 
 @pytest.fixture(scope="session")
 def only_grub_d_integration(bitbake_variables):
-    if bitbake_variables["MENDER_GRUB_D_INTEGRATION"] == "n":
+    if bitbake_variables["MENDER_GRUB_D_INTEGRATION"] != "y":
         pytest.skip("grub.d integration is off, skipping test")
 
 
-@pytest.mark.usefixtures("setup_board", "cleanup_boot_scripts", "only_grub_d_integration")
-class TestGrubIntegration:
+@pytest.mark.usefixtures("only_grub_d_integration")
+class TestGrubIntegrationOffline:
     @pytest.mark.min_mender_version("1.0.0")
-    def test_no_root_occurrences(self, connection, latest_part_image):
+    def test_no_root_occurrences(self, latest_part_image):
         """Test that the generated grub scripts do not contain any occurrences of
         `root=<something>` except for known instances that we control. This is
         important because Mender needs to keep tight control of when this
         variable is set, in order to boot from, and mount, the correct root
         partition."""
 
-        # First, check that the offline generated scripts don't have any.
+        # Check that the offline generated scripts don't have any.
         with make_tempdir() as tmpdir:
             extract_partition(latest_part_image, 1, tmpdir)
             subprocess.check_call(
@@ -112,7 +112,18 @@ class TestGrubIntegration:
             )
             check_all_root_occurrences_valid(f"{tmpdir}/grub-mender-grubenv.cfg")
 
-        # Then, check that the runtime generated scripts don't have any.
+
+@pytest.mark.usefixtures("setup_board", "cleanup_boot_scripts", "only_grub_d_integration")
+class TestGrubIntegrationOnline:
+    @pytest.mark.min_mender_version("1.0.0")
+    def test_no_root_occurrences(self, connection, latest_part_image):
+        """Test that the generated grub scripts do not contain any occurrences of
+        `root=<something>` except for known instances that we control. This is
+        important because Mender needs to keep tight control of when this
+        variable is set, in order to boot from, and mount, the correct root
+        partition."""
+
+        # Check that the runtime generated scripts don't have any.
         with make_tempdir() as tmpdir:
             get_no_sftp("/boot/grub/grub.cfg", connection, local=tmpdir)
             check_all_root_occurrences_valid(f"{tmpdir}/grub.cfg")
