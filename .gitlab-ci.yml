@@ -28,17 +28,6 @@ variables:
     description: |-
       Version of mender-configure for the converted image - 'latest', 'master' or a specific version
 
-  ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-  ## Auto-update
-  RASPBIAN_URL_BOOKWORM_64: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz"
-  RASPBIAN_NAME_BOOKWORM_64: 2024-07-04-raspios-bookworm-arm64-lite
-  RASPBIAN_URL_BOOKWORM_32: "https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-07-04/2024-07-04-raspios-bookworm-armhf-lite.img.xz"
-  RASPBIAN_NAME_BOOKWORM_32: 2024-07-04-raspios-bookworm-armhf-lite
-  RASPBIAN_URL_BOOKWORM_64: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bullseye-arm64-lite.img.xz"
-  RASPBIAN_NAME_BOOKWORM_64: 2024-07-04-raspios-bookworm-arm64-lite
-  RASPBIAN_URL_BOOKWORM_32: "https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-07-04/2024-07-04-raspios-bullseye-armhf-lite.img.xz"
-  RASPBIAN_NAME_BOOKWORM_32: 2024-07-04-raspios-bookworm-armhf-lite
-
   # Which version of mender-convert to use in published image name. Normally
   # empty, in which case the branch or tag name will be used, but this variable
   # is available so that it's possible to make small build fixes on an already
@@ -166,21 +155,24 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
-    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bookworm-arm64-lite
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz
+    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
+    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz
 
 convert_raspbian_raspberrypi4_bookworm_32bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_32bit
-    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bookworm-armhf-lite
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-07-04/2024-07-04-raspios-bookworm-armhf-lite.img.xz
+    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-armhf-lite
+    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-10-28/2024-10-22-raspios-bookworm-armhf-lite.img.xz
 
 convert_raspbian_raspberrypi4_bullseye_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bullseye_64bit
     RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bullseye-arm64-lite
+    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
     RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_oldstable_lite_arm64/images/raspios_oldstable_lite_arm64-2024-07-04/2024-07-04-raspios-bullseye-arm64-lite.img.xz
 
 convert_raspbian_raspberrypi4_bullseye_32bit:
@@ -188,6 +180,7 @@ convert_raspbian_raspberrypi4_bullseye_32bit:
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bullseye_32bit
     RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bullseye-armhf-lite
+    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
     RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_oldstable_lite_armhf/images/raspios_oldstable_lite_armhf-2024-07-04/2024-07-04-raspios-bullseye-armhf-lite.img.xz
 
 .bash_helpers: &bash_helpers |
@@ -295,7 +288,7 @@ test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
       artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bookworm-arm64-lite
+    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-arm64-lite
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
 test_acceptance_prebuilt_raspberrypi4_bookworm_32bit:
@@ -307,7 +300,7 @@ test_acceptance_prebuilt_raspberrypi4_bookworm_32bit:
       artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_32bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bookworm-armhf-lite
+    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-armhf-lite
     MENDER_DEVICE_TYPE: raspberrypi4
 
 test_acceptance_prebuilt_raspberrypi4_bullseye_64bit:
@@ -423,14 +416,14 @@ publish:s3:manual:
   when: manual
   extends: .template:publish:s3
   variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-07-04-raspios-lite
+    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
 
 publish:s3:automatic:
   rules:
     - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
   extends: .template:publish:s3
   variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-07-04-raspios-lite
+    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
 
 # excludes non multiplatform build job
 build:docker:
