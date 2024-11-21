@@ -60,7 +60,11 @@ disk_get_part_nums() {
 #  $3 - size (in 512 blocks)
 #  $4 - path to output file
 disk_extract_part() {
-    run_and_log_cmd "dd if=$1 of=$4 skip=${2}b bs=1M count=${3}b status=none iflag=count_bytes,skip_bytes"
+    conv=""
+    if [ "${MENDER_SPARSE_IMAGE}" == "y" ]; then
+        conv="conv=sparse"
+    fi
+    run_and_log_cmd "dd if=$1 of=$4 skip=${2}b bs=1M count=${3}b status=none ${conv} iflag=count_bytes,skip_bytes"
 }
 
 # Convert MiB to number of 512 sectors
@@ -98,7 +102,11 @@ disk_align_sectors() {
 # $2 - destination file
 # $3 - offset in number of 512 sectors
 disk_write_at_offset() {
-    run_and_log_cmd "dd if=${1} of=${2} seek=${3} conv=notrunc status=none"
+    conv="conv=notrunc"
+    if [ "${MENDER_SPARSE_IMAGE}" == "y" ]; then
+        conv="${conv},sparse"
+    fi
+    run_and_log_cmd "dd if=${1} of=${2} seek=${3} bs=512 ${conv} status=none"
 }
 
 # Create file system image from directory content
