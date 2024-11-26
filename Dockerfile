@@ -83,6 +83,10 @@ RUN mkdir -p /mender-convert/input
 RUN mkdir -p /mender-convert/deploy
 RUN mkdir -p /mender-convert/logs
 
+# It was discovered by accident that the Gitlab CI tends to give the clones full write permissions
+# for everyone. But instead of fixing it in the CI build file, let's just fix it everywhere.
+RUN chmod -R go-w /mender-convert
+
 VOLUME ["/mender-convert/configs"]
 VOLUME ["/mender-convert/input"]
 VOLUME ["/mender-convert/deploy"]

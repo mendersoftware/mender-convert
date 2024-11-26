@@ -63,7 +63,7 @@ function run_with_chroot_setup() {
         # but it is good enough for our purposes, and doesn't require special containment
         # capabilities. This will not work for foreign architectures, but we could probably use
         # something like qemu-aarch64-static to get around that.
-        if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" ]; then
+        if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" -a -d "$directory/boot/efi" ]; then
             run_and_log_cmd "sudo mount work/boot $directory/boot/efi -o bind"
             # Could mount the boot partition somewhere else, but we don't have a standard way to
             # specify where it should be mounted when EFI integration is off, so let's not, for now.
@@ -82,7 +82,7 @@ function run_with_chroot_setup() {
     # them while tearing down the container. You can guess how I found that out... We run without
     # the logger because otherwise the message from the previous command, which is the important
     # one, is lost.
-    if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" ]; then
+    if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" -a -d "$directory/boot/efi" ]; then
         sudo umount -l $directory/boot/efi || true
     fi
     sudo umount -l $directory/dev/pts || true

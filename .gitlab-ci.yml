@@ -101,7 +101,8 @@ test:check-shell-formatting:
             -type f
             -not -name "*.md"
             -not -path "scripts/linkbot/*"
-            -not -wholename "scripts/test/*")
+            -not -wholename "scripts/test/*"
+            -not -path "*/files/*")
 
 build:docker-multiplatform:
   variables:
@@ -368,6 +369,17 @@ test_acceptance_raspberrypi4_bookworm_64bit:
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
       --only raspberrypi4_bookworm_64bit
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
+
+test_acceptance_raspberrypi4_uefi_bookworm_64bit:
+  <<: *test_acceptance
+  script:
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only raspberrypi4_uefi_bookworm_64bit
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 

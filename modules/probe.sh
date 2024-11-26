@@ -88,6 +88,12 @@ probe_grub_install_target() {
         "i386")
             target_name="i386-efi"
             ;;
+        "armhf")
+            target_name="arm-efi"
+            ;;
+        "aarch64")
+            target_name="arm64-efi"
+            ;;
         *)
             log_fatal "Unsupported arch: ${arch}"
             ;;
@@ -371,11 +377,6 @@ supports_grub_d_and_efi() {
     test -d "$1"/EFI || return 1
     test -d "$2"/boot/efi || return 1
     test -d "$2"/etc/grub.d || return 1
-
-    # Because we are executing programs inside a chroot in the image, we cannot
-    # currently convert non-native architectures to use grub.d integration. See
-    # relevant section on chroot inside grub_install_grub_d_config.
-    [ "$(probe_arch)" = "$(uname -m)" ] || return 1
 
     return 0
 }

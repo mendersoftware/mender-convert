@@ -1,0 +1,6 @@
+Package: mender-rpi-grub-integration
+Version: 1.0
+Architecture: all
+Maintainer: Northern.tech <contact@northern.tech>
+Description: Package which makes the Raspberry Pi custom boot scripts integrate better with GRUB
+Priority: required

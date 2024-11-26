@@ -1,0 +1,15 @@
+# This is part of a bigger workaround. To fully understand it, it is advised to read the explanation
+# in the `rpi_cmdline_txt_workaround` function in the mender-convert repository.
+
+[Unit]
+Description=Mender service which enables running the Raspberry Pi OS firstboot script
+Wants=sysinit.target mender-update-grub-at-reboot.service
+After=sysinit.target mender-update-grub-at-reboot.service
+DefaultDependencies=no
+
+[Service]
+Type=exec
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+ExecStart=/usr/share/mender-rpi-grub-integration/init-runner

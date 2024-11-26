@@ -1,0 +1,6 @@
+# This is part of a bigger workaround. To fully understand it, it is advised to read the explanation
+# in the `rpi_cmdline_txt_workaround` function in the mender-convert repository.
+
+# This has no effect on the boot, it is here to record which `cmdline.txt` was used to generate
+# this. Non-existing is a valid scenario, it counts as an empty file.
+echo "# RPI_CMDLINE_TXT=\"$(head -n 1 /boot/efi/cmdline.txt 2>/dev/null || true)\""

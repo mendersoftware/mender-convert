@@ -1,0 +1,12 @@
+function rpi_firmware_link() {
+    # Raspbian OS bookworm and onwards have a standard mount point for the boot partition, at
+    # `/boot/firmware`. This conflicts with the EFI standard mount point, `/boot/efi`. Since EFI is
+    # arguably *more* standard, and we are booting from it as well, symlink `/boot/firmware` to
+    # that.
+    log_info "Installing /boot/firmware -> /boot/efi symlink"
+    if [ -d work/rootfs/boot/firmware ]; then
+        run_and_log_cmd "rmdir work/rootfs/boot/firmware"
+    fi
+    run_and_log_cmd "ln -s efi work/rootfs/boot/firmware"
+}
+PLATFORM_MODIFY_HOOKS+=(rpi_firmware_link)
