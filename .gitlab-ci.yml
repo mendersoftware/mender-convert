@@ -160,29 +160,13 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
     ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
     RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz
 
-convert_raspbian_raspberrypi4_bookworm_32bit:
+convert_raspbian_raspberrypi3_bookworm_64bit:
   <<: *convert_raspbian
   variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_32bit
-    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-armhf-lite
+    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
+    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
     ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-10-28/2024-10-22-raspios-bookworm-armhf-lite.img.xz
-
-convert_raspbian_raspberrypi4_bullseye_64bit:
-  <<: *convert_raspbian
-  variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bullseye_64bit
-    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bullseye-arm64-lite
-    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_oldstable_lite_arm64/images/raspios_oldstable_lite_arm64-2024-07-04/2024-07-04-raspios-bullseye-arm64-lite.img.xz
-
-convert_raspbian_raspberrypi4_bullseye_32bit:
-  <<: *convert_raspbian
-  variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bullseye_32bit
-    RASPBIAN_NAME_CONVERT: 2024-07-04-raspios-bullseye-armhf-lite
-    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_oldstable_lite_armhf/images/raspios_oldstable_lite_armhf-2024-07-04/2024-07-04-raspios-bullseye-armhf-lite.img.xz
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz
 
 .bash_helpers: &bash_helpers |
   # Bash function to check if the string is a final tag
@@ -292,41 +276,17 @@ test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
     RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-arm64-lite
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
-test_acceptance_prebuilt_raspberrypi4_bookworm_32bit:
+test_acceptance_prebuilt_raspberrypi3_bookworm_64bit:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-    - job: convert_raspbian_raspberrypi4_bookworm_32bit
+    - job: convert_raspbian_raspberrypi3_bookworm_64bit
       artifacts: true
   variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_32bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-armhf-lite
-    MENDER_DEVICE_TYPE: raspberrypi4
-
-test_acceptance_prebuilt_raspberrypi4_bullseye_64bit:
-  <<: *test_acceptance_prebuilt_raspberrypi
-  needs:
-    - job: build:docker-multiplatform
-      artifacts: false
-    - job: convert_raspbian_raspberrypi4_bullseye_64bit
-      artifacts: true
-  variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bullseye_64bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bullseye-arm64-lite
-    MENDER_DEVICE_TYPE: raspberrypi4_64
-
-test_acceptance_prebuilt_raspberrypi4_bullseye_32bit:
-  <<: *test_acceptance_prebuilt_raspberrypi
-  needs:
-    - job: build:docker-multiplatform
-      artifacts: false
-    - job: convert_raspbian_raspberrypi4_bullseye_32bit
-      artifacts: true
-  variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bullseye_32bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-07-04-raspios-bullseye-armhf-lite
-    MENDER_DEVICE_TYPE: raspberrypi4
+    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
+    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-arm64-lite
+    MENDER_DEVICE_TYPE: raspberrypi3_64
 
 test_acceptance_ubuntu_qemux86_64:
   <<: *test_acceptance
@@ -388,11 +348,7 @@ test_acceptance_raspberrypi4_uefi_bookworm_64bit:
   needs:
     - job: convert_raspbian_raspberrypi4_bookworm_64bit
       artifacts: true
-    - job: convert_raspbian_raspberrypi4_bookworm_32bit
-      artifacts: true
-    - job: convert_raspbian_raspberrypi4_bullseye_64bit
-      artifacts: true
-    - job: convert_raspbian_raspberrypi4_bullseye_32bit
+    - job: convert_raspbian_raspberrypi3_bookworm_64bit
       artifacts: true
   image: debian:buster
   before_script:
@@ -401,7 +357,7 @@ test_acceptance_raspberrypi4_uefi_bookworm_64bit:
     - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
   script:
     # One by one, fetch artifacts from temporary S3 bucket and publish to production S3 bucket
-    - for RASPBERRYPI_CONFIG_NAME in raspberrypi4_bookworm_64bit raspberrypi4_bookworm_32bit raspberrypi4_bullseye_64bit raspberrypi4_bullseye_32bit; do
+    - for RASPBERRYPI_CONFIG_NAME in raspberrypi4_bookworm_64bit raspberrypi3_bookworm_64bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz

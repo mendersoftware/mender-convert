@@ -54,10 +54,7 @@ These configurations are officially supported.
 | :------------ | :---------------------- |
 | generic_x86-64_config | Generic x86, 64bit distribution *use this as a starting point only!*  |
 | raspberrypi/uboot/raspberrypi0w_config | RaspberryPi 0w, Raspbian 32bit |
-| raspberrypi/uboot/raspberrypi3_config | RaspberryPi 3, Raspbian 32bit |
-| raspberrypi/uboot/debian/raspberrypi4_bullseye_32bit_config | RaspberryPi 4, Raspberry Pi OS "bullseye" 32bit |
-| raspberrypi/uboot/debian/raspberrypi4_bullseye_64bit_config | RaspberryPi 4, Raspberry Pi OS "bullseye" 64bit |
-| raspberrypi/uboot/debian/raspberrypi4_bookworm_32bit_config | RaspberryPi 4, Raspberry Pi OS "bookworm" 32bit |
+| raspberrypi/uboot/debian/raspberrypi3_bookworm_64bit_config | RaspberryPi 3, Raspberry Pi OS "bookworm" 64bit |
 | raspberrypi/uboot/debian/raspberrypi4_bookworm_64bit_config | RaspberryPi 4, Raspberry Pi OS "bookworm" 64bit |
 | raspberrypi/uboot/ubuntu/raspberrypi4_ubuntu_32bit_config | RaspberryPi 4, Ubuntu 32bit |
 
