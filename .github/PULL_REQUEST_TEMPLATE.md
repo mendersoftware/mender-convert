@@ -3,7 +3,7 @@
 
 🚨 Please review the [guidelines for contributing](https://github.com/mendersoftware/mender/blob/master/CONTRIBUTING.md) to this repository.
 
-- [ ] Make sure that all commits follow the conventional commit [specification](https://www.github.com/mendersoftware/mendertesting/commitlint/grammar.md) for the Mender project.
+- [ ] Make sure that all commits follow the conventional commit [specification](https://github.com/mendersoftware/mendertesting/blob/master/commitlint/grammar.md) for the Mender project.
 
 The majority of our contributions are fixes, which means your commit should have
 the form below:
