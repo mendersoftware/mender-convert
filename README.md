@@ -158,7 +158,7 @@ cp $PATH_TO_MY_OWN_CONFIG/$CUSTOM_CONFIG input/config
 
 MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
    --disk-image input/image/$INPUT_DISK_IMAGE \
-   --config configs/raspberrypi4_bookworm_64bit_config \
+   --config configs/raspberrypi/uboot/debian/raspberrypi4_bookworm_64bit_config \
    --config input/config/$CUSTOM_CONFIG \
    --overlay input/rootfs_overlay_demo
 ```
@@ -196,7 +196,7 @@ Start the conversion process with:
 ```bash
 MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
    --disk-image input/$INPUT_DISK_IMAGE \
-   --config configs/raspberrypi4_bookworm_64bit_config \
+   --config configs/raspberrypi/uboot/debian/raspberrypi4_bookworm_64bit_config \
    --overlay input/rootfs_overlay_demo
 ```
 
