@@ -19,3 +19,5 @@ MENDER_DEVICE_TYPE="qemux86-64"
 
 # Nothing to copy
 MENDER_COPY_BOOT_GAP="n"
+
+MENDER_SPARSE_IMAGE="y"
