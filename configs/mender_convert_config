@@ -194,6 +194,14 @@ MENDER_SNAPSHOT_INSTALL="auto"
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_SNAPSHOT_VERSION="latest"
 
+# Mender sparse image file generation
+#
+# By default, mender-convert writes the entire image. When enabled, mender-convert attempts
+# to avoid allocating empty spaces within the image. This can result in the created image
+# using less space on the storage medium while maintaining the expected size.
+# However, some tools may not handle sparse files correctly.
+MENDER_SPARSE_IMAGE="n"
+
 # File storage, containing binary files, do not modify this unless you know
 # what you are doing.
 MENDER_STORAGE_URL="https://downloads.mender.io"
