@@ -52,7 +52,7 @@ These configurations are officially supported.
 
 | Configuration | Supported OS / hardware |
 | :------------ | :---------------------- |
-| generic_x86-64_config | Generic x86, 64bit distribution *use this as a starting point only!*  |
+| generic_x86-64_hdd_config | Generic x86, 64bit distribution *use this as a starting point only!*  |
 | raspberrypi/uboot/raspberrypi0w_config | RaspberryPi 0w, Raspbian 32bit |
 | raspberrypi/uboot/debian/raspberrypi3_bookworm_64bit_config | RaspberryPi 3, Raspberry Pi OS "bookworm" 64bit |
 | raspberrypi/uboot/debian/raspberrypi4_bookworm_64bit_config | RaspberryPi 4, Raspberry Pi OS "bookworm" 64bit |
