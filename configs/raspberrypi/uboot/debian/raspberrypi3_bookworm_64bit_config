@@ -1,2 +1,2 @@
-source configs/raspberrypi/include/bookworm_config
-source configs/raspberrypi/uboot/raspberrypi3_64_config
+source configs/raspberrypi/uboot/include/bookworm_config
+source configs/raspberrypi/uboot/include/raspberrypi3_64_config
