@@ -195,7 +195,7 @@ convert_raspbian_raspberrypi3_bookworm_64bit:
     - *bash_helpers
     # Install dependencies
     - apt update
-    - apt install -qyy bash wget git util-linux mtools python3 python3-pip
+    - apt install -qyy bash wget git util-linux mtools python3 python3-pip lmdb-utils
       gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
       awscli unzip qemu-system-x86 ovmf curl docker.io s3cmd fdisk gnupg-agent
     # Python3 dependencies
