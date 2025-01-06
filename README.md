@@ -86,7 +86,7 @@ wget https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_ar
 Extract the raw Raspberry Pi disk image:
 
 ```bash
-unzip 2024-07-04-raspios-bookworm-arm64-lite.img.xz
+xz --decompress 2024-07-04-raspios-bookworm-arm64-lite.img.xz
 INPUT_DISK_IMAGE=$(ls *raspios-bookworm*.img)
 cd ..
 ```

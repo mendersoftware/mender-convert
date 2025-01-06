@@ -125,11 +125,10 @@ MENDER_CLIENT_INSTALL="y"
 # This is used to fetch the correct binaries
 #
 # Valid values are "auto" (default), "latest", "master" or a specific version
-# If set to "auto" then the Mender Client 4.0 or later will be installed unless
-# the distribution is Ubuntu jammy or older or Debian bullseye or older;
+# If set to "auto", install the latest version (Mender Client 4.0 or later),
+# unless the distribution is Ubuntu jammy or older, or Debian bullseye or older;
 # the latest Mender 3.x client will be installed in those cases.
-# If set to "latest", it will install the latest version of the Mender Client
-# from the 4.x series.
+# If set to "latest", install the latest version (Mender Client 4.0 or later)
 MENDER_CLIENT_VERSION="auto"
 
 # Mender flash version
