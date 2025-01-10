@@ -1,16 +1,14 @@
 # Run tests
 
-The tests utilize the provided Docker container in this repository and conversion
-is done using the `docker-mender-convert` command. For this reason we first need
-to build the container (commands must be run from the root directory of
-`mender-convert`):
+Commands must be run from the root directory of `mender-convert`.
 
+The tests utilize `docker-mender-convert` to run the conversion.
+You can specify a prebuilt image or build the image yourself using:
 ```bash
 ./docker-build
 ```
 
 Run tests:
-
 ```bash
-./scripts/run-tests.sh
+./scripts/test/run-tests.sh --config <extra_config_file> --only <device_type> --prebuilt-image <device_type> <image_name> -- <pytest-options>
 ```
