@@ -1,9 +1,19 @@
 version: 2
 updates:
-  - commit-message:
+
+  - package-ecosystem: docker
+    commit-message:
+      prefix: "chore"
+    directory: /
+    schedule:
+      interval: monthly
+    reviewers:
+      - "mendersoftware/client-dependabot-reviewers"
+
+  - package-ecosystem: pip
+    commit-message:
       prefix: chore
     directory: /tests
-    package-ecosystem: pip
     schedule:
       interval: monthly
       day: saturday
@@ -13,19 +23,21 @@ updates:
           - "*"
     reviewers:
       - "mendersoftware/client-dependabot-reviewers"
-  - commit-message:
+
+  - package-ecosystem: gitsubmodule
+    commit-message:
       prefix: chore
     directory: /
-    package-ecosystem: gitsubmodule
     schedule:
       interval: monthly
       day: saturday
     reviewers:
       - "mendersoftware/client-dependabot-reviewers"
-  - commit-message:
+
+  - package-ecosystem: npm
+    commit-message:
       prefix: chore
     directory: /scripts/linkbot/
-    package-ecosystem: npm
     schedule:
       interval: monthly
       day: saturday
