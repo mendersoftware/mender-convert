@@ -13,6 +13,29 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+# Checks if there is a preexisting mender integration on the golden image
+#
+# mender-convert expects a vanilla image without mender installed by other means.
+# If you provide as input an image that has mender installed by other means already
+# it might fail.
+# This function will just print warnings for traces of things that look like a tainted input image
+probe_untainted_rootfs_input() {
+    # None of these should be present in a clean rootfs
+    directories=(
+        "work/rootfs/var/lib/mender-monitor"
+        "work/rootfs/var/lib/mender-configure"
+        "work/data/mender"
+    )
+
+    for dir in "${directories[@]}"; do
+        if [ -e "$dir" ]; then
+            log_warn "$dir exists!"
+            log_warn "Input image contain traces Mender of previous Mender installation"
+            log_warn "The conversion might fail. Please provide a clean input image."
+        fi
+    done
+}
+
 # Prints target architecture
 #
 # No input parameters and these work on the assumption that boot and root parts
