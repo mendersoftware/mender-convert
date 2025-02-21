@@ -223,11 +223,9 @@ convert_raspbian_raspberrypi3_bookworm_64bit:
     -   mender_version="${MENDER_CLIENT_VERSION}"
     - fi
     - curl -f -O https://raw.githubusercontent.com/mendersoftware/mender/${mender_version}/support/modules-artifact-gen/directory-artifact-gen
-    - chmod ugo+x directory-artifact-gen
-    - mv directory-artifact-gen /usr/bin/
     - curl -f -O https://raw.githubusercontent.com/mendersoftware/mender/${mender_version}/support/modules-artifact-gen/single-file-artifact-gen
-    - chmod ugo+x single-file-artifact-gen
-    - mv single-file-artifact-gen /usr/bin/
+    - chmod ugo+x directory-artifact-gen single-file-artifact-gen
+    - mv directory-artifact-gen single-file-artifact-gen /usr/bin/
   artifacts:
     expire_in: 2w
     when: always
