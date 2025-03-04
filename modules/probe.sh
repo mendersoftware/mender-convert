@@ -13,9 +13,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-# Checks there is no preexisting mender integration on the golden image
+# Checks if there is a preexisting mender integration on the golden image
 #
-# mender-convert expects a vanilla image wihtout mender installed by other means.
+# mender-convert expects a vanilla image without mender installed by other means.
 # If you provide as input an image that has mender installed by other means already
 # it might fail.
 # This function will just print warnings for traces of things that look like a tainted input image
