@@ -304,6 +304,14 @@ run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${rootfs
 run_and_log_cmd "${PARTED} -s ${img_path} -- unit s mkpart primary ext4 ${data_start} ${data_end}"
 run_and_log_cmd "${PARTED} -s ${img_path} print"
 
+# Byte swap a 32-bit integer
+#
+# $1 - the number to be byte swapped
+swap_int32() {
+    v=$(((($1 & 0xff) << 24) | (($1 & 0xff00) << 8) | (($1 & 0xff0000) >> 8) | (($1 >> 24) & 0xff)))
+    printf "%08x" $v
+}
+
 # Update partition uuids if required
 if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
     boot_partuuid=$(disk_get_partuuid_from_device "${boot_part_device}")
@@ -320,9 +328,8 @@ if [ "${MENDER_ENABLE_PARTUUID}" == "y" ]; then
     else
         diskid=$(disk_get_partuuid_dos_diskid_from_device "${root_part_a_device}")
         log_info "Updating MBR disk identifier for partition uuid support to: '0x${diskid}'"
-        run_and_log_cmd "xxd -r -p <<< '${diskid}' | LC_ALL=C rev | dd of='${img_path}' bs=1 seek=440 count=4 conv=notrunc"
+        run_and_log_cmd "swap_int32 0x${diskid} | xxd -r -p | dd of='${img_path}' bs=1 seek=440 count=4 conv=notrunc"
     fi
-
 fi
 
 # Write boot-gap
