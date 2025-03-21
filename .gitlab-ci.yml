@@ -8,7 +8,7 @@ variables:
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION:
-    value: "3.11.2"
+    value: "4.0.0"
     description: |-
       Version of mender-artifact for the builder image - a specific version
   MENDER_CLIENT_VERSION:
@@ -208,18 +208,9 @@ convert_raspbian_raspberrypi3_bookworm_64bit:
     # Set mender-image-tests submodule to correct version
     - git submodule update --init --recursive
     # Get mender-artifact for the tests
-    - if is_final_tag "${MENDER_ARTIFACT_VERSION}" || is_build_tag "${MENDER_ARTIFACT_VERSION}"; then
-      # Direct download from the pool
-    -   wget "https://downloads.mender.io/repos/debian/pool/main/m/mender-artifact/mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2B${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb"
-    -   dpkg --install mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
-    -   rm mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
-    - else
-      # Assume master and install from experimental repo
-    -   curl -fLsS https://downloads.mender.io/repos/debian/gpg | apt-key add -
-    -   echo "deb [arch=$(dpkg --print-architecture)] https://downloads.mender.io/repos/debian ubuntu/${ACC_TESTS_UBUNTU_DISTRO}/experimental main" >
-          /etc/apt/sources.list.d/mender.list
-    -   apt-get update && apt-get install mender-artifact
-    - fi
+    - wget "https://downloads.mender.io/repos/debian/pool/main/m/mender-artifact/mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2B${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb"
+    - dpkg --install mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
+    - rm mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
     # Prepare versions file for mender-convert
     - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > versions_override_config
     - echo "MENDER_FLASH_VERSION=${MENDER_FLASH_VERSION}" >> versions_override_config
@@ -232,11 +223,9 @@ convert_raspbian_raspberrypi3_bookworm_64bit:
     -   mender_version="${MENDER_CLIENT_VERSION}"
     - fi
     - curl -f -O https://raw.githubusercontent.com/mendersoftware/mender/${mender_version}/support/modules-artifact-gen/directory-artifact-gen
-    - chmod ugo+x directory-artifact-gen
-    - mv directory-artifact-gen /usr/bin/
     - curl -f -O https://raw.githubusercontent.com/mendersoftware/mender/${mender_version}/support/modules-artifact-gen/single-file-artifact-gen
-    - chmod ugo+x single-file-artifact-gen
-    - mv single-file-artifact-gen /usr/bin/
+    - chmod ugo+x directory-artifact-gen single-file-artifact-gen
+    - mv directory-artifact-gen single-file-artifact-gen /usr/bin/
   artifacts:
     expire_in: 2w
     when: always
