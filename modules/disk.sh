@@ -166,7 +166,7 @@ disk_create_file_system_from_folder() {
 
     run_and_log_cmd "mkdir -p work/output"
     run_and_log_cmd "sudo mount ${2} work/output"
-    run_and_log_cmd "sudo rsync --archive --delete ${1} work/output/"
+    run_and_log_cmd "sudo rsync --archive --xattrs --delete ${1} work/output/"
     run_and_log_cmd "sudo umount work/output"
 }
 
