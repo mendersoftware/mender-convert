@@ -26,7 +26,7 @@ GRUB_VERSION=2.12
 MENDER_GRUB_KERNEL_BOOT_ARGS=""
 
 # grub-mender-grubenv is the Mender integration for the GRUB bootloader
-MENDER_GRUBENV_VERSION="64e32b01d1bf54784d2a290ad0469c583e843864"
+MENDER_GRUBENV_VERSION="6eabae13042a0f4128b15d9a7416cbf200f0853b"
 MENDER_GRUBENV_URL="${MENDER_GITHUB_ORG}/grub-mender-grubenv/archive/${MENDER_GRUBENV_VERSION}.tar.gz"
 
 # Type of kernel (bzImage or zImage)
