@@ -14,7 +14,7 @@ MENDER_GRUB_D_INTEGRATION=auto
 
 # Version of GRUB to use. Note that there needs to be a precompiled version
 # available at the MENDER_STORAGE_URL download source.
-GRUB_VERSION=2.04
+GRUB_VERSION=2.12
 
 # Specific Linux kernel boot arguments
 #
