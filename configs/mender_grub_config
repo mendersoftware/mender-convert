@@ -14,7 +14,7 @@ MENDER_GRUB_D_INTEGRATION=auto
 
 # Version of GRUB to use. Note that there needs to be a precompiled version
 # available at the MENDER_STORAGE_URL download source.
-GRUB_VERSION=2.04
+GRUB_VERSION=2.12
 
 # Specific Linux kernel boot arguments
 #
@@ -26,7 +26,7 @@ GRUB_VERSION=2.04
 MENDER_GRUB_KERNEL_BOOT_ARGS=""
 
 # grub-mender-grubenv is the Mender integration for the GRUB bootloader
-MENDER_GRUBENV_VERSION="64e32b01d1bf54784d2a290ad0469c583e843864"
+MENDER_GRUBENV_VERSION="e4cdd9db213de15e79576b40fd3f07736ac85709"
 MENDER_GRUBENV_URL="${MENDER_GITHUB_ORG}/grub-mender-grubenv/archive/${MENDER_GRUBENV_VERSION}.tar.gz"
 
 # Type of kernel (bzImage or zImage)
