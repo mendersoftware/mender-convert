@@ -103,6 +103,8 @@ mkdir -p work/rootfs
 sudo mount ${boot_part} work/boot
 sudo mount ${root_part} work/rootfs
 
+probe_untainted_rootfs_input
+
 if [ -z "${MENDER_DEVICE_TYPE}" ]; then
     # Observed systems who do not have this file, e.g images generated with mkosi
     if [ -f work/rootfs/etc/hostname ]; then
