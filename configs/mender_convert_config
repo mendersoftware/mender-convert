@@ -314,6 +314,7 @@ MENDER_CLIENT_DATA_DIR_SERVICE_URL="https://raw.githubusercontent.com/mendersoft
 meta-mender/ab9c1e65abf73cde1065e2a4c2005cfe61ee6e3d/meta-mender-core/recipes-mender/mender-client/files/mender-data-dir.service"
 
 source configs/mender_grub_config
+source configs/systemd_common_config
 
 # Function to create Mender Artifact
 #
