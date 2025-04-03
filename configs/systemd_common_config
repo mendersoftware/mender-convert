@@ -1,0 +1,32 @@
+#
+# Resize the data partition to fill the remaining space, using parted, with systemd
+#
+function grow_data_partition() {
+    log_info "Adding systemd init script to run parted and resize the data partition on boot"
+    log_info "to fill all the available space on the storage media"
+    run_and_log_cmd "sudo mkdir -p work/rootfs/etc/systemd/system/data.mount.wants/"
+    cat <<- EOF > work/rootfs/etc/systemd/system/mender-grow-data.service
+		  [Unit]
+		  Description=Mender service to grow data partition size
+		  DefaultDependencies=no
+		  Before=data.mount
+		  Before=systemd-growfs@data.service
+
+		  [Service]
+		  Type=oneshot
+		  User=root
+		  Group=root
+		  ExecStart=/sbin/parted --script $(disk_get_device_base "${MENDER_STORAGE_DEVICE_BASE}") resizepart ${MENDER_DATA_PART_NUMBER} 100%
+
+		  [Install]
+		  WantedBy=data.mount
+	EOF
+
+    # Install
+    run_and_log_cmd "ln -sf /etc/systemd/system/mender-grow-data.service \
+                          work/rootfs/etc/systemd/system/data.mount.wants/"
+}
+
+if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
+    PLATFORM_MODIFY_HOOKS+=(grow_data_partition)
+fi
