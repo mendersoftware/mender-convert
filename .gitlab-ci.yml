@@ -74,6 +74,9 @@ include:
       - '.gitlab-ci-check-license.yml'
       - '.gitlab-ci-github-status-updates.yml'
       - '.gitlab-ci-check-shell-format.yml'
+  - project: 'Northern.tech/Mender/mendertesting'
+    ref: pr_366
+    file:
       - '.gitlab-ci-check-docker-build.yml'
 
 stages:
