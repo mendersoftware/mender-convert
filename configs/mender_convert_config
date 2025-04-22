@@ -55,6 +55,7 @@ MENDER_DATA_PART_MKFS_OPTS=""
 #
 # This feature is utilizing x−systemd.growfs and will only work on systemd 242
 # and newer and nothing will be done if an older systemd version is used.
+# It also uses the parted command which need to be installed on the golden image.
 MENDER_DATA_PART_GROWFS=y
 
 # The name of the image or update that will be built. This is what the device

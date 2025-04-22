@@ -336,7 +336,7 @@ disk_get_device_part_number() {
     fi
 }
 
-# Get device base path without partition number from argument.
+# Get device base path without partition number from argument with a partition number.
 # Unrecognized or unsupported device paths will generate an error
 #
 # $1 - device path
