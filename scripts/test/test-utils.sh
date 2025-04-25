@@ -175,19 +175,24 @@ get_pytest_files() {
 }
 
 prepare_ssh_keys() {
-  if [ "$(stat -c %U tests/ssh-public-key-overlay/root)" != "root" ]; then
-    sudo chown -R root:root tests/ssh-public-key-overlay/root
+  # Prepare an overlay with the public key
+  mkdir --parents input/tests
+  sudo cp --recursive "tests/ssh-public-key-overlay" "input/tests/"
+  if [ "$(sudo stat -c %U input/tests/ssh-public-key-overlay/root)" != "root" ]; then
+    sudo chown -R root:root input/tests/ssh-public-key-overlay/root
   fi
-  if [ "$(stat -c %a tests/ssh-public-key-overlay/root)" != "755" ]; then
-    sudo chmod 755 tests/ssh-public-key-overlay/root
+  if [ "$(sudo stat -c %a input/tests/ssh-public-key-overlay/root)" != "755" ]; then
+    sudo chmod 755 input/tests/ssh-public-key-overlay/root
   fi
-  if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh)" != "755" ]; then
-    sudo chmod 700 tests/ssh-public-key-overlay/root/.ssh
+  if [ "$(sudo stat -c %a input/tests/ssh-public-key-overlay/root/.ssh)" != "755" ]; then
+    sudo chmod 700 input/tests/ssh-public-key-overlay/root/.ssh
   fi
-  if [ "$(stat -c %a tests/ssh-public-key-overlay/root/.ssh/authorized_keys)" != "755" ]; then
-    sudo chmod 600 tests/ssh-public-key-overlay/root/.ssh/authorized_keys
+  if [ "$(sudo stat -c %a input/tests/ssh-public-key-overlay/root/.ssh/authorized_keys)" != "755" ]; then
+    sudo chmod 600 input/tests/ssh-public-key-overlay/root/.ssh/authorized_keys
   fi
+
+  # Set also permissions for private key
   if [ "$(stat -c %a tests/ssh-priv-key/key)" != "600" ]; then
-    sudo chmod 600 tests/ssh-priv-key/key
+    chmod 600 tests/ssh-priv-key/key
   fi
 }
