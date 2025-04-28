@@ -349,7 +349,7 @@ disk_get_device_base() {
         /dev/mmcblk*p*)
             dev_base=$(echo $1 | cut -dp -f1)
             ;;
-        /dev/[sh]d[a-z][1-9]*)
+        /dev/[sh]d[a-z]*)
             dev_base=${1%%[1-9]*}
             ;;
         ubi*_*)
