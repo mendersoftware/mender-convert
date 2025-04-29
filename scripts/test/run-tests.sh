@@ -101,8 +101,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64" ]; then
   # speed up the process
   wget --progress=dot:giga -N ${UBUNTU_IMAGE_URL} -P input/image/
   UBUNTU_IMAGE_COMPRESSED="${UBUNTU_IMAGE_URL##*/}"
-  mkdir -p input/tests
-  sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${UBUNTU_IMAGE_COMPRESSED}" \
@@ -133,8 +131,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; 
   UBUNTU_IMAGE_COMPRESSED="${UBUNTU_IMAGE_URL##*/}"
   UBUNTU_IMAGE_UNCOMPRESSED=${UBUNTU_IMAGE_COMPRESSED%.gz}
   gunzip --force "input/image/${UBUNTU_IMAGE_COMPRESSED}"
-  mkdir -p input/tests
-  sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
   QEMU_NO_SECURE_BOOT=1 \
                    convert_and_test \
                    "qemux86-64" \
@@ -182,8 +178,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-qemux86-64" ]; then
   DEBIAN_IMAGE_COMPRESSED="${DEBIAN_IMAGE_URL##*/}"
   DEBIAN_IMAGE_UNCOMPRESSED=${DEBIAN_IMAGE_COMPRESSED%.gz}
   gunzip --force "input/image/${DEBIAN_IMAGE_COMPRESSED}"
-  mkdir -p input/tests
-  sudo cp -r "tests/ssh-public-key-overlay" "input/tests/"
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${DEBIAN_IMAGE_UNCOMPRESSED}" \
