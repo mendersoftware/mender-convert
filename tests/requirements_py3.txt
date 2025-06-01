@@ -38,7 +38,7 @@ pytest-metadata==3.1.1
     # via
     #   -r requirements_py3.in
     #   pytest-html
-pytest-xdist==3.6.1
+pytest-xdist==3.7.0
     # via -r requirements_py3.in
 redo==3.0.0
     # via -r requirements_py3.in
