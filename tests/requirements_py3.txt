@@ -26,7 +26,9 @@ packaging==23.1
     # via pytest
 pluggy==1.5.0
     # via pytest
-pytest==8.3.5
+pygments==2.19.1
+    # via pytest
+pytest==8.4.0
     # via
     #   -r requirements_py3.in
     #   pytest-html
@@ -38,11 +40,11 @@ pytest-metadata==3.1.1
     # via
     #   -r requirements_py3.in
     #   pytest-html
-pytest-xdist==3.6.1
+pytest-xdist==3.7.0
     # via -r requirements_py3.in
 redo==3.0.0
     # via -r requirements_py3.in
-requests==2.32.3
+requests==2.32.4
     # via -r requirements_py3.in
 tomli==2.0.1
     # via pytest
