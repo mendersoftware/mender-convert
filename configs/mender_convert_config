@@ -207,7 +207,7 @@ MENDER_STORAGE_URL="https://downloads.mender.io"
 
 # Mender APT repo url, containing binary files, do not modify this unless you know
 # what you are doing.
-MENDER_APT_REPO_URL="${MENDER_STORAGE_URL}/repos/debian"
+MENDER_APT_REPO_URL="${MENDER_STORAGE_URL}/repos/device-components"
 
 # Mender APT repo available distributions, do not modify this unless you know
 # what you are doing.
