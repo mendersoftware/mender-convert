@@ -70,9 +70,9 @@ COPY --from=build /root/pxz/pxz /usr/bin/pxz
 RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
 RUN chmod 0440 /etc/sudoers.d/secure_path_override
 
-RUN deb_filename=mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2Bnoble_${TARGETARCH}.deb && \
-    wget "https://downloads.mender.io/repos/debian/pool/main/m/mender-artifact/${deb_filename}" \
-    --output-document=/mender-artifact.deb && apt install /mender-artifact.deb && rm /mender-artifact.deb
+RUN curl -fsSL https://downloads.mender.io/repos/debian/gpg | tee /etc/apt/trusted.gpg.d/mender.asc \
+    echo "deb [arch=amd64] https://downloads.mender.io/repos/workstation-tools ubuntu/noble/stable main" | tee /etc/apt/sources.list.d/mender.list \
+    apt update && apt install -yy mender-artifact
 
 WORKDIR /
 
