@@ -71,8 +71,8 @@ RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin
 RUN chmod 0440 /etc/sudoers.d/secure_path_override
 
 RUN deb_filename=mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2Bnoble_${TARGETARCH}.deb && \
-    wget "https://downloads.mender.io/repos/debian/pool/main/m/mender-artifact/${deb_filename}" \
-    --output-document=/mender-artifact.deb && apt install /mender-artifact.deb && rm /mender-artifact.deb
+    wget "https://downloads.mender.io/repos/workstation-tools/pool/main/m/mender-artifact/${deb_filename}" \
+    --output-document=/mender-artifact.deb && apt -y --fix-broken install /mender-artifact.deb && rm /mender-artifact.deb
 
 WORKDIR /
 
