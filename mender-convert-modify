@@ -234,46 +234,27 @@ EOF
 log_info "Installing Mender client and related files"
 
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
-    mender_client_deb_version="$MENDER_CLIENT_VERSION"
     if [ "$MENDER_CLIENT_VERSION" = "auto" ]; then
-        deb_distro=$(probe_debian_distro_name)
-        deb_codename=$(probe_debian_distro_codename)
-        if ([ "$deb_distro" = "debian" ] && [ "$deb_codename" = "bullseye" ]) \
-            || ([ "$deb_distro" = "debian" ] && [ "$deb_codename" = "buster" ]) \
-            || ([ "$deb_distro" = "ubuntu" ] && [ "$deb_codename" = "jammy" ]) \
-            || ([ "$deb_distro" = "ubuntu" ] && [ "$deb_codename" = "focal" ]); then
-            MENDER_CLIENT_VERSION="3.5.x"
-            mender_client_deb_version="latest"
-        else
-            MENDER_CLIENT_VERSION="latest"
-            mender_client_deb_version="latest"
-        fi
+        # "auto" currently means "latest" on all supported distributions
+        MENDER_CLIENT_VERSION="latest"
     fi
-    case "${MENDER_CLIENT_VERSION}" in
-        1.* | 2.* | 3.*)
-            log_info "Installing Mender client version ${mender_client_deb_version}"
-            deb_get_and_install_package mender-client mender-client "${mender_client_deb_version}"
-            mender_client_deb_name="${DEB_NAME}"
-            ;;
-        *)
-            # For 4.x, master and latest(*) install the new packages
-            log_info "Installing Mender Auth and Mender Update version ${mender_client_deb_version}"
-            deb_get_and_install_package mender-client4 mender-auth "${mender_client_deb_version}"
-            deb_get_and_install_package mender-client4 mender-update "${mender_client_deb_version}"
-            mender_client_deb_name="${DEB_NAME}"
+    mender_client_deb_version="$MENDER_CLIENT_VERSION"
 
-            log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
-            deb_get_and_install_package mender-flash mender-flash "${MENDER_FLASH_VERSION}"
+    log_info "Installing Mender Auth and Mender Update version ${mender_client_deb_version}"
+    deb_get_and_install_package mender-client4 mender-auth "${mender_client_deb_version}"
+    deb_get_and_install_package mender-client4 mender-update "${mender_client_deb_version}"
+    mender_client_deb_name="${DEB_NAME}"
 
-            if [ "$MENDER_SETUP_INSTALL" = "auto" ]; then
-                MENDER_SETUP_INSTALL=y
-            fi
+    log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
+    deb_get_and_install_package mender-flash mender-flash "${MENDER_FLASH_VERSION}"
 
-            if [ "$MENDER_SNAPSHOT_INSTALL" = "auto" ]; then
-                MENDER_SNAPSHOT_INSTALL=y
-            fi
-            ;;
-    esac
+    if [ "$MENDER_SETUP_INSTALL" = "auto" ]; then
+      MENDER_SETUP_INSTALL=y
+    fi
+
+    if [ "$MENDER_SNAPSHOT_INSTALL" = "auto" ]; then
+      MENDER_SNAPSHOT_INSTALL=y
+    fi
 
     if [ "$MENDER_SETUP_INSTALL" = "y" ]; then
         log_info "Installing Mender Setup version ${MENDER_SETUP_VERSION}"

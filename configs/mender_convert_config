@@ -125,10 +125,8 @@ MENDER_CLIENT_INSTALL="y"
 # This is used to fetch the correct binaries
 #
 # Valid values are "auto" (default), "latest", "master" or a specific version
-# If set to "auto", install the latest version (Mender Client 4.0 or later),
-# unless the distribution is Ubuntu jammy or older, or Debian bullseye or older;
-# the latest Mender 3.x client will be installed in those cases.
-# If set to "latest", install the latest version (Mender Client 4.0 or later)
+# If set to "auto", install the latest version available for the given
+# distribution (must be supported, see MENDER_APT_REPO_DISTS).
 MENDER_CLIENT_VERSION="auto"
 
 # Mender flash version
@@ -211,7 +209,7 @@ MENDER_APT_REPO_URL="${MENDER_STORAGE_URL}/repos/device-components"
 
 # Mender APT repo available distributions, do not modify this unless you know
 # what you are doing.
-MENDER_APT_REPO_DISTS="debian/bookworm debian/bullseye ubuntu/noble ubuntu/jammy ubuntu/focal"
+MENDER_APT_REPO_DISTS="debian/bookworm debian/bullseye ubuntu/noble ubuntu/jammy"
 
 # Mender GitHub organization URL prefix
 MENDER_GITHUB_ORG="https://github.com/mendersoftware"
