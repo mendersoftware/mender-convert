@@ -16,86 +16,6 @@ source modules/chroot.sh
 source modules/log.sh
 source modules/probe.sh
 
-# Download of latest deb package for the given distribution of an APT repository
-#
-#  $1 - Download directory
-#  $2 - APT repository url
-#  $3 - Debian architecture
-#  $4 - Debian Distribution
-#  $5 - Package name
-#  $6 - Component (optional, default "main")
-#
-# @return - Filename of the downloaded package
-#
-function deb_from_repo_dist_get()  {
-    if [[ $# -lt 5 || $# -gt 7 ]]; then
-        log_fatal "deb_from_repo_dist_get() requires 5 arguments. 6th is optional"
-    fi
-    local -r download_dir="${1}"
-    local -r repo_url="${2}"
-    local -r architecture="${3}"
-    local -r distribution="${4}"
-    local -r package="${5}"
-    local -r component="${6:-main}"
-
-    # Fetch and parse the packages list of the given distribution to find the latest version
-    local -r packages_url="${repo_url}/dists/${distribution}/${component}/binary-${architecture}/Packages"
-    run_and_log_cmd "wget -Nq ${packages_url} -P /tmp"
-
-    local -r deb_package_path=$(grep Filename /tmp/Packages | grep ${package}_ | tail -n1 | sed 's/Filename: //')
-    if [ -z "${deb_package_path}" ]; then
-        log_fatal "Couldn't find package ${package} in ${packages_url}"
-    fi
-
-    local -r filename=$(basename $deb_package_path)
-    local -r deb_package_url=$(echo ${repo_url}/${deb_package_path} | sed 's/+/%2B/g')
-    run_and_log_cmd "wget -Nq ${deb_package_url} -P ${download_dir}"
-
-    rm -f /tmp/Packages
-    log_info "Successfully downloaded ${filename}"
-    echo ${filename}
-}
-
-# Download a deb package directly from the pool of an APT repository
-#
-#  $1 - Download directory
-#  $2 - APT repository url
-#  $3 - Debian architecture
-#  $4 - Package recipe
-#  $5 - Package name
-#  $6 - Package version
-#
-# @return - Filename of the downloaded package
-#
-function deb_from_repo_pool_get()  {
-    if [[ $# -ne 6 ]]; then
-        log_fatal "deb_from_repo_pool_get() requires 6 arguments"
-    fi
-    local -r download_dir="${1}"
-    local -r repo_url="${2}"
-    local -r architecture="${3}"
-    local -r recipe="${4}"
-    local -r package="${5}"
-    local -r version="${6}"
-
-    local -r initial="$(echo $recipe | head -c 1)"
-    local -r deb_package_path="pool/main/${initial}/${recipe}/${package}_${version}_${architecture}.deb"
-
-    local -r filename=$(basename $deb_package_path)
-    local -r deb_package_url=$(echo ${repo_url}/${deb_package_path} | sed 's/+/%2B/g')
-    run_and_log_cmd_noexit "wget -Nq ${deb_package_url} -P ${download_dir}"
-    local exit_code=$?
-
-    rm -f /tmp/Packages
-    if [[ ${exit_code} -ne 0 ]]; then
-        log_warn "Could not download ${filename} from ${deb_package_url}"
-        echo ""
-    else
-        log_info "Successfully downloaded ${filename} from ${deb_package_url}"
-        echo ${filename}
-    fi
-}
-
 # Install a deb package using a chroot
 #
 #  $1 - Deb package
@@ -166,60 +86,103 @@ function deb_install_package_in_chroot() {
     esac
 }
 
-# Download and install the binary files of a deb package into work/deb-packages
-# This is the main entry point of deb.sh
-# Defines variable DEB_NAME with the actual filename installed
-#
-#  $1 - Package recipe
-#  $2 - Package name
-#  $3 - Package version
-#  $4 - Arch independent (optional, default "false")
-#
-function deb_get_and_install_package() {
-    if ! [[ $# -eq 3 || $# -eq 4 ]]; then
-        log_fatal "deb_get_and_install_package() requires 3 or 4 arguments"
+#  Do preparations before deb operations in the image
+#  $1 - image root directory
+function deb_prepare() {
+    local -r root_dir="${1}"
+    if [[ -f "${root_dir}/etc/apt/sources.list.d/mender.list" ]]; then
+        cp -a "${root_dir}/etc/apt/sources.list.d/mender.list"{,.orig}
     fi
-    local recipe="$1"
-    local package="$2"
-    local version="$3"
-    local arch_indep="${4:-false}"
+    if [[ -f "${root_dir}/etc/apt/trusted.gpg.d/mender.asc" ]]; then
+        cp -a "${root_dir}/etc/apt/trusted.gpg.d/mender.asc"{,.orig}
+    fi
+}
 
-    mkdir -p work/deb-packages
+#  Make sure the given variant (stable/experimental) of the APT repository is
+#  enabled.
+#  $1 - Repository variant ("stable" (default) or "experimental")
+function deb_ensure_repo_enabled() {
+    local variant="stable"
+    if [[ $# -eq 1 ]]; then
+        variant="$1"
+    fi
+
+    if ! [[ -f "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" ]]; then
+        mkdir -p "work/rootfs/etc/apt/trusted.gpg.d/"
+        wget -O "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" "$MENDER_APT_KEY_URL"
+    fi
+    if ! gpg --show-keys --with-fingerprint --with-colons "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" \
+                                                                                                         | grep -qE "fpr:+$MENDER_APT_KEY_FP:"; then
+        log_fatal "APT key fingerprint mismatch, cannot continue"
+    fi
 
     local deb_arch=$(probe_debian_arch_name)
     local deb_distro=$(probe_debian_distro_name)
     local deb_codename=$(probe_debian_distro_codename)
-    if ! [[ "$MENDER_APT_REPO_DISTS" == *"${deb_distro}/${deb_codename}"* ]]; then
-        log_warn "OS Distribution ${deb_distro}/${deb_codename} not supported, defaulting to debian/bullseye"
-        deb_distro="debian"
-        deb_codename="bullseye"
+    local -r list_file="work/rootfs/etc/apt/sources.list.d/mender.list"
+    touch "$list_file"
+    if ! grep -qF "$MENDER_APT_REPO_URL $deb_distro/$deb_codename/$variant" "$list_file"; then
+        echo "deb [arch=${deb_arch}] $MENDER_APT_REPO_URL $deb_distro/$deb_codename/$variant main" >> "$list_file"
+        run_in_chroot_and_log_cmd "work/rootfs/" "apt-get update"
+        if [[ $? != 0 ]]; then
+            log_fatal "Failed to fetch repository metadata, cannot continue"
+        fi
     fi
+}
 
-    DEB_NAME=""
-    if [ "${version}" = "latest" ]; then
-        DEB_NAME=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/stable" "${package}")
-    elif [ "${version}" = "master" ]; then
-        DEB_NAME=$(deb_from_repo_dist_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${deb_arch} "${deb_distro}/${deb_codename}/experimental" "${package}")
+#  Get the exact package (as name=version) for the given spec from the APT repository
+#  $1 - Package name
+#  $2 - Package version
+function deb_get_repo_package() {
+    if ! [[ $# -eq 2 ]]; then
+        log_fatal "deb_get_repo_package() requires 2 arguments"
+    fi
+    local -r pkg_name="$1"
+    local -r pkg_ver="$2"
+
+    local ver_filter
+    local variant_filter="stable"
+    if [[ "$pkg_ver" = "latest" ]]; then
+        ver_filter='.*'
+    elif [[ "$pkg_ver" = "master" ]]; then
+        ver_filter='.*'
+        variant_filter="experimental"
     else
-        # On direct downloads, the architecture suffix will be "all" for arch independent packages
-        local pool_arch=""
-        if [[ "$arch_indep" == "true" ]]; then
-            pool_arch="all"
+        # particular version like "5", "5.1" or even "5.2.1", we need to replace
+        # all the '.' with '\.' to convert the version into an equivalent
+        # regular expression and make sure that an incomplete version like "5"
+        # or "5.1" only matches compatible versions, i.e. having dot after the
+        # specified version prefix.
+        if [[ "${pkg_ver}" =~ '^[0-9](\.[0-9])$' ]]; then
+            ver_filter="${pkg_ver//\./\\./}\."
         else
-            pool_arch="$deb_arch"
-        fi
-
-        local debian_version="-1+${deb_distro}+${deb_codename}"
-        DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${recipe}" "${package}" "${version}${debian_version}")
-        if [[ -z "${DEB_NAME}" ]]; then
-            local debian_version_fallback="-1"
-            DEB_NAME=$(deb_from_repo_pool_get "work/deb-packages" ${MENDER_APT_REPO_URL} ${pool_arch} "${recipe}" "${package}" "${version}${debian_version_fallback}")
-            if [[ -z "${DEB_NAME}" ]]; then
-                log_fatal "Specified version for ${package} cannot be found, tried ${version}${debian_version} and ${version}${debian_version_fallback}"
-            fi
+            ver_filter="${pkg_ver//\./\\./}"
         fi
     fi
-    deb_install_package "work/deb-packages/${DEB_NAME}" "work/rootfs/"
+
+    # `apt-cache madison` output is something like this:
+    # mender-client4 | 5.0.2-1+debian+bookworm | https://downloads.mender.io/repos/device-components debian/bookworm/stable/main arm64 Packages
+    # mender-client4 | 5.0.1-1+debian+bookworm | https://downloads.mender.io/repos/device-components debian/bookworm/stable/main arm64 Packages
+    # mender-client4 | 4.0.7-1+debian+bookworm | https://downloads.mender.io/repos/device-components debian/bookworm/stable/main arm64 Packages
+    local -r chosen_ver=$(
+        run_in_chroot_and_log_cmd_with_output "work/rootfs/" "apt-cache madison $pkg_name" \
+                                                                               | grep -F "$MENDER_APT_REPO_URL" | grep -F "$variant_filter" | cut -d\| -f2 | grep " *$ver_filter" | tr -d ' ' \
+                                                                                                                     | sort -rV | head -n1
+    )
+    if [[ -z "$chosen_ver" ]]; then
+        log_fatal "Cannot choose exact version for package $pkg_name $pkg_ver from the APT repository"
+    fi
+    log_debug "Selected $pkg_name=$chosen_ver"
+    echo "$pkg_name=$chosen_ver"
+}
+
+#  Install the given packages from the APT repository
+#  $1 - Packages to install (space-separated name[=version] values)
+function deb_install_repo_packages() {
+    run_in_chroot_and_log_cmd "work/rootfs/" "env \
+        DEBIAN_FRONTEND=noninteractive \
+        DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
+        apt -y --fix-broken install $1"
 }
 
 #  Install binary files of a deb package into work/deb-packages from a local directory
@@ -261,9 +224,17 @@ function deb_get_and_install_input_package() {
     done
 }
 
-function deb_cleanup_package_cache() {
+function deb_cleanup() {
     local -r dest_dir="$(pwd)/${1}"
     if [ -e "$dest_dir/var/cache/apt/mender-convert.remove-apt-cache" ]; then
         rm -rf "$dest_dir/var/cache/apt"
+    fi
+    rm -f "${dest_dir}/etc/apt/sources.list.d/mender.list"
+    if [[ -f "${dest_dir}/etc/apt/sources.list.d/mender.list.orig" ]]; then
+        mv "${dest_dir}/etc/apt/sources.list.d/mender.list"{.orig,}
+    fi
+    rm -f "${dest_dir}/etc/apt/trusted.gpg.d/mender.asc"
+    if [[ -f "${dest_dir}/etc/apt/trusted.gpg.d/mender.asc.orig" ]]; then
+        mv "${dest_dir}/etc/apt/trusted.gpg.d/mender.asc"{.orig,}
     fi
 }

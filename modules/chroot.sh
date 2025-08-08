@@ -117,6 +117,21 @@ function run_in_chroot_and_log_cmd() {
     run_and_log_cmd "sudo chroot $directory $maybe_qemu $@"
 }
 
+function run_in_chroot_and_log_cmd_with_output() {
+    local -r directory="$1"
+    shift
+    # The rest of the arguments are the command arguments.
+
+    local -r arch="$(probe_arch)"
+    local maybe_qemu=
+    if [ "$arch" != "$(uname -m)" ]; then
+        # Use env, because qemu does not look in PATH.
+        maybe_qemu="/tmp/qemu-$arch-static /usr/bin/env"
+    fi
+
+    run_and_log_cmd_with_output "sudo chroot $directory $maybe_qemu $@"
+}
+
 function run_in_chroot_and_log_cmd_noexit() {
     local -r directory="$1"
     shift
