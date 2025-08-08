@@ -207,6 +207,12 @@ MENDER_STORAGE_URL="https://downloads.mender.io"
 # what you are doing.
 MENDER_APT_REPO_URL="${MENDER_STORAGE_URL}/repos/device-components"
 
+# URL of the Mender APT repo GPG key for signature verification.
+MENDER_APT_KEY_URL="https://downloads.mender.io/repos/debian/gpg"
+
+# Fingerprint of the APT repo GPG key.
+MENDER_APT_KEY_FP="E6C857345575F9218396566224072B80A1B29B00"
+
 # Mender APT repo available distributions, do not modify this unless you know
 # what you are doing.
 MENDER_APT_REPO_DISTS="debian/bookworm debian/bullseye ubuntu/noble ubuntu/jammy"
