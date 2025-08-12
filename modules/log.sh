@@ -45,7 +45,7 @@ function local_log_debug {
 # Log the given message at DEBUG level.
 function log_debug {
     local -r message="$1"
-    local_log_debug "$message"
+    log "DEBUG" "$message"
 }
 
 # Log the given message at INFO level.
