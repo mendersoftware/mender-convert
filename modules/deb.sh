@@ -96,6 +96,14 @@ function deb_prepare() {
     if [[ -f "${root_dir}/etc/apt/trusted.gpg.d/mender.asc" ]]; then
         cp -a "${root_dir}/etc/apt/trusted.gpg.d/mender.asc"{,.orig}
     fi
+    if [[ -f "${root_dir}/etc/hosts" ]]; then
+        cp -a "${root_dir}/etc/hosts"{,.orig}
+    fi
+
+    for host in $(sed -r -e '\@^deb https?://@!d' -e 's@.*https?://([-a-z.]+)/.*@\1@' "${root_dir}/etc/apt/sources.list" | sort | uniq); do
+        echo -n "$host " >> "${root_dir}/etc/hosts"
+        host $host | sed -r -e '/has address/!d' -e 's/.*has address (.*)/\1/' | head -n1 >> "${root_dir}/etc/hosts"
+    done
 }
 
 #  Make sure the given variant (stable/experimental) of the APT repository is
@@ -123,6 +131,11 @@ function deb_ensure_repo_enabled() {
     touch "$list_file"
     if ! grep -qF "$MENDER_APT_REPO_URL $deb_distro/$deb_codename/$variant" "$list_file"; then
         echo "deb [arch=${deb_arch}] $MENDER_APT_REPO_URL $deb_distro/$deb_codename/$variant main" >> "$list_file"
+
+        local -r repo_host=$(echo $MENDER_APT_REPO_URL | sed -r 's@.*https?://([-a-z.]+)/.*@\1@')
+        echo -n "$repo_host " >> "work/rootfs/etc/hosts"
+        host $repo_host | sed -r -e '/has address/!d' -e 's/.*has address (.*)/\1/' | head -n1 >> "work/rootfs/etc/hosts"
+
         run_in_chroot_and_log_cmd "work/rootfs/" "apt-get update"
         if [[ $? != 0 ]]; then
             log_fatal "Failed to fetch repository metadata, cannot continue"
@@ -236,5 +249,9 @@ function deb_cleanup() {
     rm -f "${dest_dir}/etc/apt/trusted.gpg.d/mender.asc"
     if [[ -f "${dest_dir}/etc/apt/trusted.gpg.d/mender.asc.orig" ]]; then
         mv "${dest_dir}/etc/apt/trusted.gpg.d/mender.asc"{.orig,}
+    fi
+    rm -f "${dest_dir}/etc/hosts"
+    if [[ -f "${dest_dir}/etc/hosts.orig" ]]; then
+        mv "${dest_dir}/etc/hosts"{.orig,}
     fi
 }

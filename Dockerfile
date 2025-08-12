@@ -38,6 +38,8 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install --assum
     pigz \
 # mkfs.vfat (required for boot partition)
     dosfstools \
+# DNS resolution
+    host \
 # to download Mender binaries
     wget \
 # to compile mender-grub-env
