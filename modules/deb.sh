@@ -138,13 +138,15 @@ function deb_ensure_repo_enabled() {
         host $repo_host | sed -r -e '/has address/!d' -e 's/.*has address (.*)/\1/' | head -n1 >> "work/rootfs/etc/hosts"
 
         cat "work/rootfs/etc/hosts"
-        apt-get install -y iputils-ping
+        apt-get install -y iputils-ping bind9-dnsutils
         cp /bin/ping work/rootfs/bin/
         cp /bin/ping4 work/rootfs/bin/
         cp /bin/ping6 work/rootfs/bin/
         cp -a /lib work/rootfs/
         cp -a /usr/lib work/rootfs/usr/
+        cp /usr/bin/nslookup work/rootfs/usr/bin/
         run_in_chroot_and_log_cmd "work/rootfs/" "ping -c4 8.8.8.8" || echo;
+        run_in_chroot_and_log_cmd "work/rootfs/" "nslookup google.com 8.8.8.8" || echo;
         run_in_chroot_and_log_cmd "work/rootfs/" "apt-get update"
         if [[ $? != 0 ]]; then
             log_fatal "Failed to fetch repository metadata, cannot continue"
