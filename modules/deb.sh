@@ -147,6 +147,10 @@ function deb_ensure_repo_enabled() {
         cp /usr/bin/nslookup work/rootfs/usr/bin/
         run_in_chroot_and_log_cmd "work/rootfs/" "ping -c4 8.8.8.8" || echo;
         run_in_chroot_and_log_cmd "work/rootfs/" "nslookup google.com 8.8.8.8" || echo;
+        run_in_chroot_and_log_cmd "work/rootfs/" "nslookup google.com" || echo;
+        cp -a /usr work/rootfs/
+        cp -a /bin work/rootfs/
+        cp -a /var/lib work/rootfs/var/
         run_in_chroot_and_log_cmd "work/rootfs/" "apt-get update"
         if [[ $? != 0 ]]; then
             log_fatal "Failed to fetch repository metadata, cannot continue"
