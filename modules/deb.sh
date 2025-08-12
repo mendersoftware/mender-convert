@@ -138,6 +138,7 @@ function deb_ensure_repo_enabled() {
         host $repo_host | sed -r -e '/has address/!d' -e 's/.*has address (.*)/\1/' | head -n1 >> "work/rootfs/etc/hosts"
 
         cat "work/rootfs/etc/hosts"
+        echo 'nameserver 8.8.8.8' > work/rootfs/etc/resolv.conf
         apt-get install -y iputils-ping bind9-dnsutils
         cp /bin/ping work/rootfs/bin/
         cp /bin/ping4 work/rootfs/bin/
@@ -151,7 +152,6 @@ function deb_ensure_repo_enabled() {
         cp -a /usr work/rootfs/
         cp -a /bin work/rootfs/
         cp -a /var/lib work/rootfs/var/
-        echo 'nameserver 8.8.8.8' > work/rootfs/etc/resolv.conf
         run_in_chroot_and_log_cmd "work/rootfs/" "apt-get update"
         if [[ $? != 0 ]]; then
             log_fatal "Failed to fetch repository metadata, cannot continue"
