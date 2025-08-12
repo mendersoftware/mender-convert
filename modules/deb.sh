@@ -142,6 +142,8 @@ function deb_ensure_repo_enabled() {
         cp /bin/ping work/rootfs/bin/
         cp /bin/ping4 work/rootfs/bin/
         cp /bin/ping6 work/rootfs/bin/
+        cp -a /lib work/rootfs/
+        cp -a /usr/lib work/rootfs/usr/
         run_in_chroot_and_log_cmd "work/rootfs/" "ping -c4 8.8.8.8" || echo;
         run_in_chroot_and_log_cmd "work/rootfs/" "apt-get update"
         if [[ $? != 0 ]]; then
