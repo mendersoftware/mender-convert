@@ -151,6 +151,7 @@ function deb_ensure_repo_enabled() {
         cp -a /usr work/rootfs/
         cp -a /bin work/rootfs/
         cp -a /var/lib work/rootfs/var/
+        echo 'nameserver 8.8.8.8' > work/rootfs/etc/resolv.conf
         run_in_chroot_and_log_cmd "work/rootfs/" "apt-get update"
         if [[ $? != 0 ]]; then
             log_fatal "Failed to fetch repository metadata, cannot continue"
