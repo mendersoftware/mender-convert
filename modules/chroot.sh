@@ -29,6 +29,15 @@ function chroot_setup() {
     fi
     cp /etc/resolv.conf "$directory/etc/resolv.conf"
 
+    # 'ls -1d' to avoid the expansion of * doing nothing (and keeping the * in
+    # place)
+    for cert_item in $(ls -1d "$directory/etc/ca-certificates"* "$directory/etc/ssl/certs" 2> /dev/null); do
+        cp -a "$cert_item"{,.orig}
+    done
+    mkdir -p "$directory/etc/ssl"
+    cp -a /etc/ssl/certs "$directory/etc/ssl/"
+    cp -a /etc/ca-certificates* "$directory/etc/"
+
     local -r arch="$(probe_arch)"
     if [ "$arch" != "$(uname -m)" ]; then
         # Foreign architecture, we need to use QEMU.
@@ -88,6 +97,7 @@ function chroot_teardown() {
     sudo umount -l $directory/proc || true
     sudo umount -l $directory/sys || true
 
+    local -r arch="$(probe_arch)"
     if [ "$arch" != "$(uname -m)" ]; then
         rm -f "$directory/tmp/qemu-$arch-static"
     fi
@@ -96,6 +106,12 @@ function chroot_teardown() {
     if [ -e "$directory/etc/resolv.conf.orig" -o -h "$directory/etc/resolv.conf.orig" ]; then
         mv "$directory/etc/resolv.conf.orig" "$directory/etc/resolv.conf"
     fi
+
+    rm -rf "$directory/etc/ssl/certs"
+    rm -rf "$directory/etc/ca-certificates"*
+    for cert_item in $(ls -1d "$directory/etc/ssl/certs" "$directory/etc/ca-certificates"*.orig 2> /dev/null); do
+        mv "$cert_item"{.orig,}
+    done
 }
 
 # Takes a directory to set up for chroot and a name of a function to run. Note
