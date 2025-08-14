@@ -38,6 +38,24 @@ function chroot_setup() {
     cp -a /etc/ssl/certs "$directory/etc/ssl/"
     cp -a /etc/ca-certificates* "$directory/etc/"
 
+    # Mender-convert usually runs in a container. It's difficult to launch additional containers
+    # from within an existing one, but we need to run some commands on a simulated device using
+    # some sort of container. Use good old `chroot`, which doesn't provide perfect containment,
+    # but it is good enough for our purposes, and doesn't require special containment
+    # capabilities. This will not work for foreign architectures, but we could probably use
+    # something like qemu-aarch64-static to get around that.
+    if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" -a -d "$directory/boot/efi" ]; then
+        run_and_log_cmd "sudo mount work/boot $directory/boot/efi -o bind"
+        # Could mount the boot partition somewhere else, but we don't have a standard way to
+        # specify where it should be mounted when EFI integration is off, so let's not, for now.
+    fi
+    run_and_log_cmd "sudo mount /dev $directory/dev -o bind,ro"
+    # Bind mounting does not work recursively, so we still need this mount.
+    run_and_log_cmd "sudo mount /dev/pts $directory/dev/pts -o bind,ro"
+    run_and_log_cmd "sudo mount /proc $directory/proc -o bind,ro"
+    run_and_log_cmd "sudo mount /sys $directory/sys -o bind,ro"
+    run_and_log_cmd "sudo mount -t tmpfs tmpfs $directory/tmp"
+
     local -r arch="$(probe_arch)"
     if [ "$arch" != "$(uname -m)" ]; then
         # Foreign architecture, we need to use QEMU.
@@ -61,23 +79,6 @@ function chroot_setup() {
             /usr/lib/systemd/systemd-binfmt
         fi
     fi
-
-    # Mender-convert usually runs in a container. It's difficult to launch additional containers
-    # from within an existing one, but we need to run some commands on a simulated device using
-    # some sort of container. Use good old `chroot`, which doesn't provide perfect containment,
-    # but it is good enough for our purposes, and doesn't require special containment
-    # capabilities. This will not work for foreign architectures, but we could probably use
-    # something like qemu-aarch64-static to get around that.
-    if [ "$MENDER_GRUB_EFI_INTEGRATION" = "y" -a -d "$directory/boot/efi" ]; then
-        run_and_log_cmd "sudo mount work/boot $directory/boot/efi -o bind"
-        # Could mount the boot partition somewhere else, but we don't have a standard way to
-        # specify where it should be mounted when EFI integration is off, so let's not, for now.
-    fi
-    run_and_log_cmd "sudo mount /dev $directory/dev -o bind,ro"
-    # Bind mounting does not work recursively, so we still need this mount.
-    run_and_log_cmd "sudo mount /dev/pts $directory/dev/pts -o bind,ro"
-    run_and_log_cmd "sudo mount /proc $directory/proc -o bind,ro"
-    run_and_log_cmd "sudo mount /sys $directory/sys -o bind,ro"
 }
 
 # Teardown the chroot after setting it up and running all commands in it.
@@ -96,6 +97,7 @@ function chroot_teardown() {
     sudo umount -l $directory/dev || true
     sudo umount -l $directory/proc || true
     sudo umount -l $directory/sys || true
+    sudo umount -l $directory/tmp || true
 
     local -r arch="$(probe_arch)"
     if [ "$arch" != "$(uname -m)" ]; then
