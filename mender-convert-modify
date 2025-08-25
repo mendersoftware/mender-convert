@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-# Copyright 2021 Northern.tech AS
+# Copyright 2025 Northern.tech AS
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ OVERLAY_MODIFY_HOOKS=(overlay_modify)
 
 function trap_exit() {
     echo "mender-convert-modify has finished. Cleaning up..."
+    deb_cleanup work/rootfs
     sudo umount -f work/boot
     sudo umount -f work/rootfs
 }
@@ -233,70 +234,67 @@ EOF
 
 log_info "Installing Mender client and related files"
 
+# Prepare the image's root before we start deb operations
+deb_prepare "work/rootfs"
+
+# Collect package installation requests
+declare -A pkgs_to_install=()
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
-    mender_client_deb_version="$MENDER_CLIENT_VERSION"
     if [ "$MENDER_CLIENT_VERSION" = "auto" ]; then
-        deb_distro=$(probe_debian_distro_name)
-        deb_codename=$(probe_debian_distro_codename)
-        if ([ "$deb_distro" = "debian" ] && [ "$deb_codename" = "bullseye" ]) \
-            || ([ "$deb_distro" = "debian" ] && [ "$deb_codename" = "buster" ]) \
-            || ([ "$deb_distro" = "ubuntu" ] && [ "$deb_codename" = "jammy" ]) \
-            || ([ "$deb_distro" = "ubuntu" ] && [ "$deb_codename" = "focal" ]); then
-            MENDER_CLIENT_VERSION="3.5.x"
-            mender_client_deb_version="latest"
-        else
-            MENDER_CLIENT_VERSION="latest"
-            mender_client_deb_version="latest"
-        fi
+        # "auto" currently means "latest" on all supported distributions
+        MENDER_CLIENT_VERSION="latest"
     fi
-    case "${MENDER_CLIENT_VERSION}" in
-        1.* | 2.* | 3.*)
-            log_info "Installing Mender client version ${mender_client_deb_version}"
-            deb_get_and_install_package mender-client mender-client "${mender_client_deb_version}"
-            mender_client_deb_name="${DEB_NAME}"
-            ;;
-        *)
-            # For 4.x, master and latest(*) install the new packages
-            log_info "Installing Mender Auth and Mender Update version ${mender_client_deb_version}"
-            deb_get_and_install_package mender-client4 mender-auth "${mender_client_deb_version}"
-            deb_get_and_install_package mender-client4 mender-update "${mender_client_deb_version}"
-            mender_client_deb_name="${DEB_NAME}"
+    mender_client_deb_version="$MENDER_CLIENT_VERSION"
 
-            log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
-            deb_get_and_install_package mender-flash mender-flash "${MENDER_FLASH_VERSION}"
+    log_info "Installing Mender Client version ${mender_client_deb_version}"
+    pkgs_to_install["mender-client4"]="$mender_client_deb_version"
 
-            if [ "$MENDER_SETUP_INSTALL" = "auto" ]; then
-                MENDER_SETUP_INSTALL=y
-            fi
+    log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
+    pkgs_to_install["mender-flash"]="${MENDER_FLASH_VERSION}"
 
-            if [ "$MENDER_SNAPSHOT_INSTALL" = "auto" ]; then
-                MENDER_SNAPSHOT_INSTALL=y
-            fi
-            ;;
-    esac
-
-    if [ "$MENDER_SETUP_INSTALL" = "y" ]; then
+    if [ "$MENDER_SETUP_INSTALL" = "auto" ] || [ "$MENDER_SETUP_INSTALL" = "y" ]; then
         log_info "Installing Mender Setup version ${MENDER_SETUP_VERSION}"
-        deb_get_and_install_package mender-setup mender-setup "${MENDER_SETUP_VERSION}"
+        pkgs_to_install["mender-setup"]="${MENDER_SETUP_VERSION}"
     fi
 
-    if [ "$MENDER_SNAPSHOT_INSTALL" = "y" ]; then
+    if [ "$MENDER_SNAPSHOT_INSTALL" = "auto" ] || [ "$MENDER_SNAPSHOT_INSTALL" = "y" ]; then
         log_info "Installing Mender Snapshot version ${MENDER_SNAPSHOT_VERSION}"
-        deb_get_and_install_package mender-snapshot mender-snapshot "${MENDER_SNAPSHOT_VERSION}"
+        pkgs_to_install["mender-snapshot"]="${MENDER_SNAPSHOT_VERSION}"
     fi
-
-    # Save installed client version for tests in Yocto variable format
-    testscfg_add "PREFERRED_VERSION:mender-client" "$(echo ${mender_client_deb_name} | sed -r 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
 fi
 
 if [ "${MENDER_ADDON_CONNECT_INSTALL}" = "y" ]; then
     log_info "Installing Mender Connect addon"
-    deb_get_and_install_package mender-connect mender-connect "${MENDER_ADDON_CONNECT_VERSION}"
+    pkgs_to_install["mender-connect"]="${MENDER_ADDON_CONNECT_VERSION}"
 fi
 
 if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     log_info "Installing Mender Configure addon"
-    deb_get_and_install_package mender-configure mender-configure "${MENDER_ADDON_CONFIGURE_VERSION}" "true"
+    pkgs_to_install["mender-configure"]="${MENDER_ADDON_CONFIGURE_VERSION}"
+fi
+
+if [[ ${#pkgs_to_install[@]} -gt 0 ]]; then
+    deb_ensure_repo_enabled
+    if [[ ${pkgs_to_install[@]} =~ "master" ]]; then
+        deb_ensure_repo_enabled "experimental"
+    fi
+
+    # Collect exact package versions to install
+    pkgs_with_versions=""
+    for pkg in ${!pkgs_to_install[@]}; do
+        pkgs_with_versions="${pkgs_with_versions} $(deb_get_repo_package "$pkg" "${pkgs_to_install[$pkg]}")"
+    done
+
+    # Save installed client version for tests in Yocto variable format
+    if [[ "${pkgs_with_versions}" =~ "mender_client4" ]]; then
+        mender_client_version="$(echo ${pkgs_with_versions} | sed -r 's/.*mender_client4=([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+        if [[ -n "$mender_client_version" ]]; then
+            testscfg_add "PREFERRED_VERSION:mender-client" "$mender_client_version"
+        fi
+    fi
+
+    # Install packages
+    deb_install_repo_packages "$pkgs_with_versions"
 fi
 
 if [ "${MENDER_INSTALL_INPUT_PACKAGES}" = "y" ]; then
@@ -304,7 +302,7 @@ if [ "${MENDER_INSTALL_INPUT_PACKAGES}" = "y" ]; then
 fi
 
 # Done with package installations.
-deb_cleanup_package_cache work/rootfs
+deb_cleanup work/rootfs
 
 #
 # Make sure to re-label rootfs when selinux is in enforcing mode

@@ -95,7 +95,7 @@ generate_ubuntu() {
     mkosi --distribution=ubuntu \
           --release="$UBUNTU_CODENAME"  \
           --output="$image" \
-          --root-size=2G \
+          --root-size=2300M \
           --format=gpt_ext4 \
           --bootable \
           --checksum \
