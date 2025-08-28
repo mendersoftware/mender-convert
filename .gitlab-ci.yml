@@ -218,7 +218,7 @@ convert_raspbian_raspberrypi3_bookworm_64bit:
     # Set mender-image-tests submodule to correct version
     - git submodule update --init --recursive
     # Get mender-artifact for the tests
-    - wget "https://downloads.mender.io/repos/debian/pool/main/m/mender-artifact/mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2B${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb"
+    - wget "https://downloads.mender.io/repos/workstation-tools/pool/main/m/mender-artifact/mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2B${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb"
     - dpkg --install mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
     - rm mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
     # Prepare versions file for mender-convert
