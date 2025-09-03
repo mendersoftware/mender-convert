@@ -16,7 +16,7 @@ function grow_data_partition() {
 		  Type=oneshot
 		  User=root
 		  Group=root
-		  ExecStart=/sbin/parted --script $(disk_get_device_base "${MENDER_STORAGE_DEVICE_BASE}") resizepart ${MENDER_DATA_PART_NUMBER} 100%
+		  ExecStart=/sbin/parted --fix --script $(disk_get_device_base "${MENDER_STORAGE_DEVICE_BASE}") resizepart ${MENDER_DATA_PART_NUMBER} 100%
 
 		  [Install]
 		  WantedBy=data.mount
