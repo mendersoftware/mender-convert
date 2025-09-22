@@ -159,17 +159,17 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
-    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
+    RASPBIAN_NAME_CONVERT: 2025-05-13-raspios-bookworm-arm64-lite
     ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-05-13/2025-05-13-raspios-bookworm-arm64-lite.img.xz
 
 convert_raspbian_raspberrypi3_bookworm_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
-    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
+    RASPBIAN_NAME_CONVERT: 2025-05-13-raspios-bookworm-arm64-lite
     ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz
+    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-05-13/2025-05-13-raspios-bookworm-arm64-lite.img.xz
 
 .bash_helpers: &bash_helpers |
   # Bash function to check if the string is a final tag
@@ -272,7 +272,7 @@ test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
       artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-arm64-lite
+    RASPBIAN_NAME_ACCEPTANCE: 2025-05-13-raspios-bookworm-arm64-lite
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
 test_acceptance_prebuilt_raspberrypi3_bookworm_64bit:
@@ -284,7 +284,7 @@ test_acceptance_prebuilt_raspberrypi3_bookworm_64bit:
       artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-arm64-lite
+    RASPBIAN_NAME_ACCEPTANCE: 2025-05-13-raspios-bookworm-arm64-lite
     MENDER_DEVICE_TYPE: raspberrypi3_64
 
 test_acceptance_ubuntu_qemux86_64:
@@ -392,14 +392,14 @@ publish:s3:manual:
   when: manual
   extends: .template:publish:s3
   variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
+    RASPBERRY_PI_OS_PREFIX: 2025-05-13-raspios-lite
 
 publish:s3:automatic:
   rules:
     - if: '$PUBLISH_MENDER_CONVERT_AUTOMATIC == "true"'
   extends: .template:publish:s3
   variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
+    RASPBERRY_PI_OS_PREFIX: 2025-05-13-raspios-lite
 
 # excludes non multiplatform build job
 build:docker:

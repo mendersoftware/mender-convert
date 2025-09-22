@@ -80,13 +80,13 @@ Download the raw Raspberry Pi disk image into a subdirectory input:
 ```bash
 mkdir -p input
 cd input
-wget https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz
+wget https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-05-13/2025-05-13-raspios-bookworm-arm64-lite.img.xz
 ```
 
 Extract the raw Raspberry Pi disk image:
 
 ```bash
-xz --decompress 2024-07-04-raspios-bookworm-arm64-lite.img.xz
+xz --decompress 2025-05-13-raspios-bookworm-arm64-lite.img.xz
 INPUT_DISK_IMAGE=$(ls *raspios-bookworm*.img)
 cd ..
 ```
