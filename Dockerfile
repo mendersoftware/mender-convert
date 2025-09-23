@@ -1,5 +1,5 @@
 # Cross-compile pxz (Parallel LZMA compression) in separate image
-FROM --platform=$BUILDPLATFORM debian:12 AS build
+FROM --platform=$BUILDPLATFORM debian:13 AS build
 ARG TARGETARCH
 RUN dpkg --add-architecture ${TARGETARCH} && \
     apt-get update && \
