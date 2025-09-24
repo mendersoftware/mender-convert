@@ -81,6 +81,20 @@ include:
       - '.gitlab-ci-check-shell-format.yml'
       - '.gitlab-ci-check-docker-build.yml'
 
+  # Release CI/CD components
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-candidate@master
+    inputs:
+      github_repo: mendersoftware/mender-convert
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-mender-docs@master
+    inputs:
+      component: mender-convert
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-compass@master
+    inputs:
+      compass_component_id: "98ade477-9b61-4120-92f4-3a3078bc3214"
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-docs-changelog@master
+    inputs:
+      remote_changelog_file: "32.mender-convert/docs.md"
+
 stages:
   - test
   - build
