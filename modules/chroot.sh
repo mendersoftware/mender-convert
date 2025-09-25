@@ -24,7 +24,7 @@ function chroot_setup() {
     # Keep a copy of the resolv.conf, and copy in our own, we will need it during chroot
     # execution. We need to check for link specifically, because we want to treat a broken symlink
     # (which it often will be) as existing, but the normal check treats it as non-existing.
-    if [ -e "$directory/etc/resolv.conf" -o -h "$directory/etc/resolv.conf" ]; then
+    if [ -e "$directory/etc/resolv.conf" ]; then
         mv "$directory/etc/resolv.conf" "$directory/etc/resolv.conf.orig"
     fi
     cp /etc/resolv.conf "$directory/etc/resolv.conf"
@@ -105,7 +105,7 @@ function chroot_teardown() {
     fi
 
     rm -f "$directory/etc/resolv.conf"
-    if [ -e "$directory/etc/resolv.conf.orig" -o -h "$directory/etc/resolv.conf.orig" ]; then
+    if [ -e "$directory/etc/resolv.conf.orig" ]; then
         mv "$directory/etc/resolv.conf.orig" "$directory/etc/resolv.conf"
     fi
 
