@@ -24,15 +24,22 @@ function chroot_setup() {
     # Keep a copy of the resolv.conf, and copy in our own, we will need it during chroot
     # execution. We need to check for link specifically, because we want to treat a broken symlink
     # (which it often will be) as existing, but the normal check treats it as non-existing.
-    if [ -e "$directory/etc/resolv.conf" -o -h "$directory/etc/resolv.conf" ]; then
+    if [ -e "$directory/etc/resolv.conf" ]; then
         mv "$directory/etc/resolv.conf" "$directory/etc/resolv.conf.orig"
     fi
     cp /etc/resolv.conf "$directory/etc/resolv.conf"
 
-    # 'ls -1d' to avoid the expansion of * doing nothing (and keeping the * in
-    # place)
-    for cert_item in $(ls -1d "$directory/etc/ca-certificates"* "$directory/etc/ssl/certs" 2> /dev/null); do
-        cp -a "$cert_item"{,.orig}
+    # Keep a copy of the ca-certificates.conf and all the original certs, while copying our
+    # conf and merging the certs during chroot execution
+    if [ -e "$directory/etc/ca-certificates.conf" ]; then
+        mv "$directory/etc/ca-certificates.conf" "$directory/etc/ca-certificates.conf.orig"
+    fi
+    cp /etc/ca-certificates.conf "$directory/etc/ca-certificates.conf"
+
+    for cert_dir in "$directory/etc/ca-certificates" "$directory/etc/ssl/certs"; do
+        if [ -d "$cert_dir" ]; then
+            cp -ar "$cert_dir"{,.orig}
+        fi
     done
     mkdir -p "$directory/etc/ssl"
     cp -a /etc/ssl/certs "$directory/etc/ssl/"
@@ -105,14 +112,21 @@ function chroot_teardown() {
     fi
 
     rm -f "$directory/etc/resolv.conf"
-    if [ -e "$directory/etc/resolv.conf.orig" -o -h "$directory/etc/resolv.conf.orig" ]; then
+    if [ -e "$directory/etc/resolv.conf.orig" ]; then
         mv "$directory/etc/resolv.conf.orig" "$directory/etc/resolv.conf"
     fi
 
+    rm -f "$directory/etc/ca-certificates.conf"
+    if [ -e "$directory/etc/ca-certificates.conf.orig" ]; then
+        mv "$directory/etc/ca-certificates.conf.orig" "$directory/etc/ca-certificates.conf"
+    fi
+
     rm -rf "$directory/etc/ssl/certs"
-    rm -rf "$directory/etc/ca-certificates"*
-    for cert_item in $(ls -1d "$directory/etc/ssl/certs" "$directory/etc/ca-certificates"*.orig 2> /dev/null); do
-        mv "$cert_item"{.orig,}
+    rm -rf "$directory/etc/ca-certificates"
+    for cert_dir in "$directory/etc/ca-certificates" "$directory/etc/ssl/certs"; do
+        if [ -d "$cert_dir.orig" ]; then
+            mv "$cert_dir"{.orig,}
+        fi
     done
 }
 
