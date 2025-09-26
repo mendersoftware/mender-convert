@@ -71,13 +71,29 @@ variables:
   ACC_TESTS_UBUNTU_DISTRO: "jammy"
 
 include:
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/commit-lint@master
   - project: 'Northern.tech/Mender/mendertesting'
     file:
-      - '.gitlab-ci-check-commits.yml'
+      # QA-1046 Remove after hardening sign-off checks in the modern commit linter
+      - '.gitlab-ci-check-commits-signoffs.yml'
       - '.gitlab-ci-check-license.yml'
       - '.gitlab-ci-github-status-updates.yml'
       - '.gitlab-ci-check-shell-format.yml'
       - '.gitlab-ci-check-docker-build.yml'
+
+  # Release CI/CD components
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-candidate@master
+    inputs:
+      github_repo: mendersoftware/mender-convert
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-mender-docs@master
+    inputs:
+      component: mender-convert
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-compass@master
+    inputs:
+      compass_component_id: "98ade477-9b61-4120-92f4-3a3078bc3214"
+  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-docs-changelog@master
+    inputs:
+      remote_changelog_file: "32.mender-convert/docs.md"
 
 stages:
   - test
