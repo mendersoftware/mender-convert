@@ -1,4 +1,452 @@
 ---
+## 5.0.0 - 2025-09-29
+
+
+### Bug fixes
+
+
+- Do not use world-writable permissions for mender-convert image.
+ ([6a74029](https://github.com/mendersoftware/mender-convert/commit/6a7402947fecdd3d35df902b586dd0dc4bac3747)) 
+
+
+  The image is only used in the build itself, so it's unlikely to be a
+  security issue. It does not affect output images.
+- Pr template grammar link
+ ([275a206](https://github.com/mendersoftware/mender-convert/commit/275a206c6d0a77420e6afcd273bfa13bbda3cf7a))  by @ygerlach
+
+
+  The link to the grammar.md mentioned in the pr template was invalid (generating a 404).
+- Fix writing MSDOS partition UUIDs
+([MEN-7937](https://northerntech.atlassian.net/browse/MEN-7937)) ([af0a17d](https://github.com/mendersoftware/mender-convert/commit/af0a17d3ca0793fa3bc9328f98173ef4b0408144))  by @jo-lund
+
+
+  rev works on unicode strings and is therefore not safe to use to swap bytes.
+- Preserve extended attribute with rsync
+ ([b9988ee](https://github.com/mendersoftware/mender-convert/commit/b9988eeb87fe1350fc2baae15798e796a4e1958a))  by @timbz
+- Update `grub-mender-grubenv` version
+([ME-458](https://northerntech.atlassian.net/browse/ME-458)) ([10817e5](https://github.com/mendersoftware/mender-convert/commit/10817e5e2c88d1667329b6ba865f6de04a4fd5bf))  by @lluiscampos
+- Expand the data partition into the empty space on boot
+([MEN-8191](https://northerntech.atlassian.net/browse/MEN-8191)) ([d04876a](https://github.com/mendersoftware/mender-convert/commit/d04876acfa437454a7685ba4f59d4c13deeb8300))  by @jo-lund
+
+
+  When MENDER_DATA_PART_GROWFS is "y" (which is default), x-systemd.growfs
+  will be set for the data partition in /etc/fstab. This option is understood
+  by systemd and will grow the file system to occupy the full block device.
+  However, the partition itself will not necessarily be expanded. For
+  Raspberry Pi a systemd script could be used that would run "parted"
+  to expand the partition. This is now done for all systems.
+- Systemd_common_config: add --fix option to parted call
+ ([ef68160](https://github.com/mendersoftware/mender-convert/commit/ef6816058bfa406ca925928f177e188f838c9645))  by @chlongv
+
+
+  In case when the GPT header does not include the full disk size (can
+  happen to generate smaller images), parted is going to fail because of
+  an exception.
+  
+  Add the --fix option to fix those exceptions and allow parted to resize
+  the data partition.
+
+
+
+
+### Documentation
+
+
+- Update example commands in README
+ ([f81ba6b](https://github.com/mendersoftware/mender-convert/commit/f81ba6b57acf174afc72cbac22eceeba175d0036))  by @lluiscampos
+
+
+  Follow-up from 495c5e601f3cc52d152f651ff3a53aafce2b69b7
+- Update command to decompress the image
+ ([49f5654](https://github.com/mendersoftware/mender-convert/commit/49f565468799905dc4ba4a5beab9513f725cbf4e))  by @lluiscampos
+- Rewrite comment for `MENDER_CLIENT_VERSION`
+ ([0486ffb](https://github.com/mendersoftware/mender-convert/commit/0486ffbabb3c788dd5668fd54c2173dee7bd2978))  by @lluiscampos
+
+
+  To clarify what `auto` will do in the context of the recently released
+  Mender Client 5.0.
+- Update run-tests readme
+ ([d4a676d](https://github.com/mendersoftware/mender-convert/commit/d4a676d5ed17024548d58c20d9fe26d2e4501bdf))  by @danielskinstad
+- Extend UEFI NVRAM guide for future Ubuntu 24.04 upgrade
+ ([6b787b6](https://github.com/mendersoftware/mender-convert/commit/6b787b6a7606f74feab09890179dfe7df8dc98d5))  by @lluiscampos
+
+
+
+
+### Features
+
+
+- *(uefi)* Implement support for RPi4 `cmdline.txt` boot file.
+([MEN-5826](https://northerntech.atlassian.net/browse/MEN-5826)) ([59816ee](https://github.com/mendersoftware/mender-convert/commit/59816ee8137881f5df9743ba9ebe351cbdc24baf)) 
+
+
+  This is required to run the "firstboot" Raspberry Pi setup
+  correctly. It also makes sure that custom boot options in that file
+  are actually respected.
+
+- Add a `platform_pre_modify` hook.
+ ([9b4cae4](https://github.com/mendersoftware/mender-convert/commit/9b4cae4eb4bfdf73cd70c2ed06ca7813641ced86)) 
+
+
+  This runs before modifications, but after the image has been mounted,
+  so that it's ready to receive modifications.
+- Introduce basic support for booting Raspberry Pi 4 using UEFI.
+([MEN-5826](https://northerntech.atlassian.net/browse/MEN-5826)) ([e5fba41](https://github.com/mendersoftware/mender-convert/commit/e5fba4163ec04771f83f601b97216d784d254c14)) 
+
+
+  With this we can boot Raspberry Pi 4 using UEFI, but it provides no
+  integration beyond the mere boot itself, which works, but presents
+  some problems. These will be fixed in upcoming commits.
+- Upgrade Raspberry Pi 3 pre-built image to Debian 12 64bits
+([MEN-7759](https://northerntech.atlassian.net/browse/MEN-7759)) ([c4b47f3](https://github.com/mendersoftware/mender-convert/commit/c4b47f3d1523d2ba4fffc9cba5d7082b2b7f4e67))  by @lluiscampos
+
+
+  This commit restores the Raspberry Pi 3 pre-built image build and
+  publish, but modifying it from being based in the 32bits one to the 64
+  bits one.
+  
+  As the commit that removed it completely did not have an explicit
+  changelog entry on this, the changelog here is only about "upgrading"
+  the image.
+- Create sparse images
+ ([c90d8df](https://github.com/mendersoftware/mender-convert/commit/c90d8df9d719f5dbdcbc557e1338ae07d6604f00))  by @ygerlach
+
+
+  Instead of allocating the whole image on the disk, only allocate the parts that actually contain data. This reduces the required disk space to store or create images.
+  This feature is disabled by default and can be enabled with the `MENDER_SPARSE_IMAGE` configuration flag.
+- Warn for signs of external  mender installation
+ ([b4eab2a](https://github.com/mendersoftware/mender-convert/commit/b4eab2aa8529df858a1cbc253b0770addff92171))  by @TheMeaningfulEngineer
+
+
+  mender-convert doesn't handle well if the input image has Mender
+  installed already.
+  This could happen if someone did the installation of the Debian Mender package
+  and then attempted to mender-convert that image.
+  
+  This introduces a function that will detect detect the potential issue
+  to aid troubleshooting from the logs once the error is hit.
+  
+  With it you will see:
+  
+  ```
+  2025-02-18 18:06:44 [WARN] [mender-convert-modify] work/rootfs/var/lib/mender-monitor exists!
+  2025-02-18 18:06:44 [WARN] [mender-convert-modify] Input image contain traces Mender of previous Mender installation
+  2025-02-18 18:06:44 [WARN] [mender-convert-modify] The conversion might fail. Please provide a clean input image.
+  
+  Extra WARN context is above
+  Below is old
+  
+  2025-02-18 17:53:29 [INFO] [mender-convert-modify] Performing platform specific pre-modifications (if any)
+  2025-02-18 17:53:29 [INFO] [mender-convert-modify] Running hook: platform_pre_modify
+  2025-02-18 17:53:29 [INFO] [mender-convert-modify] Creating state folder in the data partition for Mender  add-ons
+  mender-convert-modify has finished. Cleaning up...
+  2025-02-18 17:53:29 [ERROR] [mender-convert] mender-convert failed
+  2025-02-18 17:53:29 [DEBUG] [mender-convert-modify] When running: (./mender-convert-modify:174): run_and_
+  log_cmd():
+  
+          sudo ln -sf /data/mender work/rootfs/var/lib
+          ln: work/rootfs/var/lib/mender: cannot overwrite directory
+  
+  2025-02-18 17:53:29 [ERROR] [mender-convert] mender-convert failed
+  2025-02-18 17:53:29 [ERROR] [mender-convert] mender-convert exit code: 1
+  ```
+- Update GRUB to version 2.12
+ ([4f180a2](https://github.com/mendersoftware/mender-convert/commit/4f180a2356054b8342cf0eefa886bd602ebc99e5))  by @lluiscampos
+
+
+  Following the update from `grub-mender-grubenv` repository from January
+  2025:
+  * https://github.com/mendersoftware/grub-mender-grubenv/pull/39
+- Use the `device-components` repository
+ ([150095d](https://github.com/mendersoftware/mender-convert/commit/150095d717ebeea40f1993738f8d4303a2fa8864))  by @danielskinstad
+- Use `apt install some-package` to install Mender packages
+([MEN-8476](https://northerntech.atlassian.net/browse/MEN-8476)) ([44920dc](https://github.com/mendersoftware/mender-convert/commit/44920dca944c8bca9cc2a6ed06d3b1a3d51fc3bb))  by @vpodzime
+  - **BREAKING**: apt is now used to install Mender packages from
+the repositories instead of dpkg installing individual packages
+
+
+  Instead of custom magic downloading and installing individual
+  packages from the repos, `apt` package manager is now used to do
+  its job, including dependency resolution and installation, and
+  signature+checksum verification, among other things.
+
+
+
+
+### Security
+
+
+- Bump tests/mender-image-tests from `698cb01` to `5405aa3`
+ ([88d0240](https://github.com/mendersoftware/mender-convert/commit/88d0240790e49171a3d889dcc44f007321493929))  by @dependabot[bot]
+
+
+  Bumps [tests/mender-image-tests](https://github.com/mendersoftware/mender-image-tests) from `698cb01` to `5405aa3`.
+  - [Commits](https://github.com/mendersoftware/mender-image-tests/compare/698cb01171f7ef1faaabbe8311f21a06cf1a0432...5405aa3c2b0bd8a6219820720e023363f090881c)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: tests/mender-image-tests
+    dependency-type: direct:production
+  ...
+- Bump pytest in /tests in the python-test-dependencies group
+ ([afff8f2](https://github.com/mendersoftware/mender-convert/commit/afff8f2d1151c7cfeb0e5b6eab650c87314b2a0a))  by @dependabot[bot]
+
+
+  Bumps the python-test-dependencies group in /tests with 1 update: [pytest](https://github.com/pytest-dev/pytest).
+  
+  
+  Updates `pytest` from 8.3.3 to 8.3.4
+  - [Release notes](https://github.com/pytest-dev/pytest/releases)
+  - [Changelog](https://github.com/pytest-dev/pytest/blob/main/CHANGELOG.rst)
+  - [Commits](https://github.com/pytest-dev/pytest/compare/8.3.3...8.3.4)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: pytest
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: python-test-dependencies
+  ...
+- Bump jinja2 from 3.1.4 to 3.1.5 in /tests
+ ([b2e6c67](https://github.com/mendersoftware/mender-convert/commit/b2e6c67a8c0acd17ce718ac7eec0df71539e7d79))  by @dependabot[bot]
+
+
+  Bumps [jinja2](https://github.com/pallets/jinja) from 3.1.4 to 3.1.5.
+  - [Release notes](https://github.com/pallets/jinja/releases)
+  - [Changelog](https://github.com/pallets/jinja/blob/main/CHANGES.rst)
+  - [Commits](https://github.com/pallets/jinja/compare/3.1.4...3.1.5)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: jinja2
+    dependency-type: indirect
+  ...
+- Bump tests/mender-image-tests from `5405aa3` to `074bb74`
+ ([c8c7eb9](https://github.com/mendersoftware/mender-convert/commit/c8c7eb93181f43e2fb6e8613adf554411e482106))  by @dependabot[bot]
+
+
+  Bumps [tests/mender-image-tests](https://github.com/mendersoftware/mender-image-tests) from `5405aa3` to `074bb74`.
+  - [Commits](https://github.com/mendersoftware/mender-image-tests/compare/5405aa3c2b0bd8a6219820720e023363f090881c...074bb74c4828ea8c265f0cc40781f312bc17ed5e)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: tests/mender-image-tests
+    dependency-type: direct:production
+  ...
+- Bump filelock in /tests in the python-test-dependencies group
+ ([b051bd7](https://github.com/mendersoftware/mender-convert/commit/b051bd7e15a78adfa4831f45e8fef6f7265d8a2f))  by @dependabot[bot]
+
+
+  Bumps the python-test-dependencies group in /tests with 1 update: [filelock](https://github.com/tox-dev/py-filelock).
+  
+  
+  Updates `filelock` from 3.16.1 to 3.17.0
+  - [Release notes](https://github.com/tox-dev/py-filelock/releases)
+  - [Changelog](https://github.com/tox-dev/filelock/blob/main/docs/changelog.rst)
+  - [Commits](https://github.com/tox-dev/py-filelock/compare/3.16.1...3.17.0)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: filelock
+    dependency-type: direct:production
+    update-type: version-update:semver-minor
+    dependency-group: python-test-dependencies
+  ...
+- Bump jsdom from 25.0.1 to 26.0.0 in /scripts/linkbot
+ ([37bb957](https://github.com/mendersoftware/mender-convert/commit/37bb9575200f14f6384933f867def79214e998bf))  by @dependabot[bot]
+
+
+  Bumps [jsdom](https://github.com/jsdom/jsdom) from 25.0.1 to 26.0.0.
+  - [Release notes](https://github.com/jsdom/jsdom/releases)
+  - [Changelog](https://github.com/jsdom/jsdom/blob/main/Changelog.md)
+  - [Commits](https://github.com/jsdom/jsdom/compare/25.0.1...26.0.0)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: jsdom
+    dependency-type: direct:production
+    update-type: version-update:semver-major
+  ...
+- Bump tests/mender-image-tests from `074bb74` to `a03b5fd`
+ ([03abc36](https://github.com/mendersoftware/mender-convert/commit/03abc367539d74a35d450f3a71fcdc9e0e155898))  by @dependabot[bot]
+
+
+  Bumps [tests/mender-image-tests](https://github.com/mendersoftware/mender-image-tests) from `074bb74` to `a03b5fd`.
+  - [Commits](https://github.com/mendersoftware/mender-image-tests/compare/074bb74c4828ea8c265f0cc40781f312bc17ed5e...a03b5fd7465e079442ec2667823ab70ca625d085)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: tests/mender-image-tests
+    dependency-type: direct:production
+  ...
+- Bump the python-test-dependencies group in /tests with 2 updates
+ ([a40d044](https://github.com/mendersoftware/mender-convert/commit/a40d04400863e4a10b921071a6b5535f834566f9))  by @dependabot[bot]
+
+
+  Bumps the python-test-dependencies group in /tests with 2 updates: [filelock](https://github.com/tox-dev/py-filelock) and [pytest](https://github.com/pytest-dev/pytest).
+  
+  
+  Updates `filelock` from 3.17.0 to 3.18.0
+  - [Release notes](https://github.com/tox-dev/py-filelock/releases)
+  - [Changelog](https://github.com/tox-dev/filelock/blob/main/docs/changelog.rst)
+  - [Commits](https://github.com/tox-dev/py-filelock/compare/3.17.0...3.18.0)
+  
+  Updates `pytest` from 8.3.4 to 8.3.5
+  - [Release notes](https://github.com/pytest-dev/pytest/releases)
+  - [Changelog](https://github.com/pytest-dev/pytest/blob/main/CHANGELOG.rst)
+  - [Commits](https://github.com/pytest-dev/pytest/compare/8.3.4...8.3.5)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: filelock
+    dependency-version: 3.18.0
+    dependency-type: direct:production
+    update-type: version-update:semver-minor
+    dependency-group: python-test-dependencies
+  - dependency-name: pytest
+    dependency-version: 8.3.5
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: python-test-dependencies
+  ...
+- Bump jinja2 from 3.1.5 to 3.1.6 in /tests
+ ([48a73a2](https://github.com/mendersoftware/mender-convert/commit/48a73a27f8af6158b7ed55a38563a551fcbef29c))  by @dependabot[bot]
+
+
+  Bumps [jinja2](https://github.com/pallets/jinja) from 3.1.5 to 3.1.6.
+  - [Release notes](https://github.com/pallets/jinja/releases)
+  - [Changelog](https://github.com/pallets/jinja/blob/main/CHANGES.rst)
+  - [Commits](https://github.com/pallets/jinja/compare/3.1.5...3.1.6)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: jinja2
+    dependency-version: 3.1.6
+    dependency-type: indirect
+  ...
+- Bump jsdom from 26.0.0 to 26.1.0 in /scripts/linkbot
+ ([a2fef50](https://github.com/mendersoftware/mender-convert/commit/a2fef50fe87edfd85e05bfbf3a19e6990dcfd16c))  by @dependabot[bot]
+
+
+  Bumps [jsdom](https://github.com/jsdom/jsdom) from 26.0.0 to 26.1.0.
+  - [Release notes](https://github.com/jsdom/jsdom/releases)
+  - [Changelog](https://github.com/jsdom/jsdom/blob/main/Changelog.md)
+  - [Commits](https://github.com/jsdom/jsdom/compare/26.0.0...26.1.0)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: jsdom
+    dependency-version: 26.1.0
+    dependency-type: direct:production
+    update-type: version-update:semver-minor
+  ...
+- Bump the python-test-dependencies group across 1 directory with 3 updates
+ ([1c55aef](https://github.com/mendersoftware/mender-convert/commit/1c55aef03e0bd7a25a523443872e663a1a2ccb93))  by @dependabot[bot]
+
+
+  Bumps the python-test-dependencies group with 3 updates in the /tests directory: [pytest](https://github.com/pytest-dev/pytest), [pytest-xdist](https://github.com/pytest-dev/pytest-xdist) and [requests](https://github.com/psf/requests).
+  
+  
+  Updates `pytest` from 8.3.5 to 8.4.0
+  - [Release notes](https://github.com/pytest-dev/pytest/releases)
+  - [Changelog](https://github.com/pytest-dev/pytest/blob/main/CHANGELOG.rst)
+  - [Commits](https://github.com/pytest-dev/pytest/compare/8.3.5...8.4.0)
+  
+  Updates `pytest-xdist` from 3.6.1 to 3.7.0
+  - [Release notes](https://github.com/pytest-dev/pytest-xdist/releases)
+  - [Changelog](https://github.com/pytest-dev/pytest-xdist/blob/master/CHANGELOG.rst)
+  - [Commits](https://github.com/pytest-dev/pytest-xdist/compare/v3.6.1...v3.7.0)
+  
+  Updates `requests` from 2.32.3 to 2.32.4
+  - [Release notes](https://github.com/psf/requests/releases)
+  - [Changelog](https://github.com/psf/requests/blob/main/HISTORY.md)
+  - [Commits](https://github.com/psf/requests/compare/v2.32.3...v2.32.4)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: pytest
+    dependency-version: 8.4.0
+    dependency-type: direct:production
+    update-type: version-update:semver-minor
+    dependency-group: python-test-dependencies
+  - dependency-name: pytest-xdist
+    dependency-version: 3.7.0
+    dependency-type: direct:production
+    update-type: version-update:semver-minor
+    dependency-group: python-test-dependencies
+  - dependency-name: requests
+    dependency-version: 2.32.4
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: python-test-dependencies
+  ...
+- Bump urllib3 from 1.26.19 to 2.5.0 in /tests
+ ([a2bda71](https://github.com/mendersoftware/mender-convert/commit/a2bda7170f827d3b4c1486ec42b7c0a9b71344af))  by @danielskinstad
+
+
+  Bumps [urllib3](https://github.com/urllib3/urllib3) from 1.26.19 to 2.5.0.
+  - [Release notes](https://github.com/urllib3/urllib3/releases)
+  - [Changelog](https://github.com/urllib3/urllib3/blob/main/CHANGES.rst)
+  - [Commits](https://github.com/urllib3/urllib3/compare/1.26.19...2.5.0)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: urllib3
+    dependency-version: 2.5.0
+    dependency-type: indirect
+  ...
+  
+  Install awscli2 because of
+  `ImportError: cannot import name 'DEFAULT_CIPHERS' from 'urllib3.util.ssl_'`
+  See https://github.com/aws/aws-cli/issues/7905
+- Bump tests/mender-image-tests from `a03b5fd` to `e5ff4e5`
+ ([66aed83](https://github.com/mendersoftware/mender-convert/commit/66aed833474bf36487f19858c5715a0ba4640f09))  by @dependabot[bot]
+
+
+  Bumps [tests/mender-image-tests](https://github.com/mendersoftware/mender-image-tests) from `a03b5fd` to `e5ff4e5`.
+  - [Commits](https://github.com/mendersoftware/mender-image-tests/compare/a03b5fd7465e079442ec2667823ab70ca625d085...e5ff4e596e9137ec90a297f5e53358a5f3033484)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: tests/mender-image-tests
+    dependency-version: e5ff4e596e9137ec90a297f5e53358a5f3033484
+    dependency-type: direct:production
+  ...
+- Bump pytest-xdist in /tests in the python-test-dependencies group
+ ([eb04be3](https://github.com/mendersoftware/mender-convert/commit/eb04be33c9b07a8456b7aabc21666981e71aca1f))  by @dependabot[bot]
+
+
+  Bumps the python-test-dependencies group in /tests with 1 update: [pytest-xdist](https://github.com/pytest-dev/pytest-xdist).
+  
+  
+  Updates `pytest-xdist` from 3.7.0 to 3.8.0
+  - [Release notes](https://github.com/pytest-dev/pytest-xdist/releases)
+  - [Changelog](https://github.com/pytest-dev/pytest-xdist/blob/master/CHANGELOG.rst)
+  - [Commits](https://github.com/pytest-dev/pytest-xdist/compare/v3.7.0...v3.8.0)
+  
+  ---
+  updated-dependencies:
+  - dependency-name: pytest-xdist
+    dependency-version: 3.8.0
+    dependency-type: direct:production
+    update-type: version-update:semver-minor
+    dependency-group: python-test-dependencies
+  ...
+
+
+
+
+### Build
+
+
+- Update to latest `mender-artifact` version
+([MEN-8269](https://northerntech.atlassian.net/browse/MEN-8269)) ([65a3be8](https://github.com/mendersoftware/mender-convert/commit/65a3be8a94cd1a7c747c24a19de761a26ff44883))  by @lluiscampos
+
+
+
+
+
+
 
 ## mender-convert 4.3.0
 
