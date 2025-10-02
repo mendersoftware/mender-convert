@@ -374,7 +374,7 @@ publish:image-multiplatform:
       artifacts: true
     - job: convert_raspbian_raspberrypi3_bookworm_64bit
       artifacts: true
-  image: debian:buster
+  image: debian:trixie
   before_script:
     - apt update && apt install -yyq awscli curl
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
