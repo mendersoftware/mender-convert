@@ -1,0 +1,10 @@
+
+
+export MENDER_CONVERT_LOCATION=$PWD
+
+
+cd $MENDER_CONVERT_LOCATION
+$MENDER_CONVERT_LOCATION/scripts/bootstrap-rootfs-overlay-hosted-server.sh \
+    --output-dir ${PWD}/input/rootfs_overlay_demo \
+    --region eu \
+    --tenant-token "xxx"

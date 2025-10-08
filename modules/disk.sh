@@ -191,7 +191,7 @@ disk_boot_part() {
     # boot part was extracted or generated.
     boot_part="work/boot-generated.vfat"
     if [ ! -f ${boot_part} ]; then
-        boot_part="work/part-1.fs"
+        boot_part="work/part-2.fs"
     fi
     echo "${boot_part}"
 }
@@ -201,9 +201,7 @@ disk_boot_part() {
 disk_root_part() {
     boot_part="work/boot-generated.vfat"
     if [ ! -f ${boot_part} ]; then
-        root_part="work/part-2.fs"
-    else
-        root_part="work/part-1.fs"
+        root_part="work/part-3.fs"
     fi
     echo "${root_part}"
 }

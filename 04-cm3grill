@@ -1,0 +1,5 @@
+# convert the image
+MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
+    --disk-image input/radxa-cm3i-io_debian_bullseye_xfce_b4.img  \
+    --config configs/cm3i_config \
+    --overlay input/rootfs_overlay_demo/

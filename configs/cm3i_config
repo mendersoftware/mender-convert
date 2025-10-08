@@ -1,0 +1,17 @@
+ROCKPRO64_CONFIG="rockpro64_emmc"
+MENDER_STORAGE_DEVICE_BASE=/dev/mmcblk1p
+
+source configs/rockpro64_config
+MENDER_BOOT_PART=/dev/mmcblk1p2
+MENDER_ROOTFS_PART_A=/dev/mmcblk1p3
+MENDER_ROOTFS_PART_B=/dev/mmcblk1p4
+MENDER_BOOT_PART_NUMBER="2"
+MENDER_COPY_BOOT_GAP="n"
+MENDER_STORAGE_TOTAL_SIZE_MB="16000"
+
+
+function deb_archive() {
+run_and_log_cmd "sed -i 's|deb https://deb.debian.org/debian bullseye-backports main contrib non-free|deb https://archive.debian.org/debian bullseye-backports main contrib non-free|g' ./work/rootfs/etc/apt/sources.list.d/bullseye-backports.list"
+}
+
+PLATFORM_PRE_MODIFY_HOOKS+=(deb_archive)
