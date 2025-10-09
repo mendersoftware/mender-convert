@@ -7,14 +7,12 @@ MENDER_GRUB_EFI_INTEGRATION=n
 # We will write a modified bootloader
 MENDER_COPY_BOOT_GAP=n
 
-ROCKPRO64_BINARIES="${ROCKPRO64_CONFIG}-2017.09.tar.gz"
-ROCKPRO64_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/rockpro64/${ROCKPRO64_BINARIES}"
+
 
 function platform_modify() {
     mkdir -p work/rockpro64
 
-    run_and_log_cmd "wget -Nq ${ROCKPRO64_BINARIES_URL} -P work/rockpro64"
-    run_and_log_cmd "tar xzvf work/rockpro64/${ROCKPRO64_BINARIES} -C work/rockpro64"
+    run_and_log_cmd "tar xzvf assets/${UBOOT_BINARIES} -C work/rockpro64"
 
     run_and_log_cmd "sudo cp work/rockpro64/boot.scr work/boot"
 
