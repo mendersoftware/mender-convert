@@ -1,13 +1,15 @@
 
-MENDER_STORAGE_DEVICE_BASE=/dev/mmcblk1p
+MENDER_STORAGE_DEVICE_BASE=/dev/mmcblk0p
 UBOOT_BINARIES="perfecta-cm3i-rk3568_emmc-v2024.03.tar.gz"
 source configs/rockpro64_config
-MENDER_BOOT_PART=/dev/mmcblk1p2
-MENDER_ROOTFS_PART_A=/dev/mmcblk1p3
-MENDER_ROOTFS_PART_B=/dev/mmcblk1p4
+MENDER_BOOT_PART=/dev/mmcblk0p2
+MENDER_ROOTFS_PART_A=/dev/mmcblk0p3
+MENDER_ROOTFS_PART_B=/dev/mmcblk0p4
 MENDER_BOOT_PART_NUMBER="2"
 MENDER_COPY_BOOT_GAP="n"
-MENDER_STORAGE_TOTAL_SIZE_MB="16000"
+MENDER_STORAGE_TOTAL_SIZE_MB="12000"
+#we may want to use excess space for encrypted parition.
+MENDER_DATA_PART_GROWFS="n"
 
 
 function deb_archive() {
