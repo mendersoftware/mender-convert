@@ -7,9 +7,11 @@ MENDER_ROOTFS_PART_A=/dev/mmcblk0p3
 MENDER_ROOTFS_PART_B=/dev/mmcblk0p4
 MENDER_BOOT_PART_NUMBER="2"
 MENDER_COPY_BOOT_GAP="n"
+MENDER_DATA_PART_GROWFS="n"
 MENDER_STORAGE_TOTAL_SIZE_MB="12000"
 #we may want to use excess space for encrypted parition.
-MENDER_DATA_PART_GROWFS="n"
+MENDER_ADDON_CONNECT_INSTALL="y"
+
 
 
 function deb_archive() {
@@ -17,3 +19,29 @@ run_and_log_cmd "sed -i 's|deb https://deb.debian.org/debian bullseye-backports 
 }
 
 PLATFORM_PRE_MODIFY_HOOKS+=(deb_archive)
+
+MENDER_BOOT_PART_FSTAB_OPTS="defaults,sync -m 1 -O dir_index,filetype,^64bit,^metadata_csum,^orphan_file -E lazy_itable_init=0,lazy_journal_init=0"
+
+# Custom mkfs options for creating the rootfs partition
+MENDER_ROOT_PART_MKFS_OPTS=" -m 1 -O dir_index,filetype,^64bit,^metadata_csum,^64bit,^metadata_csum,^orphan_file -E lazy_itable_init=0,lazy_journal_init=0 "
+
+
+function kernel_linking() {
+    # Ensure boot directory exists
+    run_and_log_cmd "mkdir -p work/boot"
+    # Create relative symlinks from work/boot -> work/rootfs/... so they remain valid if CWD changes (chatgpt magic to hopefully make the link works)
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn vmlinuz-5.10.160-33-rk356x Image'"
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn initrd.img-5.10.160-33-rk356x initrd.img'"
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn ../usr/lib/linux-image-5.10.160-33-rk356x/rockchip/rk3568-radxa-cm3i-io.dtb dtb'"
+
+}
+
+# Register the correct hook function name
+PLATFORM_MODIFY_HOOKS+=(kernel_linking)
+
+
+function config_part() {
+disk_create_file_system_from_folder "work/config/" "work/config.img" "614400" vfat
+}
+
+PLATFORM_MODIFY_HOOKS+=(config_part)

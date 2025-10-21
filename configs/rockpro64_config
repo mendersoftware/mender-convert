@@ -12,11 +12,10 @@ MENDER_COPY_BOOT_GAP=n
 function platform_modify() {
     mkdir -p work/rockpro64
 
-    run_and_log_cmd "tar xzvf assets/${UBOOT_BINARIES} -C work/rockpro64"
-
-    #run_and_log_cmd "sudo cp work/rockpro64/boot.scr work/boot"
-
+    run_and_log_cmd "sudo cp assets/idbloader.img  work/rockpro64"
+    run_and_log_cmd "sudo cp assets/u-boot.itb work/rockpro64"
     run_and_log_cmd "sudo cp work/rockpro64/fw_env.config work/rootfs/etc/"
+    run_and_log_cmd "sudo cp assets/fw_printenv work/rockpro64"
 
     # It is not possible to resize rootfs part when using Mender. so disable
     # the service
@@ -27,5 +26,10 @@ function platform_package() {
     log_info "Embedding bootloader in disk image"
     run_and_log_cmd "dd conv=notrunc,fsync if="work/rockpro64/idbloader.img" of=${img_path}  bs=512 seek=64"
     run_and_log_cmd "dd conv=notrunc,fsync if="work/rockpro64/u-boot.itb" of=${img_path}  bs=512 seek=16384"
+    log_info "Setting up userspace"
+    run_and_log_cmd "sudo mkdir -p work/rootfs/sbin"
+
+    run_and_log_cmd "sudo install -m 755 work/rockpro64/fw_printenv work/rootfs/sbin/fw_printenv"
+    run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
 
 }

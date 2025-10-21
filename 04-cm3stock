@@ -1,3 +1,7 @@
+sudo umount work/part-1.fs -f
+sudo umount work/part-2.fs -f
+sudo umount work/part-3.fs -f
+
 # convert the image
 MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
     --disk-image input/radxa-cm3i-io_debian_bullseye_xfce_b4.img  \

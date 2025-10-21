@@ -88,19 +88,24 @@ done
 # pathnames and avoid splitting those into multiple parameters.
 source modules/config.sh $(printf "%q " "${configs[@]}")
 
+config_part="work/part-1.fs"
 boot_part=$(disk_boot_part)
 root_part=$(disk_root_part)
-
+log_info "CONFIGPART $config_part"
+log_info "BOOTPART $boot_part"
+log_info "ROOTPART $root_part"
 # Sysfs device paths
-boot_part_device=$(disk_boot_part_device)
-data_part_device=$(disk_data_part_device)
-root_part_a_device=$(disk_root_part_a_device)
-root_part_b_device=$(disk_root_part_b_device)
+boot_part_device="/dev/mmcblk0p2"
+data_part_device="/dev/mmcblk0p5"
+root_part_a_device="/dev/mmcblk0p3"
+root_part_b_device="/dev/mmcblk0p4"
 
 # Create mount points
 mkdir -p work/boot
 mkdir -p work/rootfs
+mkdir -p work/config
 
+sudo mount ${config_part} work/config
 sudo mount ${boot_part} work/boot
 sudo mount ${root_part} work/rootfs
 

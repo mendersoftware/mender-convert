@@ -1,0 +1,5 @@
+ssh-copy-id radxa@radxa-cm3i-io     
+
+scp -C deploy/radxa-cm3i-io_debian_bullseye_xfce_b4-radxa-cm3i-io-mender.img  radxa@radxa-cm3i-io:/home/radxa/mender.img
+
+#sudo dd if=mender.img of=/dev/mmcblk0 bs=4M status=progress

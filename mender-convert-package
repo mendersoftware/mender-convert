@@ -76,7 +76,7 @@ if [ ! -f ${PARTED} ]; then
 fi
 
 output_dir=work
-
+config_part="work/part-1.fs"
 boot_part=$(disk_boot_part)
 root_part=$(disk_root_part)
 
@@ -98,18 +98,27 @@ sudo mount ${root_part} work/rootfs
 
 # Convert to 512 blocks
 disk_image_total_sectors=$(disk_mb_to_sectors ${MENDER_STORAGE_TOTAL_SIZE_MB})
-boot_part_sectors=$(disk_mb_to_sectors ${MENDER_BOOT_PART_SIZE_MB})
+#boot_part_sectors=$(disk_mb_to_sectors ${MENDER_BOOT_PART_SIZE_MB})
 data_part_sectors=$(disk_mb_to_sectors ${MENDER_DATA_PART_SIZE_MB})
 alignment_sectors=$((${MENDER_PARTITION_ALIGNMENT} / 512))
 
-if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
-    boot_part_start=${alignment_sectors}
-    overhead_sectors=$((${alignment_sectors} * 4))
-else
+
+config_start="32768"
+config_end="65535"
+config_part_sectors="32768"
+boot_part_start="65536"
+boot_part_sectors="614400"
+boot_part_end="679935"
+
+# Manual Override
+#if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
+#    boot_part_start=${alignment_sectors}
+#    overhead_sectors=$((${alignment_sectors} * 4))
+#else
     # The two first blocks are typically reserved for U-boot environment.
-    boot_part_start=$((${alignment_sectors} * 3))
-    overhead_sectors=$((${alignment_sectors} * 6))
-fi
+#    boot_part_start=$((${alignment_sectors} * 3))
+overhead_sectors=$((${alignment_sectors} * 6))
+#fi
 
 # Validate boot-gap.bin size, ensuring it will fit between MBR and boot_part_start
 if [ "${MENDER_COPY_BOOT_GAP}" == "y" ]; then
@@ -254,6 +263,7 @@ log_info "Creating Mender compatible disk-image"
 img_path="deploy/${image_name}.img"
 
 log_info "Total disk size: $(disk_sectors_to_mb ${disk_image_total_sectors}) MiB"
+log_info "  Config partition  $(disk_sectors_to_mb ${config_part_sectors}) MiB"
 log_info "  Boot partition    $(disk_sectors_to_mb ${boot_part_sectors}) MiB"
 log_info "  RootFS partitions $(disk_sectors_to_mb ${rootfs_part_sectors}) MiB x 2"
 log_info "  Data partition    $(disk_sectors_to_mb ${data_part_sectors}) MiB"
@@ -263,6 +273,7 @@ run_and_log_cmd \
     "dd if=/dev/zero of=${img_path} bs=512 count=0 seek=${disk_image_total_sectors} status=none"
 
 # boot_part_start, is defined at the beginning of this file
+
 boot_part_end=$((${boot_part_start} + ${boot_part_sectors} - 1))
 
 rootfsa_start=$(disk_align_sectors ${boot_part_end} ${MENDER_PARTITION_ALIGNMENT})
@@ -288,6 +299,9 @@ fi
 if [ "${partition_scheme}" == "gpt" ]; then
     log_info "Writing GPT partition table"
     run_and_log_cmd "${PARTED} -s ${img_path} mklabel gpt"
+    run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart config fat32 ${config_start} ${config_end}"
+    run_and_log_cmd "sgdisk -u 1:92C8-3707 '${img_path}'"
+
     run_and_log_cmd "${PARTED} -s ${img_path} unit s mkpart ESP fat32 ${boot_part_start} ${boot_part_end}"
     # Keep the uuid of the original gpt table for the boot partition
     boot_partuuid=$(disk_get_part_value "${disk_image}" 1 UUID)
@@ -343,6 +357,8 @@ run_and_log_cmd "sudo umount -f work/boot"
 run_and_log_cmd "sudo umount -f work/rootfs"
 
 # Burn Partitions
+log_info "Writing config partition image"
+disk_write_at_offset "${config_part}" "${img_path}" "${config_start}"
 log_info "Writing boot partition image"
 disk_write_at_offset "${boot_part}" "${img_path}" "${boot_part_start}"
 log_info "Writing rootfsa partition image"

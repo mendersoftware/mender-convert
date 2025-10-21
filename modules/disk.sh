@@ -158,6 +158,13 @@ disk_create_file_system_from_folder() {
             fi
             run_and_log_cmd "${MKFS_BTRFS} -q -f ${2} ${EXTRA_OPTS}"
             ;;
+        "vfat")
+            MKFS_VFAT="/usr/bin/mkfs.vfat"
+            if [ ! -f ${MKFS_VFAT} ]; then
+                MKFS_VFAT="/usr/sbin/mkfs.vfat"
+            fi
+            run_and_log_cmd "${MKFS_VFAT} -S 512  ${2} ${EXTRA_OPTS}"
+            ;;
 
         *)
             log_fatal "Unknown file system type specified: ${4}"
@@ -345,7 +352,7 @@ disk_get_device_base() {
             dev_base=$(echo $1 | cut -dp -f1)
             ;;
         /dev/mmcblk*p*)
-            dev_base=$(echo $1 | cut -dp -f1)
+            dev_base=$(echo $1 | cut -dp -f1)p
             ;;
         /dev/[sh]d[a-z]*)
             dev_base=${1%%[1-9]*}
@@ -360,7 +367,7 @@ disk_get_device_base() {
     if [ -z "$dev_base" ]; then
         log_fatal "Could not determine device base from '${1}'"
     else
-        echo $dev_base
+        log_info "Device base '${1}': $dev_base"
     fi
 }
 
