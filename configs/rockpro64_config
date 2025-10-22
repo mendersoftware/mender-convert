@@ -14,9 +14,14 @@ function platform_modify() {
 
     run_and_log_cmd "sudo cp assets/idbloader.img  work/rockpro64"
     run_and_log_cmd "sudo cp assets/u-boot.itb work/rockpro64"
-    run_and_log_cmd "sudo cp work/rockpro64/fw_env.config work/rootfs/etc/"
     run_and_log_cmd "sudo cp assets/fw_printenv work/rockpro64"
+    run_and_log_cmd "sudo cp assets/fw_env.config work/rockpro64"
 
+    run_and_log_cmd "sudo cp work/rockpro64/fw_env.config work/rootfs/etc/"
+    run_and_log_cmd "sudo install -m 755 work/rockpro64/fw_printenv work/rootfs/sbin/fw_printenv"
+    run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+
+    
     # It is not possible to resize rootfs part when using Mender. so disable
     # the service
     run_and_log_cmd "sudo touch work/rootfs/root/.no_rootfs_resize"
@@ -29,7 +34,6 @@ function platform_package() {
     log_info "Setting up userspace"
     run_and_log_cmd "sudo mkdir -p work/rootfs/sbin"
 
-    run_and_log_cmd "sudo install -m 755 work/rockpro64/fw_printenv work/rootfs/sbin/fw_printenv"
-    run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+
 
 }
