@@ -15,11 +15,15 @@ function platform_modify() {
     run_and_log_cmd "sudo cp assets/idbloader.img  work/rockpro64"
     run_and_log_cmd "sudo cp assets/u-boot.itb work/rockpro64"
     run_and_log_cmd "sudo cp assets/fw_printenv work/rockpro64"
+    run_and_log_cmd "sudo cp assets/fw_setenv work/rockpro64"
     run_and_log_cmd "sudo cp assets/fw_env.config work/rockpro64"
 
     run_and_log_cmd "sudo cp work/rockpro64/fw_env.config work/rootfs/etc/"
-    run_and_log_cmd "sudo install -m 755 work/rockpro64/fw_printenv work/rootfs/sbin/fw_printenv"
-    run_and_log_cmd "sudo ln -fs /sbin/fw_printenv work/rootfs/sbin/fw_setenv"
+    run_and_log_cmd "sudo install -m 755 work/rockpro64/fw_printenv work/rootfs/usr/bin/fw_printenv"
+    #fw_setenv wrapper
+    run_and_log_cmd "sudo install -m 755 work/rockpro64/fw_setenv work/rootfs/usr/bin/fw_setenv"
+    #Oringal fw_set outside of path
+    run_and_log_cmd "sudo ln -fs /usr/bin/fw_printenv work/rootfs/root/fw_setenv"
 
     
     # It is not possible to resize rootfs part when using Mender. so disable
@@ -32,8 +36,4 @@ function platform_package() {
     run_and_log_cmd "dd conv=notrunc,fsync if="work/rockpro64/idbloader.img" of=${img_path}  bs=512 seek=64"
     run_and_log_cmd "dd conv=notrunc,fsync if="work/rockpro64/u-boot.itb" of=${img_path}  bs=512 seek=16384"
     log_info "Setting up userspace"
-    run_and_log_cmd "sudo mkdir -p work/rootfs/sbin"
-
-
-
 }
