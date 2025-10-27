@@ -1,5 +1,0 @@
-# convert the image
-MENDER_ARTIFACT_NAME=release-1 ./mender-convert \
-    --disk-image input/seergrill.img  \
-    --config configs/cm3i_config \
-    --overlay input/rootfs_overlay_demo/

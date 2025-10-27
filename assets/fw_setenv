@@ -1,36 +1,123 @@
 #!/bin/bash
-# Script to set U-Boot environment variables from input wrapper function to deal with
-# This u boot for radax and mender 5.0.2.
+# Script to set U-Boot environment variables
+# Usage: ./set_uboot_env.sh key1=value1 key2 value2 ...
+#    or: echo "key1=value1" | ./set_uboot_env.sh
+#    or: ./set_uboot_env.sh < file.txt
 
-# Check if we have input from pipe or redirection
-if [ ! -t 0 ]; then
-    # Read from stdin (pipe/redirect)
-    input=$(cat)
-else
-    echo "Mender Uboot wrapper Usage: $0 < input_file"
-    echo "   or: echo 'key=value' | $0"
-    echo "   or: $0 <<< 'key=value'"
-    exit 1
-fi
-
-# Process each line
-echo "$input" | while IFS='=' read -r key value; do
-    # Skip empty lines and lines starting with #
-    [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+set_env_var() {
+    local key="$1"
+    local value="$2"
     
-    # Remove leading/trailing whitespace
+    # Trim whitespace
     key=$(echo "$key" | xargs)
     value=$(echo "$value" | xargs)
     
-    # Skip if key is empty (doesn't delete it)
-    [[ -z "$key" ]] && continue
+    # Skip if key is empty
+    [[ -z "$key" ]] && return 1
     
-    # Set the with off path fw_setenv
     /root/fw_setenv "$key" "$value"
     
-    # Check if command succeeded
-    if [ $? -ne 0 ]; then
+    if [ $? -eq 0 ]; then
+        return 0
+    else
         echo "Error: Failed to set $key=$value" >&2
+        return 1
+    fi
+}
+
+parse_line() {
+    local line="$1"
+    local key value
+    
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && return 1
+    
+    # Check if line contains equals sign
+    if [[ "$line" =~ ^([^=]+)=(.*)$ ]]; then
+        key="${BASH_REMATCH[1]}"
+        value="${BASH_REMATCH[2]}"
+        set_env_var "$key" "$value"
+    else
+        # Try to split on first space
+        if [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            set_env_var "$key" "$value"
+        else
+            echo "Warning: Skipping invalid format: $line (expected 'key=value' or 'key value')"
+            return 1
+        fi
+    fi
+}
+
+success_count=0
+total_count=0
+
+# Check if we have command line arguments
+if [ $# -gt 0 ]; then
+    # Process command line arguments
+    i=1
+    while [ $i -le $# ]; do
+        arg="${!i}"
+        
+        # Check if arg contains equals sign
+        if [[ "$arg" =~ = ]]; then
+            ((total_count++))
+            if parse_line "$arg"; then
+                ((success_count++))
+            fi
+            ((i++))
+        else
+            # Treat as key value pair (two arguments)
+            if [ $((i + 1)) -le $# ]; then
+                next_arg_index=$((i + 1))
+                value="${!next_arg_index}"
+                ((total_count++))
+                if set_env_var "$arg" "$value"; then
+                    ((success_count++))
+                fi
+                ((i += 2))
+            else
+                echo "Warning: Missing value for key: $arg"
+                ((total_count++))
+                ((i++))
+            fi
+        fi
+    done
+else
+    # Check if we have input from pipe or redirection
+    if [ ! -t 0 ]; then
+        # Read from stdin
+        while IFS= read -r line; do
+            # Skip empty lines and comments
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+            
+            ((total_count++))
+            if parse_line "$line"; then
+                ((success_count++))
+            fi
+        done
+    else
+        echo "Usage: $0 key1=value1 key2=value2 ..."
+        echo "   or: $0 key1 value1 key2 value2 ..."
+        echo "   or: $0 key1=value1 key2 value2 ..."
+        echo "   or: echo 'key1=value1' | $0"
+        echo "   or: $0 < input_file"
+        echo ""
+        echo "Examples:"
+        echo "  $0 bootcount=1 upgrade_available=0"
+        echo "  $0 bootcount 1 upgrade_available 0"
+        echo "  $0 bootcount=1 upgrade_available 0"
+        echo "  echo 'bootcount=1' | $0"
+        echo "  echo 'bootcount 1' | $0"
         exit 1
     fi
-done
+fi
+
+
+if [ $success_count -eq $total_count ] && [ $total_count -gt 0 ]; then
+    exit 0
+else
+    echo "Some variables failed to set or no variables processed"
+    exit 1
+fi
