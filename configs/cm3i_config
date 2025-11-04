@@ -8,10 +8,10 @@ MENDER_ROOTFS_PART_B=/dev/mmcblk0p4
 MENDER_BOOT_PART_NUMBER="2"
 MENDER_COPY_BOOT_GAP="n"
 MENDER_DATA_PART_GROWFS="n"
-MENDER_STORAGE_TOTAL_SIZE_MB="13000"
+MENDER_STORAGE_TOTAL_SIZE_MB="14500"
 #we may want to use excess space for encrypted parition.
 MENDER_ADDON_CONNECT_INSTALL="y"
-IMAGE_OVERHEAD_FACTOR=1.3
+IMAGE_OVERHEAD_FACTOR=1.2
 
 
 function deb_archive() {
@@ -30,9 +30,9 @@ function kernel_linking() {
     # Ensure boot directory exists
     run_and_log_cmd "mkdir -p work/boot"
     # Create relative symlinks from work/boot -> work/rootfs/... so they remain valid if CWD changes (chatgpt magic to hopefully make the link works)
-    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn vmlinuz-5.10.160-33-rk356x Image'"
-    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn initrd.img-5.10.160-33-rk356x initrd.img'"
-    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn ../usr/lib/linux-image-5.10.160-33-rk356x/rockchip/rk3568-radxa-cm3i-io.dtb dtb'"
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn vmlinuz-5.10.160-29-rk356x Image'"
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn initrd.img-5.10.160-29-rk356x initrd.img'"
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn ../usr/lib/linux-image-5.10.160-29-rk356x/rockchip/rk3568-radxa-cm3i-io.dtb dtb'"
 
 }
 
