@@ -8,10 +8,10 @@ MENDER_ROOTFS_PART_B=/dev/mmcblk0p4
 MENDER_BOOT_PART_NUMBER="2"
 MENDER_COPY_BOOT_GAP="n"
 MENDER_DATA_PART_GROWFS="n"
-MENDER_STORAGE_TOTAL_SIZE_MB="14500"
+MENDER_STORAGE_TOTAL_SIZE_MB="13500"
 #we may want to use excess space for encrypted parition.
 MENDER_ADDON_CONNECT_INSTALL="y"
-IMAGE_OVERHEAD_FACTOR=1.2
+IMAGE_OVERHEAD_FACTOR=1.3
 
 
 function deb_archive() {
@@ -29,15 +29,17 @@ MENDER_ROOT_PART_MKFS_OPTS=" -m 1 -O dir_index,filetype,^64bit,^metadata_csum,^6
 function kernel_linking() {
     # Ensure boot directory exists
     run_and_log_cmd "mkdir -p work/boot"
-    # Create relative symlinks from work/boot -> work/rootfs/... so they remain valid if CWD changes (chatgpt magic to hopefully make the link works)
-    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn vmlinuz-5.10.160-29-rk356x Image'"
-    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn initrd.img-5.10.160-29-rk356x initrd.img'"
-    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && sudo ln -sfn ../usr/lib/linux-image-5.10.160-29-rk356x/rockchip/rk3568-radxa-cm3i-io.dtb dtb'"
-
+    
+    # Find the actual kernel image and create symlinks dynamically
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && KERNEL=\$(ls vmlinuz-* | head -1) && sudo ln -sfn \$KERNEL Image'"
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && INITRD=\$(ls initrd.img-* | head -1) && sudo ln -sfn \$INITRD initrd.img'"
+    run_and_log_cmd "bash -lc 'cd work/rootfs/boot && LINUX_IMAGE_DIR=\$(ls -d ../usr/lib/linux-image-* | head -1) && sudo ln -sfn \$LINUX_IMAGE_DIR/rockchip/rk3568-radxa-cm3i-io.dtb dtb'"
 }
 
 # Register the correct hook function name
 PLATFORM_MODIFY_HOOKS+=(kernel_linking)
+
+
 
 
 function config_part() {

@@ -1,4 +1,4 @@
-ssh-copy-id radxa@radxa-cm3i-io.local  
+ssh-copy-id radxa@radxa-cm3i-io.local  -o "StrictHostKeyChecking no"
 
 scp -C deploy/radxa-cm3i-io_debian_bullseye_xfce_b4-radxa-cm3i-io-mender.img  radxa@radxa-cm3i-io.local:/home/radxa/mender.img
 
