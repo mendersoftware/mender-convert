@@ -26,7 +26,3 @@ function grow_data_partition() {
     run_and_log_cmd "ln -sf /etc/systemd/system/mender-grow-data.service \
                           work/rootfs/etc/systemd/system/data.mount.wants/"
 }
-
-if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
-    PLATFORM_MODIFY_HOOKS+=(grow_data_partition)
-fi
