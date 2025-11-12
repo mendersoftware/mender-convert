@@ -208,6 +208,7 @@ fi
 run_and_log_cmd "sudo mkdir -p work/rootfs/${MENDER_BOOT_PART_MOUNT_LOCATION}"
 
 if [ "${MENDER_DATA_PART_GROWFS}" == "y" ]; then
+    PLATFORM_MODIFY_HOOKS+=(grow_data_partition)
     MENDER_DATA_PART_FSTAB_OPTS="${MENDER_DATA_PART_FSTAB_OPTS},x-systemd.growfs"
 fi
 
