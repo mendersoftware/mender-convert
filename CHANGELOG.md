@@ -1,4 +1,22 @@
 ---
+## 5.0.1 - 2025-11-12
+
+
+### Bug fixes
+
+
+- MENDER_DATA_PART_GROWFS=n does not prevent mender-convert from increasing partition size
+([MEN-8916](https://northerntech.atlassian.net/browse/MEN-8916)) ([dc09d32](https://github.com/mendersoftware/mender-convert/commit/dc09d32945f70006f5f3664fc475958510c9b6e3))  by @michalkopczan
+
+
+  Prevent mender-convert from increasing partition size when MENDER_DATA_PART_GROWFS is set
+  to 'n' in additional/custom configuration file provided by --config argument.
+
+
+
+
+
+
 ## 5.0.0 - 2025-09-29
 
 
