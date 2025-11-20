@@ -27,7 +27,6 @@ fi
 
 WORKSPACE=./tests
 
-## Auto-update
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Jammy-x86-64.img.gz"
 
 DEBIAN_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-11-x86-64.img.gz"
