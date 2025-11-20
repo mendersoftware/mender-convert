@@ -8,6 +8,22 @@ variables:
   AWS_CLI_V2_VERSION: "2.27.56"
   AWS_CLI_V2_CHECKSUM: "48c7a449b6bbb1f679ca25fe32dca9bc410b4abd2622d4640ccee922f504458f"
 
+  # The RaspberryPi OS version can differ between
+  # our U-Boot and UEFI integrations.
+  RASPBERRY_PI_OS_IMAGE_UBOOT_URL:
+    value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz"
+    description: |-
+      Raspberry Pi OS image URL for U-Boot based tests
+  RASPBERRY_PI_OS_IMAGE_UEFI_URL:
+    value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz"
+    description: |-
+      Raspberry Pi OS image URL for UEFI based tests
+
+  RASPBERRY_PI_OS_UBOOT_PREFIX:
+    value: 2024-10-22-raspios-lite
+  RASPBERRY_PI_OS_UBOOT_NAME_CONVERT:
+    value: 2024-10-22-raspios-bookworm-arm64-lite
+
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION:
@@ -149,15 +165,15 @@ build:docker-multiplatform:
 
     - mkdir -p input
     - cd input
-    - wget -q ${RASPBIAN_DOWNLOAD_CONVERT}
-    - unxz ${RASPBIAN_NAME_CONVERT}.img.xz
+    - wget -q ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
+    - unxz ${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}.img.xz
     - cd ..
 
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
 
   script:
-    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME_CONVERT}-mender
-      ./docker-mender-convert --disk-image input/${RASPBIAN_NAME_CONVERT}.img
+    - env MENDER_ARTIFACT_NAME=${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}-mender
+      ./docker-mender-convert --disk-image input/${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}.img
       --config configs/raspberrypi/${RASPBERRYPI_PLATFORM}_config
       --config configs/images/raspberrypi_raspbian_config
 
@@ -175,17 +191,11 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
-    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
-    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz
 
 convert_raspbian_raspberrypi3_bookworm_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
-    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
-    ## Important: when updating the upstream image update also RASPBERRY_PI_OS_PREFIX in the publish jobs
-    RASPBIAN_DOWNLOAD_CONVERT: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz
 
 .bash_helpers: &bash_helpers |
   # Bash function to check if the string is a final tag
@@ -344,6 +354,7 @@ test_acceptance_raspberrypi4_bookworm_64bit:
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
       --only raspberrypi4_bookworm_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
@@ -355,6 +366,7 @@ test_acceptance_raspberrypi4_uefi_bookworm_64bit:
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
       --only raspberrypi4_uefi_bookworm_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UEFI_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
@@ -384,21 +396,21 @@ publish:image-multiplatform:
     - for RASPBERRYPI_CONFIG_NAME in raspberrypi4_bookworm_64bit raspberrypi3_bookworm_64bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
-    -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
+    -   PUBLISH_NAME=${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    #   It is not possible deduce filename from RASPBERRY_PI_OS_PREFIX and RASPBERRYPI_CONFIG_NAME,
+    #   It is not possible deduce filename from RASPBERRY_PI_OS_UBOOT_PREFIX and RASPBERRYPI_CONFIG_NAME,
     #   so use a wildcard and assume that there is only one conversion per directory (same below)
     -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-mender.img.xz
-          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          --key ${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
 
-    -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.mender
+    -   PUBLISH_NAME=${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.mender
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
     -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-mender.mender
-          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          --key ${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
 
     #   Remove after upload to free disk space for the next board
     -   rm -rf ${RASPBERRYPI_CONFIG_NAME}.tar.gz ${RASPBERRYPI_CONFIG_NAME}/
@@ -407,8 +419,6 @@ publish:image-multiplatform:
 publish:s3:manual:
   when: manual
   extends: .template:publish:s3
-  variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
 
 publish:s3:automatic:
   rules:
@@ -418,8 +428,6 @@ publish:s3:automatic:
     # don't update the Mender Docs they are to be treated as release candidates.
     - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
   extends: .template:publish:s3
-  variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
 
 # excludes non multiplatform build job
 build:docker:

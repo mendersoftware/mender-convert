@@ -15,7 +15,7 @@
 set -e
 
 usage() {
-  echo "$0 [--config EXTRA_CONFIG_FILE] <--all | --only DEVICE_TYPE | --prebuilt-image DEVICE_TYPE IMAGE_NAME> [-- <pytest-options>]"
+  echo "$0 [--config EXTRA_CONFIG_FILE] <--all | --only DEVICE_TYPE | --raspios-image-url RASPIOS_IMAGE_URL | --prebuilt-image DEVICE_TYPE IMAGE_NAME> [-- <pytest-options>]"
   exit 1
 }
 
@@ -26,9 +26,6 @@ if [ "${root_dir}" != "${PWD}" ]; then
 fi
 
 WORKSPACE=./tests
-
-## Auto-update
-RASPIOS_IMAGE_URL="https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz"
 
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Jammy-x86-64.img.gz"
 
@@ -57,6 +54,7 @@ PREBUILT_IMAGE=
 TEST_PLATFORM=
 TEST_ALL=0
 EXTRA_CONFIG=
+RASPIOS_IMAGE_URL=
 while [ -n "$1" ]; do
   case "$1" in
     --prebuilt-image)
@@ -69,6 +67,11 @@ while [ -n "$1" ]; do
     --only)
       usage_if_empty "$2"
       TEST_PLATFORM="$2"
+      shift
+      ;;
+    --raspios-image-url)
+      usage_if_empty "$2"
+      RASPIOS_IMAGE_URL="$2"
       shift
       ;;
     --config)
