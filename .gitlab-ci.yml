@@ -21,6 +21,8 @@ variables:
 
   RASPBERRY_PI_OS_UBOOT_PREFIX:
     value: 2024-10-22-raspios-lite
+  RASPBERRY_PI_OS_UBOOT_NAME_CONVERT:
+    value: 2024-10-22-raspios-bookworm-arm64-lite
 
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
@@ -164,14 +166,14 @@ build:docker-multiplatform:
     - mkdir -p input
     - cd input
     - wget -q ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
-    - unxz ${RASPBIAN_NAME_CONVERT}.img.xz
+    - unxz ${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}.img.xz
     - cd ..
 
     - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
 
   script:
-    - env MENDER_ARTIFACT_NAME=${RASPBIAN_NAME_CONVERT}-mender
-      ./docker-mender-convert --disk-image input/${RASPBIAN_NAME_CONVERT}.img
+    - env MENDER_ARTIFACT_NAME=${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}-mender
+      ./docker-mender-convert --disk-image input/${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}.img
       --config configs/raspberrypi/${RASPBERRYPI_PLATFORM}_config
       --config configs/images/raspberrypi_raspbian_config
 
@@ -189,13 +191,11 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
-    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
 
 convert_raspbian_raspberrypi3_bookworm_64bit:
   <<: *convert_raspbian
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
-    RASPBIAN_NAME_CONVERT: 2024-10-22-raspios-bookworm-arm64-lite
 
 .bash_helpers: &bash_helpers |
   # Bash function to check if the string is a final tag
