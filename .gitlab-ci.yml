@@ -8,6 +8,17 @@ variables:
   AWS_CLI_V2_VERSION: "2.27.56"
   AWS_CLI_V2_CHECKSUM: "48c7a449b6bbb1f679ca25fe32dca9bc410b4abd2622d4640ccee922f504458f"
 
+  # The RaspberryPi OS version can differ between
+  # our U-Boot and UEFI integrations.
+  RASPBERRY_PI_OS_IMAGE_UBOOT_URL:
+    value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz"
+    description: |-
+      Raspberry Pi OS image URL for U-Boot based tests
+  RASPBERRY_PI_OS_IMAGE_UEFI_URL:
+    value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz"
+    description: |-
+      Raspberry Pi OS image URL for UEFI based tests
+
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION:
@@ -344,6 +355,7 @@ test_acceptance_raspberrypi4_bookworm_64bit:
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
       --only raspberrypi4_bookworm_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
@@ -355,6 +367,7 @@ test_acceptance_raspberrypi4_uefi_bookworm_64bit:
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
       --only raspberrypi4_uefi_bookworm_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UEFI_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
