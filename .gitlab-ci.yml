@@ -21,8 +21,6 @@ variables:
 
   RASPBERRY_PI_OS_UBOOT_PREFIX:
     value: 2024-10-22-raspios-lite
-  RASPBERRY_PI_OS_UBOOT_NAME_CONVERT:
-    value: 2024-10-22-raspios-bookworm-arm64-lite
 
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
@@ -162,6 +160,8 @@ build:docker-multiplatform:
     - export IMAGE_NAME=${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
 
     - export RASPBERRYPI_CONFIG_NAME="$(basename "$RASPBERRYPI_PLATFORM")"
+
+    - export RASPBERRY_PI_OS_UBOOT_NAME_CONVERT="$(basename "$RASPBERRY_PI_OS_IMAGE_UBOOT_URL" .img.xz)"
 
     - mkdir -p input
     - cd input
