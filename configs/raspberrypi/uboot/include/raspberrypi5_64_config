@@ -1,4 +1,18 @@
 MENDER_DEVICE_TYPE="raspberrypi5"
 
 source configs/raspberrypi/uboot/include/raspberrypi_64_config
+
+# Override the U-Boot binary set in raspberrypi_64_config. The binary
+# has CONFIG_BOOTDELAY=-2 which is needed for U-Boot to work with RPi5
+# See MEN-8901 and https://github.com/agherzan/meta-raspberrypi/issues/1459
+RASPBERRYPI_BINARIES="raspberrypi_arm64_rpi5-2024.04-no-bootdelay.tar.gz"
+RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi64/${RASPBERRYPI_BINARIES}"
+
 PLATFORM_MODIFY_HOOKS+=(raspberrypi_64_platform_modify)
+
+function log_boot_delay_warning() {
+    log_warn "The RPi5 integration with mender-convert currently uses a separate U-Boot binary with \`CONFIG_BOOTDELAY=-2\`."
+    log_warn "This is a workaround for an issue where RPi5 with U-Boot is stuck waiting for uart, see https://github.com/agherzan/meta-raspberrypi/issues/1459."
+}
+
+PLATFORM_MODIFY_HOOKS+=(log_boot_delay_warning)
