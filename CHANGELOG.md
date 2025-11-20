@@ -1,4 +1,37 @@
 ---
+## 5.1.0 - 2025-11-20
+
+
+### Bug fixes
+
+
+- MENDER_DATA_PART_GROWFS=n does not prevent mender-convert from increasing partition size
+([MEN-8916](https://northerntech.atlassian.net/browse/MEN-8916)) ([dc09d32](https://github.com/mendersoftware/mender-convert/commit/dc09d32945f70006f5f3664fc475958510c9b6e3))  by @michalkopczan
+
+
+  Prevent mender-convert from increasing partition size when MENDER_DATA_PART_GROWFS is set
+  to 'n' in additional/custom configuration file provided by --config argument.
+
+
+
+
+### Features
+
+
+- Select uboot binary with boot delay disabled for rpi5
+([MEN-8901](https://northerntech.atlassian.net/browse/MEN-8901)) ([53f77ab](https://github.com/mendersoftware/mender-convert/commit/53f77abdcd5bee571ce7c0a1817bcbacb9f93011))  by @danielskinstad
+
+
+  Added an override in `raspberrypi5_64_config` to use a U-Boot binary with
+  boot delay set to -2. This is a workaround for an issue where RPi5 with U-Boot
+  is stuck waiting for uart. By setting boot delay to -2, it will autoboot with
+  no delay and not check for abort.
+
+
+
+
+
+
 ## 5.0.0 - 2025-09-29
 
 
