@@ -147,7 +147,7 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-qemux86-64-no-grub-d" ]; 
                    || test_result=$?
 fi
 
-if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_bookworm_64bit" ]; then
+if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_trixie_64bit" ]; then
   MATCHED_A_TEST=1
   # For this test we test compressed image to verify xz compression
   wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
@@ -155,13 +155,13 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_bookworm_64bit" ]; 
   convert_and_test "raspberrypi4_64" \
                    "release-1" \
                    "input/image/${RASPIOS_IMAGE_COMPRESSED}" \
-                   "--config configs/raspberrypi/uboot/debian/raspberrypi4_bookworm_64bit_config $EXTRA_CONFIG" \
+                   "--config configs/raspberrypi/uboot/debian/raspberrypi4_trixie_64bit_config $EXTRA_CONFIG" \
                    "--" \
                    "$@" \
                    || test_result=$?
 fi
 
-if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_uefi_bookworm_64bit" ]; then
+if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_uefi_trixie_64bit" ]; then
   MATCHED_A_TEST=1
   # For this test we test compressed image to verify xz compression
   wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
@@ -169,7 +169,7 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_uefi_bookworm_64bit
   convert_and_test "raspberrypi4_64_uefi" \
                    "release-1" \
                    "input/image/${RASPIOS_IMAGE_COMPRESSED}" \
-                   "--config configs/raspberrypi/uefi/debian/raspberrypi4_bookworm_64bit_config $EXTRA_CONFIG" \
+                   "--config configs/raspberrypi/uefi/debian/raspberrypi4_trixie_64bit_config $EXTRA_CONFIG" \
                    "--" \
                    "$@" \
                    || test_result=$?
