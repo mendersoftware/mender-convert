@@ -19,6 +19,9 @@ variables:
     description: |-
       Raspberry Pi OS image URL for UEFI based tests
 
+  RASPBERRY_PI_OS_UBOOT_PREFIX:
+    value: 2024-10-22-raspios-lite
+
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION:
@@ -393,21 +396,21 @@ publish:image-multiplatform:
     - for RASPBERRYPI_CONFIG_NAME in raspberrypi4_bookworm_64bit raspberrypi3_bookworm_64bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
-    -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
+    -   PUBLISH_NAME=${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
-    #   It is not possible deduce filename from RASPBERRY_PI_OS_PREFIX and RASPBERRYPI_CONFIG_NAME,
+    #   It is not possible deduce filename from RASPBERRY_PI_OS_UBOOT_PREFIX and RASPBERRYPI_CONFIG_NAME,
     #   so use a wildcard and assume that there is only one conversion per directory (same below)
     -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-mender.img.xz
-          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          --key ${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
 
-    -   PUBLISH_NAME=${RASPBERRY_PI_OS_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.mender
+    -   PUBLISH_NAME=${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.mender
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
     -   aws s3 cp ${RASPBERRYPI_CONFIG_NAME}/*-mender.mender
-          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          s3://$S3_BUCKET_NAME/${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
-          --key ${RASPBERRY_PI_OS_PREFIX}/arm/${PUBLISH_NAME}
+          --key ${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
 
     #   Remove after upload to free disk space for the next board
     -   rm -rf ${RASPBERRYPI_CONFIG_NAME}.tar.gz ${RASPBERRYPI_CONFIG_NAME}/
@@ -416,8 +419,6 @@ publish:image-multiplatform:
 publish:s3:manual:
   when: manual
   extends: .template:publish:s3
-  variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
 
 publish:s3:automatic:
   rules:
@@ -427,8 +428,6 @@ publish:s3:automatic:
     # don't update the Mender Docs they are to be treated as release candidates.
     - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
   extends: .template:publish:s3
-  variables:
-    RASPBERRY_PI_OS_PREFIX: 2024-10-22-raspios-lite
 
 # excludes non multiplatform build job
 build:docker:
