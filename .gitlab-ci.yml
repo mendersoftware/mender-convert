@@ -21,8 +21,6 @@ variables:
 
   RASPBERRY_PI_OS_UBOOT_PREFIX:
     value: 2024-10-22-raspios-lite
-  RASPBERRY_PI_OS_UBOOT_NAME_CONVERT:
-    value: 2024-10-22-raspios-bookworm-arm64-lite
 
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
@@ -163,6 +161,8 @@ build:docker-multiplatform:
 
     - export RASPBERRYPI_CONFIG_NAME="$(basename "$RASPBERRYPI_PLATFORM")"
 
+    - export RASPBERRY_PI_OS_UBOOT_NAME_CONVERT="$(basename "$RASPBERRY_PI_OS_IMAGE_UBOOT_URL" .img.xz)"
+
     - mkdir -p input
     - cd input
     - wget -q ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
@@ -281,11 +281,12 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
     - mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     - tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     - mv ${RASPBERRYPI_CONFIG_NAME} deploy
+    - export RASPBERRY_PI_OS_UBOOT_NAME_CONVERT="$(basename "$RASPBERRY_PI_OS_IMAGE_UBOOT_URL" .img.xz)"
     # Extract converted Raspbian artifacts
-    - unxz deploy/${RASPBIAN_NAME_ACCEPTANCE}-${MENDER_DEVICE_TYPE}-mender.img.xz
+    - unxz deploy/${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}-${MENDER_DEVICE_TYPE}-mender.img.xz
     - ./scripts/test/run-tests.sh
       --prebuilt-image ${MENDER_DEVICE_TYPE}
-      ${RASPBIAN_NAME_ACCEPTANCE}-${MENDER_DEVICE_TYPE}-mender
+      ${RASPBERRY_PI_OS_UBOOT_NAME_CONVERT}-${MENDER_DEVICE_TYPE}-mender
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
@@ -298,7 +299,6 @@ test_acceptance_prebuilt_raspberrypi5_bookworm_64bit:
       artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi5_bookworm_64bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-arm64-lite
     MENDER_DEVICE_TYPE: raspberrypi5
 
 test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
@@ -310,7 +310,6 @@ test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
       artifacts: true
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
-    RASPBIAN_NAME_ACCEPTANCE: 2024-10-22-raspios-bookworm-arm64-lite
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
 test_acceptance_ubuntu_qemux86_64:
