@@ -1,4 +1,4 @@
-MENDER_DEVICE_TYPE="raspberrypi5"
+MENDER_DEVICE_TYPE="raspberrypi5_64"
 
 source configs/raspberrypi/uboot/include/raspberrypi_64_config
 
