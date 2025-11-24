@@ -11,7 +11,7 @@ variables:
   # The RaspberryPi OS version can differ between
   # our U-Boot and UEFI integrations.
   RASPBERRY_PI_OS_IMAGE_UBOOT_URL:
-    value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz"
+    value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz"
     description: |-
       Raspberry Pi OS image URL for U-Boot based tests
   RASPBERRY_PI_OS_IMAGE_UEFI_URL:
@@ -187,15 +187,15 @@ build:docker-multiplatform:
     paths:
       - checksums
 
-convert_raspbian_raspberrypi5_bookworm_64bit:
+convert_raspbian_raspberrypi5_trixie_64bit:
   <<: *convert_raspbian
   variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi5_bookworm_64bit
+    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi5_trixie_64bit
 
-convert_raspbian_raspberrypi4_bookworm_64bit:
+convert_raspbian_raspberrypi4_trixie_64bit:
   <<: *convert_raspbian
   variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
+    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_trixie_64bit
 
 .bash_helpers: &bash_helpers |
   # Bash function to check if the string is a final tag
@@ -290,26 +290,26 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_prebuilt_raspberrypi5_bookworm_64bit:
+test_acceptance_prebuilt_raspberrypi5_trixie_64bit:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-    - job: convert_raspbian_raspberrypi5_bookworm_64bit
+    - job: convert_raspbian_raspberrypi5_trixie_64bit
       artifacts: true
   variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi5_bookworm_64bit
+    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi5_trixie_64bit
     MENDER_DEVICE_TYPE: raspberrypi5_64
 
-test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
+test_acceptance_prebuilt_raspberrypi4_trixie_64bit:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-    - job: convert_raspbian_raspberrypi4_bookworm_64bit
+    - job: convert_raspbian_raspberrypi4_trixie_64bit
       artifacts: true
   variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
+    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_trixie_64bit
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
 test_acceptance_ubuntu_qemux86_64:
@@ -345,26 +345,26 @@ test_acceptance_debian_qemux86_64:
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_raspberrypi5_bookworm_64bit:
+test_acceptance_raspberrypi5_trixie_64bit:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
-      --only raspberrypi5_bookworm_64bit
+      --only raspberrypi5_trixie_64bit
       --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_raspberrypi4_bookworm_64bit:
+test_acceptance_raspberrypi4_trixie_64bit:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
-      --only raspberrypi4_bookworm_64bit
+      --only raspberrypi4_trixie_64bit
       --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
@@ -393,9 +393,9 @@ publish:image-multiplatform:
 .template:publish:s3:
   stage: publish
   needs:
-    - job: convert_raspbian_raspberrypi4_bookworm_64bit
+    - job: convert_raspbian_raspberrypi4_trixie_64bit
       artifacts: true
-    - job: convert_raspbian_raspberrypi5_bookworm_64bit
+    - job: convert_raspbian_raspberrypi5_trixie_64bit
       artifacts: true
   image: debian:trixie
   before_script:
