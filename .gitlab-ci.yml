@@ -197,11 +197,6 @@ convert_raspbian_raspberrypi4_bookworm_64bit:
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
 
-convert_raspbian_raspberrypi3_bookworm_64bit:
-  <<: *convert_raspbian
-  variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
-
 .bash_helpers: &bash_helpers |
   # Bash function to check if the string is a final tag
   function is_final_tag () {
@@ -317,17 +312,6 @@ test_acceptance_prebuilt_raspberrypi4_bookworm_64bit:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
-test_acceptance_prebuilt_raspberrypi3_bookworm_64bit:
-  <<: *test_acceptance_prebuilt_raspberrypi
-  needs:
-    - job: build:docker-multiplatform
-      artifacts: false
-    - job: convert_raspbian_raspberrypi3_bookworm_64bit
-      artifacts: true
-  variables:
-    RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi3_bookworm_64bit
-    MENDER_DEVICE_TYPE: raspberrypi3_64
-
 test_acceptance_ubuntu_qemux86_64:
   <<: *test_acceptance
   script:
@@ -413,8 +397,6 @@ publish:image-multiplatform:
       artifacts: true
     - job: convert_raspbian_raspberrypi5_bookworm_64bit
       artifacts: true
-    - job: convert_raspbian_raspberrypi3_bookworm_64bit
-      artifacts: true
   image: debian:trixie
   before_script:
     - apt update && apt install -yyq awscli curl
@@ -422,7 +404,7 @@ publish:image-multiplatform:
     - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
   script:
     # One by one, fetch artifacts from temporary S3 bucket and publish to production S3 bucket
-    - for RASPBERRYPI_CONFIG_NAME in raspberrypi5_bookworm_64bit raspberrypi4_bookworm_64bit raspberrypi3_bookworm_64bit; do
+    - for RASPBERRYPI_CONFIG_NAME in raspberrypi5_bookworm_64bit raspberrypi4_bookworm_64bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   PUBLISH_NAME=${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
