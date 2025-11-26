@@ -121,15 +121,19 @@ for hook in "${PLATFORM_PRE_MODIFY_HOOKS[@]}"; do
     eval $hook
 done
 
-# Do this unconditionally even if not installing add-ons. The reason is that if
-# the Debian package is installed later, this folder has to preexist. It is part
-# of the rootfs setup, independently of the software.
+# Create links from /var/lib/* to /data/* unconditionally for various Mender
+# components. The reason is that if one of these Debian packages is installed
+# later, its related folder in /data and link from /var/lib has to preexist.
+# It is part of the rootfs setup, independent of the software actually
+# installed at any given moment.
 log_info "Creating state folder in the data partition for Mender add-ons"
 run_and_log_cmd "sudo mkdir -p work/rootfs/var/lib"
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-configure"
 run_and_log_cmd "sudo ln -sf /data/mender-configure work/rootfs/var/lib"
 run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-monitor"
 run_and_log_cmd "sudo ln -sf /data/mender-monitor work/rootfs/var/lib"
+run_and_log_cmd "sudo mkdir -p work/rootfs/data/mender-orchestrator"
+run_and_log_cmd "sudo ln -sf /data/mender-orchestrator work/rootfs/var/lib"
 
 if [ "${MENDER_GRUB_EFI_INTEGRATION}" == "y" ]; then
     # Check for known U-Boot problems in all files on the boot partition.
