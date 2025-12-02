@@ -1,62 +1,48 @@
 ---
 ## 5.1.0 - 2025-12-01
 
-
 ### Bug fixes
-
 
 - MENDER_DATA_PART_GROWFS=n does not prevent mender-convert from increasing partition size
 ([MEN-8916](https://northerntech.atlassian.net/browse/MEN-8916)) ([dc09d32](https://github.com/mendersoftware/mender-convert/commit/dc09d32945f70006f5f3664fc475958510c9b6e3))  by @michalkopczan
 
-
   Prevent mender-convert from increasing partition size when MENDER_DATA_PART_GROWFS is set
   to 'n' in additional/custom configuration file provided by --config argument.
-- Set device type to `raspberrypi5_64`
- ([daf2715](https://github.com/mendersoftware/mender-convert/commit/daf27158ce33d0d38fb5b3601ded48f732fb90ce))  by @danielskinstad
 
+- Set device type for RaspberryPi 5 to `raspberrypi5_64`
+ ([daf2715](https://github.com/mendersoftware/mender-convert/commit/daf27158ce33d0d38fb5b3601ded48f732fb90ce))  by @danielskinstad
 
   Changed the  device type in `raspberrypi5_64_config` to
   `raspberrypi5_64` to align it with other configs and tests.
 
 
-
-
 ### Features
-
 
 - Select uboot binary with boot delay disabled for rpi5
 ([MEN-8901](https://northerntech.atlassian.net/browse/MEN-8901)) ([53f77ab](https://github.com/mendersoftware/mender-convert/commit/53f77abdcd5bee571ce7c0a1817bcbacb9f93011))  by @danielskinstad
-
 
   Added an override in `raspberrypi5_64_config` to use a U-Boot binary with
   boot delay set to -2. This is a workaround for an issue where RPi5 with U-Boot
   is stuck waiting for uart. By setting boot delay to -2, it will autoboot with
   no delay and not check for abort.
+
 - Update pre-built U-Boot image to Debian Trixie
 ([MEN-8946](https://northerntech.atlassian.net/browse/MEN-8946)) ([275ad3b](https://github.com/mendersoftware/mender-convert/commit/275ad3bac79a62ba8ca9a21207eb1adc8c955ecd))  by @danielskinstad
 
-
   Updated the pre-converted images for RPi4 and RPi5 from Debian Bookworm
   to Debian Trixie.
+
 - Create symlink from /var/lib/mender-orchestrator to /data/mender-orchestrator
 ([MEN-9003](https://northerntech.atlassian.net/browse/MEN-9003)) ([4c5f367](https://github.com/mendersoftware/mender-convert/commit/4c5f3679f6ef2ae4384204adb78741e7dc05afba))  by @michalkopczan
 
 
-
-
 ### Build
-
 
 - Remove raspberrypi3 jobs
 ([MEN-8947](https://northerntech.atlassian.net/browse/MEN-8947)) ([264a51e](https://github.com/mendersoftware/mender-convert/commit/264a51ee05f3905e3f32e0231a6142184b2ef359))  by @danielskinstad
 
-
   We've added support for building and testing RPi5, so we should remove
   RPi3 support as we're now going to build onboarding images for  RPi4 and RPi5.
-
-
-
-
 
 
 ## 5.0.0 - 2025-09-29
