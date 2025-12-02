@@ -404,7 +404,7 @@ publish:image-multiplatform:
     - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
   script:
     # One by one, fetch artifacts from temporary S3 bucket and publish to production S3 bucket
-    - for RASPBERRYPI_CONFIG_NAME in raspberrypi5_bookworm_64bit raspberrypi4_bookworm_64bit; do
+    - for RASPBERRYPI_CONFIG_NAME in raspberrypi5_trixie_64bit raspberrypi4_trixie_64bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   PUBLISH_NAME=${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
