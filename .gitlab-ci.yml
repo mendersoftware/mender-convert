@@ -8,19 +8,22 @@ variables:
   AWS_CLI_V2_VERSION: "2.27.56"
   AWS_CLI_V2_CHECKSUM: "48c7a449b6bbb1f679ca25fe32dca9bc410b4abd2622d4640ccee922f504458f"
 
-  # The RaspberryPi OS version can differ between
-  # our U-Boot and UEFI integrations.
+  # The RaspberryPi OS version for U-Boot (tests + pre-converted images)
+  # IMPORTANT: Keep the two _UBOOT_ variables in sync!
   RASPBERRY_PI_OS_IMAGE_UBOOT_URL:
     value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz"
     description: |-
       Raspberry Pi OS image URL for U-Boot based tests
+  RASPBERRY_PI_OS_UBOOT_PREFIX:
+    value: 2025-10-01-raspios-lite
+
+  # The RaspberryPi OS version for UEFI integration (tests)
+  # It can differ from U-Boot integration
   RASPBERRY_PI_OS_IMAGE_UEFI_URL:
     value: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-10-28/2024-10-22-raspios-bookworm-arm64-lite.img.xz"
     description: |-
       Raspberry Pi OS image URL for UEFI based tests
 
-  RASPBERRY_PI_OS_UBOOT_PREFIX:
-    value: 2024-10-22-raspios-lite
 
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
