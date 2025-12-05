@@ -301,6 +301,11 @@ if [ "${MENDER_ADDON_CONFIGURE_INSTALL}" = "y" ]; then
     pkgs_to_install["mender-configure"]="${MENDER_ADDON_CONFIGURE_VERSION}"
 fi
 
+if [ "${MENDER_DOCKER_COMPOSE_INSTALL}" = "y" ]; then
+    log_info "Installing docker-compose Update Module version ${MENDER_DOCKER_COMPOSE_VERSION}"
+    pkgs_to_install["mender-docker-compose"]="${MENDER_DOCKER_COMPOSE_VERSION}"
+fi
+
 if [[ ${#pkgs_to_install[@]} -gt 0 ]]; then
     deb_ensure_repo_enabled
     if [[ ${pkgs_to_install[@]} =~ "master" ]] || [[ ${pkgs_to_install[@]} =~ "main" ]]; then

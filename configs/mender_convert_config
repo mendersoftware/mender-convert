@@ -154,6 +154,15 @@ MENDER_ADDON_CONFIGURE_INSTALL="n"
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_ADDON_CONFIGURE_VERSION="latest"
 
+# Install docker-compose Update Module
+#
+MENDER_DOCKER_COMPOSE_INSTALL="n"
+
+# docker-compose Update Module version
+#
+# Valid values are "latest" (default), "main" or a specific version
+MENDER_DOCKER_COMPOSE_VERSION="latest"
+
 # Install arbitrary debian packages by placing them in
 # MENDER_INSTALL_INPUT_PACKAGES_PATH. Specify the order
 # of installation (in case of dependencies where package
