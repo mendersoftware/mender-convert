@@ -156,7 +156,7 @@ function deb_get_repo_package() {
     local variant_filter="stable"
     if [[ "$pkg_ver" = "latest" ]]; then
         ver_filter='.*'
-    elif [[ "$pkg_ver" = "master" ]]; then
+    elif [[ "$pkg_ver" = "master" ]] || [[ "$pkg_ver" = "main" ]]; then
         ver_filter='.*'
         variant_filter="experimental"
     else

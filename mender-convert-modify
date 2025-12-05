@@ -303,7 +303,7 @@ fi
 
 if [[ ${#pkgs_to_install[@]} -gt 0 ]]; then
     deb_ensure_repo_enabled
-    if [[ ${pkgs_to_install[@]} =~ "master" ]]; then
+    if [[ ${pkgs_to_install[@]} =~ "master" ]] || [[ ${pkgs_to_install[@]} =~ "main" ]]; then
         deb_ensure_repo_enabled "experimental"
     fi
 
