@@ -101,8 +101,31 @@ root_part_b_device=$(disk_root_part_b_device)
 mkdir -p work/boot
 mkdir -p work/rootfs
 
+if [ -n "${MENDER_EXPAND_WORK_ROOTFS}" ]; then
+    truncate -s +"${MENDER_EXPAND_WORK_ROOTFS}" "$root_part" > /dev/null || log_fatal "Failed to expand filesystem"
+fi
+
 sudo mount ${boot_part} work/boot
 sudo mount ${root_part} work/rootfs
+
+# Expand the working root filesystem if needed.
+# This provides temporary space which might be needed when
+# installing packages and their dependencies.
+# Note that this doesn't increase the final image size, as that
+# is calculated independently based on actual disk usage.
+if [ -n "${MENDER_EXPAND_WORK_ROOTFS}" ]; then
+    log_info "Expanding mounted root filesystem by ${MENDER_EXPAND_WORK_ROOTFS}"
+    if file ${root_part} | grep -qE ext[34]; then
+        sudo resize2fs "$root_part" > /dev/null || log_fatal "Failed to resize ext filesystem"
+    elif file ${root_part} | grep -q BTRFS; then
+        sudo btrfs filesystem resize max work/rootfs > /dev/null || log_fatal "Failed to resize BTRFS filesystem"
+    elif file ${root_part} | grep -q XFS; then
+        sudo xfs_growfs work/rootfs > /dev/null || log_fatal "Failed to grow XFS filesystem"
+    else
+        log_warn "$(file ${root_part})"
+        log_fatal "Could not determine root file-system type. Aborting..."
+    fi
+fi
 
 probe_untainted_rootfs_input
 

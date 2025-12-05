@@ -314,6 +314,19 @@ IMAGE_ROOTFS_EXTRA_SPACE="0"
 # why it is missing a "MENDER_" prefix.
 IMAGE_OVERHEAD_FACTOR="1.5"
 
+# Extra space to add to the rootfs mounted at work/rootfs.
+#
+# From truncate man-page: The argument is an integer and optional unit (example: 10K is 10*1024).
+# Units are K,M,G,T,P,E,Z,Y  (powers  of 1024) or KB,MB,... (powers of 1000).
+# Binary prefixes can be used, too: KiB=K, MiB=M, and so on.
+#
+# Note: This does NOT directly affect the final image size. The final rootfs image
+# size is calculated separately based on actual disk usage plus
+# IMAGE_ROOTFS_EXTRA_SPACE and IMAGE_OVERHEAD_FACTOR.
+#
+# Set to empty string to disable expansion (default).
+MENDER_EXPAND_WORK_ROOTFS=""
+
 MENDER_CLIENT_DATA_DIR_SERVICE_URL="https://raw.githubusercontent.com/mendersoftware/\
 meta-mender/ab9c1e65abf73cde1065e2a4c2005cfe61ee6e3d/meta-mender-core/recipes-mender/mender-client/files/mender-data-dir.service"
 
