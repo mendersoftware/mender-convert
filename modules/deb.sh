@@ -121,9 +121,9 @@ function deb_ensure_repo_enabled() {
 
     if ! [[ -f "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" ]]; then
         mkdir -p "work/rootfs/etc/apt/trusted.gpg.d/"
-        wget -O "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" "$MENDER_APT_KEY_URL"
+        wget --quiet -O "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" "$MENDER_APT_KEY_URL"
     fi
-    if ! gpg --show-keys --with-fingerprint --with-colons "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" \
+    if ! gpg --quiet --show-keys --with-fingerprint --with-colons "work/rootfs/etc/apt/trusted.gpg.d/mender.asc" \
                                                                                                          | grep -qE "fpr:+$MENDER_APT_KEY_FP:"; then
         log_fatal "APT key fingerprint mismatch, cannot continue"
     fi
@@ -156,7 +156,7 @@ function deb_get_repo_package() {
     local variant_filter="stable"
     if [[ "$pkg_ver" = "latest" ]]; then
         ver_filter='.*'
-    elif [[ "$pkg_ver" = "master" ]]; then
+    elif [[ "$pkg_ver" = "master" ]] || [[ "$pkg_ver" = "main" ]]; then
         ver_filter='.*'
         variant_filter="experimental"
     else
