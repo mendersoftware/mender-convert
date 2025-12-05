@@ -1,4 +1,12 @@
 ---
+## [5.2.0](https://github.com/mendersoftware/mender-convert/compare/5.1.0...5.2.0) (2025-12-05)
+
+
+### Features
+
+* added mender-docker-compose installation ([d94386d](https://github.com/mendersoftware/mender-convert/commit/d94386d46b94f6f6ff318e2317a86b1bf12f1122))
+* added possibilty to expand `work/rootfs` ([e29415e](https://github.com/mendersoftware/mender-convert/commit/e29415ef6bd7ad0b265d1b0055252ff89f04d982))
+
 ## 5.1.0 - 2025-12-01
 
 ### Bug fixes
@@ -2885,4 +2893,3 @@ way, so here is the changelog since then:
 * Increase default server retry interval from 1 to 30 seconds.
 * Add version option for mender convert
 ([MEN-2257](https://northerntech.atlassian.net/browse/MEN-2257))
-
