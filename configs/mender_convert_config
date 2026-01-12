@@ -126,7 +126,7 @@ MENDER_CLIENT_INSTALL="y"
 #
 # Valid values are "auto" (default), "latest", "master" or a specific version
 # If set to "auto", install the latest version available for the given
-# distribution (must be supported, see MENDER_APT_REPO_DISTS).
+# distribution.
 MENDER_CLIENT_VERSION="auto"
 
 # Mender flash version
@@ -221,10 +221,6 @@ MENDER_APT_KEY_URL="https://downloads.mender.io/repos/debian/gpg"
 
 # Fingerprint of the APT repo GPG key.
 MENDER_APT_KEY_FP="E6C857345575F9218396566224072B80A1B29B00"
-
-# Mender APT repo available distributions, do not modify this unless you know
-# what you are doing.
-MENDER_APT_REPO_DISTS="debian/bookworm debian/bullseye ubuntu/noble ubuntu/jammy"
 
 # Mender GitHub organization URL prefix
 MENDER_GITHUB_ORG="https://github.com/mendersoftware"
