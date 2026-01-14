@@ -1,4 +1,54 @@
 ---
+## 5.2.0 - 2026-01-14
+
+
+### Bug fixes
+
+
+- Add preferred yocto mender-client4 version to testcfg
+([MEN-9106](https://northerntech.atlassian.net/browse/MEN-9106)) ([4ed6b9d](https://github.com/mendersoftware/mender-convert/commit/4ed6b9d262959278eb53182164958f73bd365b74))  by @michalkopczan
+
+
+
+
+
+
+
+
+### Features
+
+
+- Added possibilty to expand `work/rootfs`
+ ([e29415e](https://github.com/mendersoftware/mender-convert/commit/e29415ef6bd7ad0b265d1b0055252ff89f04d982))  by @danielskinstad
+
+
+
+
+
+  Added a new configuration variable `MENDER_EXPAND_WORK_ROOTFS` that
+  allows expanding the filesystem mounted `work/rootfs` before installing
+  packages and their dependencies. This provides extra space during conversion
+  without affecting the final image size.
+  
+  Set to empty string to disable expansion (default). When set, accepts size
+  units like 10K, 10M, 10G, etc.
+- Added mender-docker-compose installation
+([MEN-9090](https://northerntech.atlassian.net/browse/MEN-9090)) ([d94386d](https://github.com/mendersoftware/mender-convert/commit/d94386d46b94f6f6ff318e2317a86b1bf12f1122))  by @danielskinstad
+
+
+
+
+
+  Added support for installing the mender-docker-compose Update Module.
+  There are two new configuration options:
+  - MENDER_DOCKER_COMPOSE_INSTALL
+  - MENDER_DOCKER_COMPOSE_VERSION
+
+
+
+
+
+
 ## 5.1.0 - 2025-12-01
 
 ### Bug fixes
