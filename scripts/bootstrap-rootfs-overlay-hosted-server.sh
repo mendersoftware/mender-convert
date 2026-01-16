@@ -35,7 +35,7 @@ while (("$#")); do
             ;;
         *)
             echo "Sorry but the provided option is not supported: $1"
-            echo "Usage:  $(basename $0) [--region 'us','eu'] --output-dir ./input/rootfs_overlay_demo --tenant-token <paste your token here>"
+            echo "Usage:  $(basename $0) [--region 'us','eu','cn'] --output-dir ./input/rootfs_overlay_demo --tenant-token <paste your token here>"
             exit 1
             ;;
     esac
@@ -58,18 +58,20 @@ fi
 
 # check lowercase or uppercase region
 if [ "${region}" = "eu" ] || [ "${region}" = "EU" ]; then
-    region_appendix="eu."
+    region_url="eu.hosted.mender.io/"
 elif [ "${region}" = "us" ] || [ "${region}" = "US" ]; then
-    region_appendix=""
+    region_url="hosted.mender.io/"
+elif [ "${region}" = "cn" ] || [ "${region}" = "CN" ]; then
+    region_url="hosted.mender.cn/"
 else
-    echo "Sorry, but the provided region is not supported: ${region} (only 'eu' and 'us' are accepted)"
+    echo "Sorry, but the provided region is not supported: ${region} (only 'eu', 'us' and 'cn' are accepted)"
     exit 1
 fi
 
 mkdir -p ${output_dir}/etc/mender
 cat <<- EOF > ${output_dir}/etc/mender/mender.conf
 {
-  "ServerURL": "https://${region_appendix}hosted.mender.io/",
+  "ServerURL": "https://${region_url}",
   "TenantToken": "${tenant_token}"
 }
 EOF
