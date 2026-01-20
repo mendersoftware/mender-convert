@@ -164,9 +164,7 @@ MENDER_DOCKER_COMPOSE_INSTALL="n"
 MENDER_DOCKER_COMPOSE_VERSION="latest"
 
 # Install arbitrary debian packages by placing them in
-# MENDER_INSTALL_INPUT_PACKAGES_PATH. Specify the order
-# of installation (in case of dependencies where package
-# B depends on A) by adding a file called `order` to the directory.
+# MENDER_INSTALL_INPUT_PACKAGES_PATH.
 #
 # Directory containing deb packages to be installed in the image
 #

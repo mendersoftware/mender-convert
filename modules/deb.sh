@@ -18,56 +18,71 @@ source modules/probe.sh
 
 deb_chroot_set_up=0
 
-# Install a deb package using a chroot
+# Install deb package(s) using a chroot
 #
-#  $1 - Deb package
-#  $2 - Dest directory
+#  $1 - Dest directory
+#  $@ - Deb package(s)
 #
-function deb_install_package() {
-    if [[ $# -ne 2 ]]; then
-        log_fatal "deb_install_package() requires 2 arguments"
+function deb_install_packages() {
+    if [[ $# -lt 2 ]]; then
+        log_fatal "deb_install_packages() requires at least 2 arguments"
     fi
-    local -r deb_package="$(pwd)/${1}"
-    local -r dest_dir="$(pwd)/${2}"
+
+    local -r dest_dir="$(pwd)/${1}"
+    shift
+
+    local -a deb_packages=()
+    for pkg in "$@"; do
+        deb_packages+=("$(pwd)/${pkg}")
+    done
 
     (   
         # Mender postinstall script uses this variable.
         export DEVICE_TYPE="${MENDER_DEVICE_TYPE}"
-
         # This may be called from a larger script that manages the chroot
         # setup/teardown by using deb_prepare/cleanup or from a place where the
         # chroot is supposed to be set up and torn down for a single package
         # installation.
         if [[ $deb_chroot_set_up -eq 1 ]]; then
-            deb_install_package_in_chroot "$@"
+            deb_install_packages_in_chroot "$dest_dir" "${deb_packages[@]}"
         else
-            run_with_chroot_setup "$dest_dir" deb_install_package_in_chroot "$@"
+            run_with_chroot_setup "$dest_dir" deb_install_packages_in_chroot "$dest_dir" "${deb_packages[@]}"
         fi
     )
 }
 
-function deb_install_package_in_chroot() {
-    if [[ $# -ne 2 ]]; then
-        log_fatal "deb_install_package() requires 2 arguments"
+function deb_install_packages_in_chroot() {
+    if [[ $# -lt 2 ]]; then
+        log_fatal "deb_install_packages_in_chroot() requires at least 2 arguments"
     fi
-    local -r deb_package="$(pwd)/${1}"
-    local -r dest_dir="$(pwd)/${2}"
 
-    # Copy package to somewhere reachable from within the chroot.
-    cp "$deb_package" "$dest_dir/tmp/"
+    local -r dest_dir="${1}"
+    shift
+    local -a deb_packages=("$@")
+
+    # Copy packages to somewhere reachable from within the chroot.
+    local -a tmp_packages=()
+    for deb_package in "${deb_packages[@]}"; do
+        cp "$deb_package" "$dest_dir/tmp/"
+        tmp_packages+=("/tmp/$(basename "$deb_package")")
+    done
 
     local ret=0
     run_in_chroot_and_log_cmd_noexit "$dest_dir" "env \
         DEBIAN_FRONTEND=noninteractive \
         DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
-        dpkg --install \"/tmp/$(basename "$deb_package")\"" || ret=$?
-    rm -f "$dest_dir/tmp/$(basename "$deb_package")"
+        dpkg --install ${tmp_packages[*]}" || ret=$?
+
+    # Clean up copied packages
+    for deb_package in "${deb_packages[@]}"; do
+        rm -f "$dest_dir/tmp/$(basename "$deb_package")"
+    done
     case $ret in
         0)
             # Success
             ;;
         1)
-            log_info "Installing dependencies for $deb_package"
+            log_info "Installing dependencies for packages"
 
             # Try to avoid excessive repository pulling. Only update if older than one day.
             if [ ! -e "$dest_dir/var/cache/apt/pkgcache.bin" ] || [ $(date -r "$dest_dir/var/cache/apt/pkgcache.bin" +%s) -lt $(date -d 'today - 1 day' +%s) ]; then
@@ -206,34 +221,18 @@ function deb_get_and_install_input_package() {
     fi
 
     local -r package_path="$1"
-    local -r package_order_file="${package_path}/order"
-    local -a order=()
+    local -a packages=("${package_path}"/*.deb)
 
-    # Install packages by set order if file exists
-    if [ -f "${package_order_file}" ]; then
-        while read package; do
-            order+=("${package_path}/${package}")
-        done < "$package_order_file"
+    # Check if we have any packages
+    if [[ ! -e "${packages[0]}" ]]; then
+        log_warn "No .deb packages found in ${package_path}"
+        return
     fi
 
-    # Add the rest of the packages to the order array
-    while read -r -d $'\0' package; do
-        # Match `order packages` with `package` to
-        # to avoid duplication in the array
-        if ! [[ " ${order[@]} " =~ " ${package} " ]]; then
-            order+=("$package")
-        fi
-    done < <(find "${package_path}" -name "*.deb" -type f -print0)
+    log_info "Installing ${#packages[@]} package(s) from ${package_path}"
 
-    # Install packages
-    for package in "${order[@]}"; do
-        if ! [ -e "${package}" ]; then
-            log_fatal "Debian package '${package}' does not exist"
-            continue
-        fi
-        log_info "Installing ${package}"
-        deb_install_package "${package}" "work/rootfs/"
-    done
+    # Install all packages at once - dpkg handles dependencies automatically
+    deb_install_packages "work/rootfs/" "${packages[@]}"
 }
 
 function deb_cleanup() {
