@@ -103,6 +103,19 @@ function deb_install_packages_in_chroot() {
                 DEBIAN_FRONTEND=noninteractive \
                 DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
                 apt --fix-broken --assume-yes install"
+
+            # Verify that all packages were installed. If we install input packages with dependencies not available in the APT repositories,
+            # `apt --fix-broken install` will remove the packages and exit with 0
+            for deb_package in "${deb_packages[@]}"; do
+                local pkg_name="$(dpkg-deb -f "$deb_package" Package)"
+                # From dpkg-query man page: db:Status-Status contains the package status word
+                local status=$(run_in_chroot_and_log_cmd_with_output "$dest_dir" "dpkg-query -W -f='\${db:Status-Status}' $pkg_name")
+                if [[ "$status" != "installed" ]]; then
+                    log_error "Package "$deb_package" ("$pkg_name") was not installed. This typically means some of its dependencies are not available in the configured APT repositories."
+                    log_fatal "$(dpkg --field "$deb_package")"
+                fi
+                log_info ""$deb_package" ("$pkg_name") installed successfully"
+            done
             ;;
         *)
             # Other return codes are not expected.
