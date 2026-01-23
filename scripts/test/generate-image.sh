@@ -53,6 +53,18 @@ if [ -z "$GENERATE_VARIANT" ]; then
     exit 1
 fi
 
+MKOSI_MAJOR_VERSION=$(mkosi --version | awk '{print int($2)}')
+
+echo "Detected mkosi major version: $MKOSI_MAJOR_VERSION" >&2
+
+MKOSI_FORMAT_ARG="--format=gpt_ext4"
+MKOSI_PASSWORD_ARG="--password"
+
+if [ "$MKOSI_MAJOR_VERSION" -ge 15 ]; then
+    MKOSI_FORMAT_ARG="--format=disk"
+    MKOSI_PASSWORD_ARG="--root-password"
+fi
+
 cleanup_losetup() {
     set +e
     for dev in ${LO_DEVICE}p*; do
@@ -70,10 +82,10 @@ generate_debian() {
           --release="$DEBIAN_CODENAME" \
           --output="$image" \
           --root-size=2G \
-          --format=gpt_ext4 \
+          $MKOSI_FORMAT_ARG \
           --bootable \
           --checksum \
-          --password password \
+          $MKOSI_PASSWORD_ARG password \
           --package openssh-server \
           --package dhcpcd5 \
           --package liblmdb0 \
@@ -96,10 +108,10 @@ generate_ubuntu() {
           --release="$UBUNTU_CODENAME"  \
           --output="$image" \
           --root-size=2300M \
-          --format=gpt_ext4 \
+          $MKOSI_FORMAT_ARG \
           --bootable \
           --checksum \
-          --password password \
+          $MKOSI_PASSWORD_ARG password \
           --package openssh-server \
           --package dhcpcd5 \
           --package liblmdb0 \
