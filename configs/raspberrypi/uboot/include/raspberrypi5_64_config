@@ -1,5 +1,6 @@
 MENDER_DEVICE_TYPE="raspberrypi5_64"
 
+RASPBERRYPI_KERNEL_IMAGE="kernel_2712.img" # RPi5 is could run kernel8.img, but kernel_2712.img is optimized for RPi5
 source configs/raspberrypi/uboot/include/raspberrypi_64_config
 
 # Override the U-Boot binary set in raspberrypi_64_config. The binary
