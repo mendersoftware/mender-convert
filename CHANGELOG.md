@@ -1,4 +1,98 @@
 ---
+## 5.2.0 - 2026-02-04
+
+
+### Bug fixes
+
+
+- Add preferred yocto mender-client4 version to testcfg
+([MEN-9106](https://northerntech.atlassian.net/browse/MEN-9106)) ([4ed6b9d](https://github.com/mendersoftware/mender-convert/commit/4ed6b9d262959278eb53182164958f73bd365b74))  by @michalkopczan
+
+
+
+
+- Ensure package is installed
+ ([c0dbcc1](https://github.com/mendersoftware/mender-convert/commit/c0dbcc1c6e3b3e9b5f2271c6fc1e36f2a135b3c3))  by @danielskinstad
+
+
+
+
+
+  Added verification to check if an input package has been successfully installed.
+  This exposes issues where the installation of a package fails silently
+  because of dependencies not provided as input packages or not available
+  in the configured APT repositories.
+- Improve data partition resizing compatibility
+([MEN-9266](https://northerntech.atlassian.net/browse/MEN-9266)) ([2021097](https://github.com/mendersoftware/mender-convert/commit/2021097a4d5b5b63fb4e45573f3086577a3ec6c2))  by @estape11
+
+
+
+
+
+  Removes the `--fix` flag from `parted` in `mender-grow-data.service`,
+  which caused failures on OSs with older `parted` versions that do not
+  include this flag.
+  This change also adds `sgdisk -e` as a pre-execution step to ensure
+  the backup GPT header is correctly positioned without relying on `parted`
+  to fix it.
+
+
+
+
+### Features
+
+
+- Added possibilty to expand `work/rootfs`
+ ([e29415e](https://github.com/mendersoftware/mender-convert/commit/e29415ef6bd7ad0b265d1b0055252ff89f04d982))  by @danielskinstad
+
+
+
+
+
+  Added a new configuration variable `MENDER_EXPAND_WORK_ROOTFS` that
+  allows expanding the filesystem mounted `work/rootfs` before installing
+  packages and their dependencies. This provides extra space during conversion
+  without affecting the final image size.
+  
+  Set to empty string to disable expansion (default). When set, accepts size
+  units like 10K, 10M, 10G, etc.
+- Added mender-docker-compose installation
+([MEN-9090](https://northerntech.atlassian.net/browse/MEN-9090)) ([d94386d](https://github.com/mendersoftware/mender-convert/commit/d94386d46b94f6f6ff318e2317a86b1bf12f1122))  by @danielskinstad
+
+
+
+
+
+  Added support for installing the mender-docker-compose Update Module.
+  There are two new configuration options:
+  - MENDER_DOCKER_COMPOSE_INSTALL
+  - MENDER_DOCKER_COMPOSE_VERSION
+- Added CN instance to bootstrap scripts
+([MEN-8996](https://northerntech.atlassian.net/browse/MEN-8996)) ([f850689](https://github.com/mendersoftware/mender-convert/commit/f850689e6d399e77b15e1ea9454dbdf0d397191c))  by @danielskinstad
+
+
+
+
+
+  Added the CN instance of hosted Mender, `hosted.mender.cn`,
+  to the hosted server bootstrap script.
+- Handle package dependencies automatically
+ ([8a0684a](https://github.com/mendersoftware/mender-convert/commit/8a0684a455fc8b5d018da46255c5aa9dc74adc56))  by @danielskinstad
+
+
+
+
+
+  Changed input package installation to pass all packages to dpkg in a single
+  command instead of one at a time. This allows dpkg to automatically resolve
+  dependencies between the packages, eliminating the need for a manual 'order'
+  file.
+
+
+
+
+
+
 ## 5.1.0 - 2025-12-01
 
 ### Bug fixes
