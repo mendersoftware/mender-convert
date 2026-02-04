@@ -58,6 +58,7 @@ source modules/probe.sh
 source modules/deb.sh
 source modules/testscfg.sh
 source modules/grub.sh
+source modules/versioncmp.sh
 
 # The mender_convert_config is always used and provides all the defaults
 declare -a configs=("configs/mender_convert_config")
@@ -318,11 +319,30 @@ if [[ ${#pkgs_to_install[@]} -gt 0 ]]; then
         pkgs_with_versions="${pkgs_with_versions} $(deb_get_repo_package "$pkg" "${pkgs_to_install[$pkg]}")"
     done
 
-    # Save installed client version for tests in Yocto variable format
+    # Save installed client version for tests in Yocto variable format and for checking compatibility
+    # with mender-client-version-inventory-script
     if [[ "${pkgs_with_versions}" =~ "mender-client4" ]]; then
         mender_client_version="$(echo ${pkgs_with_versions} | sed -r 's/.*mender-client4=([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
         if [[ -n "$mender_client_version" ]]; then
             testscfg_add "PREFERRED_VERSION:mender-client" "$mender_client_version"
+        fi
+    fi
+
+    # # Install mender-client-version-inventory-script if it's set to auto if mender-client supports it.
+    # # If it's a forced installation, but mender-client does not support it, install it and log a warning.
+    if [[ "${MENDER_CLIENT_INSTALL}" == "y" && -v mender_client_version ]]; then
+        if [ "${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_INSTALL}" = "y" ]; then
+            if ! minimum_required_version "5.1.0" "${mender_client_version}"; then
+                log_warn "Forced mender-client-version-inventory-script install but chosen mender-client version does not support it."
+            fi
+            log_info "Installing mender-client-version-inventory-script version ${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_VERSION}"
+            pkgs_to_install["mender-client-version-inventory-script"]="${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_VERSION}"
+
+        elif [ "${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_INSTALL}" = "auto" ]; then
+            if minimum_required_version "5.1.0" "${mender_client_version}"; then
+                log_info "Installing mender-client-version-inventory-script version ${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_VERSION}"
+                pkgs_to_install["mender-client-version-inventory-script"]="${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_VERSION}"
+            fi
         fi
     fi
 
