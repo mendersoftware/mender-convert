@@ -350,7 +350,7 @@ disk_get_device_base() {
             dev_base=$(echo $1 | cut -dp -f1)
             ;;
         /dev/[sh]d[a-z]*)
-            dev_base=${1%%[1-9]*}
+            dev_base=$(echo $1 | sed 's/[0-9]*$//')
             ;;
         ubi*_*)
             dev_base=$(echo $1 | cut -d_ -f1)
