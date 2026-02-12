@@ -276,6 +276,8 @@ if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
 
     log_info "Installing Mender Client version ${mender_client_deb_version}"
     pkgs_to_install["mender-client4"]="$mender_client_deb_version"
+    pkgs_to_install["mender-auth"]="$mender_client_deb_version"
+    pkgs_to_install["mender-update"]="$mender_client_deb_version"
 
     log_info "Installing Mender Flash version ${MENDER_FLASH_VERSION}"
     pkgs_to_install["mender-flash"]="${MENDER_FLASH_VERSION}"
