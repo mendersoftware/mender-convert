@@ -222,7 +222,7 @@ function deb_install_repo_packages() {
     run_in_chroot_and_log_cmd "work/rootfs/" "env \
         DEBIAN_FRONTEND=noninteractive \
         DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
-        apt -y --fix-broken install $1"
+        apt --assume-yes --fix-broken --no-remove install $1"
 }
 
 #  Install binary files of a deb package into work/deb-packages from a local directory
