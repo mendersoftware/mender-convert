@@ -119,7 +119,7 @@ function deb_install_packages_in_chroot() {
             ;;
         *)
             # Other return codes are not expected.
-            log_error "dpkg returned unexpected return code: $ret"
+            log_fatal "dpkg returned unexpected return code: $ret"
             ;;
     esac
 }
