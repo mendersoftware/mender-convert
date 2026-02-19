@@ -198,6 +198,21 @@ MENDER_SNAPSHOT_INSTALL="auto"
 # Valid values are "latest" (default), "master" or a specific version
 MENDER_SNAPSHOT_VERSION="latest"
 
+# Install Mender-client-version-inventory-script
+# If set to "auto" then it is not explicitly installed; Mender client 5.1.0 or later
+# recommends this package and hence it will be implicitly installed if no other
+# incompatible software is selected
+# If set to "y" it is explicitly installed; any incompatibility with other package will
+# then result in an error
+# Setting it to "n" has no effect
+# The recommended option is "y"
+MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_INSTALL="auto"
+
+# Mender-client-version-inventory-script version
+#
+# Valid values are "latest" (default), "master" or a specific version
+MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_VERSION="latest"
+
 # Mender sparse image file generation
 #
 # By default, mender-convert writes the entire image. When enabled, mender-convert attempts
