@@ -68,10 +68,11 @@ function deb_install_packages_in_chroot() {
     done
 
     local ret=0
-    run_in_chroot_and_log_cmd_noexit "$dest_dir" "env \
+    local dpkg_output
+    dpkg_output=$(run_in_chroot_and_log_cmd_with_output_noexit "$dest_dir" "env \
         DEBIAN_FRONTEND=noninteractive \
         DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
-        dpkg --install ${tmp_packages[*]}" || ret=$?
+        dpkg --install ${tmp_packages[*]}") || ret=$?
 
     # Clean up copied packages
     for deb_package in "${deb_packages[@]}"; do
@@ -82,6 +83,12 @@ function deb_install_packages_in_chroot() {
             # Success
             ;;
         1)
+            # Check if this is actually a dependency problem that can be fixed with apt
+            if ! echo "$dpkg_output" | grep -qE "(dependency problems|depends on.*not installed)"; then
+                log_error "dpkg failed but not due to missing dependencies:"
+                log_fatal "$dpkg_output"
+            fi
+
             log_info "Installing dependencies for packages"
 
             # Try to avoid excessive repository pulling. Only update if older than one day.
@@ -119,7 +126,7 @@ function deb_install_packages_in_chroot() {
             ;;
         *)
             # Other return codes are not expected.
-            log_error "dpkg returned unexpected return code: $ret"
+            log_fatal "dpkg returned unexpected return code: $ret"
             ;;
     esac
 }
@@ -222,7 +229,7 @@ function deb_install_repo_packages() {
     run_in_chroot_and_log_cmd "work/rootfs/" "env \
         DEBIAN_FRONTEND=noninteractive \
         DEVICE_TYPE=${MENDER_DEVICE_TYPE} \
-        apt -y --fix-broken install $1"
+        apt --assume-yes --fix-broken --no-remove install $1"
 }
 
 #  Install binary files of a deb package into work/deb-packages from a local directory

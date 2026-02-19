@@ -65,3 +65,20 @@ function run_and_log_cmd_noexit() {
     log_debug "${log_msg}"
     return ${exit_code}
 }
+
+# Run a command, capture and log output, return output and the command's return code
+#
+#  $1 - command to run
+function run_and_log_cmd_with_output_noexit() {
+    local -r cmd="${1}"
+    local -r position="(${BASH_SOURCE[1]}:${BASH_LINENO[0]}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }"
+    local exit_code=0
+    output="$({ eval "${cmd}"; } 2>&1)" || exit_code=$?
+    local log_msg="Running: ${position} \n\r\n\r\t${cmd}"
+    if [[ "${output}" != "" ]]; then
+        log_msg="${log_msg}\n\t${output}\n"
+    fi
+    log_debug "${log_msg}"
+    echo "${output}"
+    return ${exit_code}
+}
