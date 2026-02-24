@@ -1,4 +1,167 @@
 ---
+## 5.2.0 - 2026-02-24
+
+
+### Bug fixes
+
+
+- Add preferred yocto mender-client4 version to testcfg
+([MEN-9106](https://northerntech.atlassian.net/browse/MEN-9106)) ([4ed6b9d](https://github.com/mendersoftware/mender-convert/commit/4ed6b9d262959278eb53182164958f73bd365b74))  by @michalkopczan
+
+
+
+
+- Ensure package is installed
+ ([c0dbcc1](https://github.com/mendersoftware/mender-convert/commit/c0dbcc1c6e3b3e9b5f2271c6fc1e36f2a135b3c3))  by @danielskinstad
+
+
+
+
+
+  Added verification to check if an input package has been successfully installed.
+  This exposes issues where the installation of a package fails silently
+  because of dependencies not provided as input packages or not available
+  in the configured APT repositories.
+- Improve data partition resizing compatibility
+([MEN-9266](https://northerntech.atlassian.net/browse/MEN-9266)) ([2021097](https://github.com/mendersoftware/mender-convert/commit/2021097a4d5b5b63fb4e45573f3086577a3ec6c2))  by @estape11
+
+
+
+
+
+  Removes the `--fix` flag from `parted` in `mender-grow-data.service`,
+  which caused failures on OSs with older `parted` versions that do not
+  include this flag.
+  This change also adds `sgdisk -e` as a pre-execution step to ensure
+  the backup GPT header is correctly positioned without relying on `parted`
+  to fix it.
+- Explicitly install `mender-auth` and `mender-update` with client
+ ([a609527](https://github.com/mendersoftware/mender-convert/commit/a609527e8dfb8287f22beec8249cd8aef32d4f1a))  by @lluiscampos
+
+
+
+
+  Fixes the issue where setting `MENDER_CLIENT_VERSION` to "latest" (or an
+  specific version) while having any other package set to "master", the
+  install will fail with an error like:
+  
+  ```
+  The following packages have unmet dependencies:
+   mender-client4 : Depends: mender-auth (= 5.0.3-1+ubuntu+jammy)
+                    Depends: mender-update (= 5.0.3-1+ubuntu+jammy)
+  E: Unable to correct problems, you have held broken packages.
+  ```
+  
+  The under-the-hood problem is that when selecting "master" in any
+  package the experimental repos are enabled, and then by not explicitly
+  setting `mender-auth` and `mender-update` versions, `apt` will try to
+  install the experimental ones (which are the greatest) and a pinned
+  `mender-client4` package, which is incompatible.
+- Exit with error on unexpected `dpkg` return codes
+([MEN-9021](https://northerntech.atlassian.net/browse/MEN-9021)) ([abc123a](https://github.com/mendersoftware/mender-convert/commit/abc123a52056069219bb61f52373a448667da5d9))  by @lluiscampos
+
+
+
+
+
+  Previously the software was logging the error but not aborting the
+  conversion.
+- Do not silently remove incompatible packages during conversion
+([MEN-9021](https://northerntech.atlassian.net/browse/MEN-9021)) ([bdebbc1](https://github.com/mendersoftware/mender-convert/commit/bdebbc1257036f5dafa87dd509376e6881a8b5c5))  by @lluiscampos
+
+
+
+
+
+  Previously the call to `apt install` to get the Mender software was done
+  with `--assume-yes` flag alone which not only confirms installing
+  dependencies but also confirms removing incompatible packages. Adding
+  the `--no-remove` flag will correctly handle the latter, aborting the
+  conversion instead of removing an incompatible package.
+- Properly detect and fail on non-dependency dpkg errors
+([MEN-9021](https://northerntech.atlassian.net/browse/MEN-9021)) ([74f96d4](https://github.com/mendersoftware/mender-convert/commit/74f96d4241b448fb527b313a6efd9e73a3d38450))  by @lluiscampos
+
+
+
+
+
+
+  Previously, when dpkg returned exit code 1, the script would always
+  assume missing dependencies and attempt to fix with `--fix-broken`.
+  However, other kinds of errors like a package not installed due to
+  conflicts would silently be ignored.
+
+
+
+
+### Features
+
+
+- Added possibilty to expand `work/rootfs`
+ ([e29415e](https://github.com/mendersoftware/mender-convert/commit/e29415ef6bd7ad0b265d1b0055252ff89f04d982))  by @danielskinstad
+
+
+
+
+
+  Added a new configuration variable `MENDER_EXPAND_WORK_ROOTFS` that
+  allows expanding the filesystem mounted `work/rootfs` before installing
+  packages and their dependencies. This provides extra space during conversion
+  without affecting the final image size.
+  
+  Set to empty string to disable expansion (default). When set, accepts size
+  units like 10K, 10M, 10G, etc.
+- Added mender-docker-compose installation
+([MEN-9090](https://northerntech.atlassian.net/browse/MEN-9090)) ([d94386d](https://github.com/mendersoftware/mender-convert/commit/d94386d46b94f6f6ff318e2317a86b1bf12f1122))  by @danielskinstad
+
+
+
+
+
+  Added support for installing the mender-docker-compose Update Module.
+  There are two new configuration options:
+  - MENDER_DOCKER_COMPOSE_INSTALL
+  - MENDER_DOCKER_COMPOSE_VERSION
+- Added CN instance to bootstrap scripts
+([MEN-8996](https://northerntech.atlassian.net/browse/MEN-8996)) ([f850689](https://github.com/mendersoftware/mender-convert/commit/f850689e6d399e77b15e1ea9454dbdf0d397191c))  by @danielskinstad
+
+
+
+
+
+  Added the CN instance of hosted Mender, `hosted.mender.cn`,
+  to the hosted server bootstrap script.
+- Handle package dependencies automatically
+ ([8a0684a](https://github.com/mendersoftware/mender-convert/commit/8a0684a455fc8b5d018da46255c5aa9dc74adc56))  by @danielskinstad
+
+
+
+
+
+  Changed input package installation to pass all packages to dpkg in a single
+  command instead of one at a time. This allows dpkg to automatically resolve
+  dependencies between the packages, eliminating the need for a manual 'order'
+  file.
+- Add mender-client-version-inventory-script to mender-convert
+([MEN-9021](https://northerntech.atlassian.net/browse/MEN-9021)) ([62e828f](https://github.com/mendersoftware/mender-convert/commit/62e828fef18b7670cf837bacdaba48dc45f55ca5))  by @lluiscampos
+
+
+
+
+
+
+  The package installs a new inventory script that takes over the
+  ownership of the `mender_client_version` inventory key previously
+  reported as a built-in attribute in `mender-update`. The package will
+  validate that all the rest of the installed Mender versions are
+  compatible with the given Mender Client version. Effective from next
+  feature release of Mender Client 6.0.0 with `mender-update` 5.1.0.
+
+
+
+
+
+
 ## 5.1.0 - 2025-12-01
 
 ### Bug fixes
