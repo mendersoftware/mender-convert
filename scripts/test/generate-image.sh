@@ -26,8 +26,14 @@ if [ "$UID" -ne 0 ]; then
     exec sudo "$0" "$@"
 fi
 
-DEBIAN_CODENAME="bullseye"
-DEBIAN_IMAGE_ID="Debian-11"
+# Warning: Originally this script has been used around 2022 to create
+# Debian 11 image. It is failing on the newer Ubuntu version due to change
+# in the mkosi implementation (lots of arguments has changed together with
+# internal logic). As result to build the Debian 12 image in 2026
+# we needed to use Debian 12 virtual machine containing old mkosi version 14
+# and run the script on top of that.
+DEBIAN_CODENAME="bookworm"
+DEBIAN_IMAGE_ID="Debian-12"
 
 UBUNTU_CODENAME="jammy"
 UBUNTU_IMAGE_ID="Ubuntu-Jammy"

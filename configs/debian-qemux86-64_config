@@ -1,18 +1,33 @@
 # This configuration can be used to run on a qemux86-64 machine.
 #
+# Last time for image creation Debian 12 host was used with mkosi version 14
+# Newer mkosi version changed multiple options and produced image was failing
+# during a conversion.
+#
 # The image is generated with the following command:
 #
-# mender-convert/scripts/test/generate-image.sh debian
+#    ./scripts/test/generate-image.sh debian
 #
-# Then manually uploaded to Mender's AWS S3 bucket for CI testing
+# Result is generation of file: Debian-12-x86-64.img
+# Before S3 upload it need to be compressed:
+#
+#    gzip Debian-12-x86-64.img
+#
+# Then manually uploaded to Mender's AWS S3 bucket for CI testing and download:
+#
+#    https://downloads.mender.io/mender-convert/images/Debian-12-x86-64.img.gz
 #
 # Locally, converted with the following command:
 #
-#    MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert --disk-image input/Debian-11-x86-64.img --overlay input/rootfs_overlay_demo --config configs/qemux86-64_config
+#    cp Debian-12-x86-64.img input/image/
+#    MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
+#                                   --disk-image input/image/Debian-11-x86-64.img \
+#                                   --config configs/debian-qemux86-64_config \
+#                                   --overlay input/rootfs_overlay_demo
 #
 # and qemu is executed with the following command:
 #
-#    qemu-system-x86_64 -enable-kvm -m 512 -smp 2 -bios /usr/share/OVMF/OVMF_CODE.fd -drive format=raw,file=deploy/Debian-11-x86-64-qemux86-64-mender.img
+#    qemu-system-x86_64 -enable-kvm -m 512 -smp 2 -bios /usr/share/OVMF/OVMF_CODE.fd -drive format=raw,file=deploy/Debian-12-x86-64-qemux86-64-mender.img
 
 MENDER_STORAGE_DEVICE_BASE=/dev/sda
 MENDER_DEVICE_TYPE="qemux86-64"
