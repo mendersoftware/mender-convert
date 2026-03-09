@@ -142,7 +142,7 @@ function grub_install_mender_grub() {
 
     run_and_log_cmd "sudo ln -s ${kernel_imagetype} work/rootfs/boot/kernel"
     if [ "${initrd_imagetype}" != "" ]; then
-        run_and_log_cmd "sudo ln -s ${initrd_imagetype} work/rootfs/boot/initrd"
+        run_and_log_cmd "sudo ln -sf ${initrd_imagetype} work/rootfs/boot/initrd"
     fi
 
     # Remove conflicting boot files. These files do not necessarily effect the
