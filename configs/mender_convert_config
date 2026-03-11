@@ -206,7 +206,7 @@ MENDER_SNAPSHOT_VERSION="latest"
 # then result in an error
 # Setting it to "n" has no effect
 # The recommended option is "y"
-MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_INSTALL="auto"
+MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_INSTALL="y"
 
 # Mender-client-version-inventory-script version
 #
