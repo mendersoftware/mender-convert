@@ -13,8 +13,7 @@ fix: <SHORT DESCRIPTION OF FIX>
 
 <OPTIONAL LONGER DESCRIPTION>
 
-Changelog: <USER-FRIENDLY-CHANGE-DESCRIPTION> or <None>
-Ticket: <TICKET NUMBER> or <None>
+<OPTIONAL Ticket: <TICKET NUMBER>>
 ```
 
 - [ ] Make sure that all commits are signed with [`git --signoff`](https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work). Also note that the signoff author must match the author of the commit.
