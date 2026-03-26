@@ -44,7 +44,7 @@ pytest-xdist==3.8.0
     # via -r requirements_py3.in
 redo==3.0.0
     # via -r requirements_py3.in
-requests==2.32.5
+requests==2.33.0
     # via -r requirements_py3.in
 tomli==2.0.1
     # via pytest
