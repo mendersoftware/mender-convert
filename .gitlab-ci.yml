@@ -87,6 +87,24 @@ variables:
   # Jammy Jellyfish is Ubuntu 22.04
   ACC_TESTS_UBUNTU_DISTRO: "jammy"
 
+  # Renovate required variables
+  RENOVATE_PLATFORM: github
+  RENOVATE_ENDPOINT: "https://api.github.com"
+  RENOVATE_GIT_AUTHOR: "mender-test-bot <mender@northern.tech>"
+  RENOVATE_TOKEN: $GITHUB_BOT_TOKEN_REPO_FULL
+  RENOVATE_GITHUB_COM_TOKEN: $GITHUB_BOT_TOKEN_REPO_FULL
+  RENOVATE_REPOSITORIES: "mendersoftware/$CI_PROJECT_NAME"
+  RENOVATE_REQUIRE_CONFIG: "optional"
+  RENOVATE_ONBOARDING: "false"
+  RENOVATE_GIT_PRIVATE_KEY: $SSH_PRIVATE_KEY
+  RENOVATE_CONFIG_FILE: "$CI_PROJECT_DIR/renovate.json"
+  FORCE_RENOVATE_RUN:
+    description: "Force a renovate bot run"
+    value: "false"
+    options:
+      - "true"
+      - "false"
+
 include:
   - project: Northern.tech/Mender/mendertesting
     file:
@@ -113,6 +131,7 @@ include:
   - component: gitlab.com/Northern.tech/Mender/mendertesting/release-docs-changelog@master
     inputs:
       remote_changelog_file: "32.mender-convert/docs.md"
+  - component: gitlab.com/renovate-bot/renovate-runner/renovate.gitlab-ci@main
 
 default:
   tags: !reference [.qa-common-default-runner, tags]
@@ -125,6 +144,16 @@ stages:
   - flash
   - test_acceptance
   - publish
+
+# Override rules
+renovate:
+  needs: []
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $FORCE_RENOVATE_RUN == "true"'
+  stage: build
+  tags:
+    - k8s-small
 
 test:check-license:
   rules:
