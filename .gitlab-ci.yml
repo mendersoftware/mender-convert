@@ -279,9 +279,10 @@ convert_raspbian_raspberrypi4_trixie_64bit:
     # Set mender-image-tests submodule to correct version
     - git submodule update --init --recursive
     # Get mender-artifact for the tests
-    - wget "https://downloads.mender.io/repos/workstation-tools/pool/main/m/mender-artifact/mender-artifact_${MENDER_ARTIFACT_VERSION}-1%2Bubuntu%2B${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb"
-    - dpkg --install mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
-    - rm mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+${ACC_TESTS_UBUNTU_DISTRO}_amd64.deb
+    - DEB_PACKAGE="$(echo mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+$(. /etc/lsb-release && echo $DISTRIB_CODENAME)_amd64.deb)"
+    - wget "https://downloads.mender.io/repos/workstation-tools/pool/main/m/mender-artifact/${DEB_PACKAGE}"
+    - apt install -yq ./${DEB_PACKAGE}
+    - rm ${DEB_PACKAGE}
     # Prepare versions file for mender-convert
     - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > versions_override_config
     - echo "MENDER_FLASH_VERSION=${MENDER_FLASH_VERSION}" >> versions_override_config
