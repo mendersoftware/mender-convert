@@ -1,4 +1,25 @@
 ---
+## 5.2.1 - 2026-04-09
+
+
+### Bug fixes
+
+
+- Update mender-artifact from 4.1.0 to 4.4.0
+([MEN-9541](https://northerntech.atlassian.net/browse/MEN-9541)) ([dc8261f](https://github.com/mendersoftware/mender-convert/commit/dc8261f1a14d083ca3fe1392d7aa3a8349ac8aee))  by @elkoniu
+
+
+
+
+
+  This resolves an issue where Artifacts created by mender-convert
+  couldn't be properly signed and validated with mender-artifact 4.4.0.
+
+
+
+
+
+
 ## 5.2.0 - 2026-03-31
 
 
