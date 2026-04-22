@@ -234,7 +234,7 @@ rootfs_img_checksum=$(sha256sum work/rootfs.img | cut -d ' ' -f1)
 run_and_log_cmd "mender-artifact write bootstrap-artifact \
                     --artifact-name "${MENDER_ARTIFACT_NAME}" \
                     --no-progress \
-                    --device-type  "${device_type}" \
+                    --compatible-types "${device_type}" \
                     --provides rootfs-image.version:"${MENDER_ARTIFACT_NAME}" \
                     --provides rootfs-image.checksum:${rootfs_img_checksum} \
                     --clears-provides 'rootfs-image.*' \
