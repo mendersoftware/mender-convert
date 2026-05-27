@@ -472,6 +472,11 @@ publish:image:saas:
   rules:
     - when: never
 
+# excludes unused job
+publish:image-multiplatform:mender:
+  rules:
+    - when: never
+
 ####################
 # Hardware testing #
 ####################
