@@ -313,6 +313,9 @@ disk_get_device_part_number() {
         /dev/mmcblk*p*)
             dev_part=$(echo $1 | cut -dp -f2)
             ;;
+        /dev/tssdcard[a-z][0-9]*)
+            dev_part=${1##*[!0-9]}
+            ;;
         /dev/[sh]d[a-z][1-9]*)
             dev_part=${1##*d[a-z]}
             ;;
@@ -348,6 +351,12 @@ disk_get_device_base() {
             ;;
         /dev/mmcblk*p*)
             dev_base=$(echo $1 | cut -dp -f1)
+            ;;
+        /dev/tssdcard[a-z][0-9]*)
+            dev_base=${1%%[0-9]*}
+            ;;
+        /dev/tssdcard[a-z])
+            dev_base=$1
             ;;
         /dev/[sh]d[a-z]*)
             dev_base=${1%%[1-9]*}
