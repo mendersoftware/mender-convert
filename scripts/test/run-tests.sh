@@ -27,7 +27,7 @@ fi
 
 WORKSPACE=./tests
 
-UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Jammy-x86-64.img.gz"
+UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Resolute-x86-64.img.gz"
 
 DEBIAN_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-12-x86-64.img.gz"
 

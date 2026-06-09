@@ -84,8 +84,8 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
 
   # Ubuntu distribution to use in test_acceptance jobs
-  # Jammy Jellyfish is Ubuntu 22.04
-  ACC_TESTS_UBUNTU_DISTRO: "jammy"
+  # Resolute Raccoon is Ubuntu 26.04
+  ACC_TESTS_UBUNTU_DISTRO: "resolute"
 
 include:
   - project: Northern.tech/Mender/mendertesting

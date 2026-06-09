@@ -35,8 +35,8 @@ fi
 DEBIAN_CODENAME="bookworm"
 DEBIAN_IMAGE_ID="Debian-12"
 
-UBUNTU_CODENAME="jammy"
-UBUNTU_IMAGE_ID="Ubuntu-Jammy"
+UBUNTU_CODENAME="resolute"
+UBUNTU_IMAGE_ID="Ubuntu-Resolute"
 
 while [ -n "$1" ]; do
     case "$1" in
