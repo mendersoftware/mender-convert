@@ -29,6 +29,7 @@ WORKSPACE=./tests
 
 UBUNTU_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-Jammy-x86-64.img.gz"
 
+# This image source is https://cloud.debian.org/images/cloud/bookworm/20260225-2399/debian-12-nocloud-amd64-20260225-2399.tar.xz
 DEBIAN_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-12-x86-64.img.gz"
 
 # Keep common function declarations in separate utils script
