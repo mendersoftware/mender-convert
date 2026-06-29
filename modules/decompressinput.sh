@@ -39,6 +39,9 @@ function compression_type()  {
         *.xz)
             echo "lzma"
             ;;
+        *.zst)
+            echo "zstd"
+            ;;
         *)
             log_fatal "Unsupported compression type: ${disk_image}. Please uncompress the image yourself."
             ;;
@@ -79,8 +82,13 @@ function decompress_image()  {
             disk_image=${disk_image%.xz}
             xzcat "${input_image}" > "${disk_image}"
             ;;
+        zstd)
+            log_info "Decompressing ${disk_image}..."
+            disk_image=${disk_image%.zst}
+            zstdcat "${input_image}" > "${disk_image}"
+            ;;
         *)
-            log_fatal "Unsupported input image format: ${input_image}. We support: '.img', '.gz', '.zip', '.xz'."
+            log_fatal "Unsupported input image format: ${input_image}. We support: '.img', '.gz', '.zip', '.xz', '.zst'."
             ;;
     esac
     echo "${disk_image}"
