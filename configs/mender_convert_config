@@ -244,6 +244,9 @@ MENDER_STORAGE_DEVICE_BASE=/dev/mmcblk0p
 # Partition number of boot partition
 MENDER_BOOT_PART_NUMBER="1"
 
+# Include root filesystem B in the image
+MENDER_ROOTFS_PART_B_INCLUDE="y"
+
 # Partition number of root filesystem A
 MENDER_ROOTFS_PART_A_NUMBER="2"
 
