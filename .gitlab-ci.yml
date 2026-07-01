@@ -156,14 +156,19 @@ build:docker-multiplatform:
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-  image: ubuntu:22.04
+  image: ubuntu:24.04
   services:
     - docker:dind
   tags:
     - mender-qa-worker-generic
   before_script:
     - !reference [.qa-common-network-apt-retry, before_script]
-    - apt update && apt install -yy bash wget xz-utils awscli docker.io curl
+    - apt update && apt install -yy bash wget xz-utils docker.io curl unzip
+
+    # Install awscli
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+    - unzip awscliv2.zip
+    - ./aws/install
 
     - docker pull ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
     - export IMAGE_NAME=${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
@@ -245,7 +250,6 @@ convert_raspbian_raspberrypi4_trixie_64bit:
     - ./aws/install --bin-dir /usr/bin
 
     # Python3 dependencies
-    - python3 -m pip install -U pip
     - pip3 install --ignore-installed -r tests/requirements_py3.txt
     # Load image under test
     - docker pull ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
