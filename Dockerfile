@@ -12,7 +12,7 @@ RUN git clone https://github.com/jnovy/pxz.git /root/pxz
 WORKDIR /root/pxz
 RUN if [ "$TARGETARCH" = "arm64" ]; then CC=aarch64-linux-gnu-gcc; else CC=cc; fi; env CC=$CC make
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 ARG TARGETARCH
 ARG MENDER_ARTIFACT_VERSION
 RUN if [ "$MENDER_ARTIFACT_VERSION" = "" ]; then echo "MENDER_ARTIFACT_VERSION must be set!" 1>&2; exit 1; fi
@@ -64,7 +64,7 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install --assum
     grub-common \
 # to be able to run package installations on foreign architectures
     binfmt-support \
-    qemu-user-static
+    qemu-user-binfmt
 
 COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
