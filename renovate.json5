@@ -1,22 +1,46 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
   "extends": [
     "config:recommended",
     ":gitSignOff",
     ":rebaseStalePrs"
   ],
-  "reviewers": ["team:client-dependabot-reviewers"],
+
+  // CODEOWNERS drives reviewer assignment. Keep CODEOWNERS complete.
+  "reviewersFromCodeOwners": true,
+
+  // chore(deps): <desc>, matching the old Dependabot prefix. CI files get ci: below.
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+
+  // Drain backlogs gradually. 10 concurrent because there are three base branches.
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
+
+  "baseBranchPatterns": ["master", "4.3.x"],
+
+  // Security PRs bypass the schedule
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "labels": ["security"]
+  },
 
   "packageRules": [
+    // GitLab CI image bumps -> ci: (keeps them out of the deps changelog section).
     {
-      // TODO: remove some of these when we ditch dependabot
-      "matchCategories": ["python", "docker", "ci"],
-      "enabled": false
+      "matchManagers": ["gitlabci", "gitlabci-include"],
+      "semanticCommitType": "ci",
+      "semanticCommitScope": ""
     },
+
+    // Docker base images: one grouped PR.
     {
-      // TODO: remove  when we ditch dependabot
-      "matchManagers": ["git-submodules"],
-      "enabled": false
+      "matchManagers": ["dockerfile"],
+      "groupName": "docker-base-images",
+      "groupSlug": "docker-base-images"
     },
   ],
 
@@ -33,6 +57,4 @@
       "versioningTemplate": "semver"
     },
   ],
-
-  "prHourlyLimit": 0
 }
