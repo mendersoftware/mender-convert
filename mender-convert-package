@@ -381,6 +381,10 @@ case "${MENDER_COMPRESS_DISK_IMAGE}" in
         log_info "Compressing ${img_path}.xz"
         run_and_log_cmd "pxz --best --force ${img_path}"
         ;;
+    zstd)
+        log_info "Compressing ${img_path}.zst"
+        run_and_log_cmd "zstd -10 -zfT0 --no-progress --rm ${img_path}"
+        ;;
     none)
         :
         ;;

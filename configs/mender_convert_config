@@ -14,6 +14,7 @@
 # 'none' - No compression
 # 'gzip' - Compress with gzip
 # 'lzma' - Compress with xz (LZMA)
+# 'zstd' - Compress with zstd
 MENDER_COMPRESS_DISK_IMAGE=gzip
 
 # Compression algorithm for Mender Artifact
