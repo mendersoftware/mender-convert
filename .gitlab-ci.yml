@@ -83,9 +83,13 @@ variables:
   DOCKER_TLS_VERIFY: "1"
   DOCKER_TLS_CERTDIR: "/certs"
 
-  # Ubuntu distribution to use in test_acceptance jobs
-  # Jammy Jellyfish is Ubuntu 22.04
-  ACC_TESTS_UBUNTU_DISTRO: "jammy"
+.acc-test-distros-image-matrix:
+  parallel:
+    matrix:
+      - DISTRO: debian
+        RELEASE: [bookworm, trixie]
+      - DISTRO: ubuntu
+        RELEASE: [jammy, noble, resolute]
 
 include:
   - project: Northern.tech/Mender/mendertesting
@@ -228,7 +232,7 @@ convert_raspbian_raspberrypi4_trixie_64bit:
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-  image: ubuntu:${ACC_TESTS_UBUNTU_DISTRO}
+  image: ${DISTRO}:${RELEASE}
   services:
     - docker:dind
   tags:
@@ -250,6 +254,7 @@ convert_raspbian_raspberrypi4_trixie_64bit:
     - ./aws/install --bin-dir /usr/bin
 
     # Python3 dependencies
+    - export PIP_BREAK_SYSTEM_PACKAGES=1
     - pip3 install --ignore-installed -r tests/requirements_py3.txt
     # Load image under test
     - docker pull ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
@@ -257,8 +262,8 @@ convert_raspbian_raspberrypi4_trixie_64bit:
     - export RASPBERRYPI_CONFIG_NAME="$(basename "$RASPBERRYPI_PLATFORM")"
     # Set mender-image-tests submodule to correct version
     - git submodule update --init --recursive
-    # Get mender-artifact for the tests
-    - DEB_PACKAGE="$(echo mender-artifact_${MENDER_ARTIFACT_VERSION}-1+ubuntu+$(. /etc/lsb-release && echo $DISTRIB_CODENAME)_amd64.deb)"
+    # Get mender-artifact for the tests from the official deb packages
+    - DEB_PACKAGE="$(echo mender-artifact_${MENDER_ARTIFACT_VERSION}-1+${DISTRO}+${RELEASE}_amd64.deb)"
     - wget "https://downloads.mender.io/repos/workstation-tools/pool/main/m/mender-artifact/${DEB_PACKAGE}"
     - apt install -yq ./${DEB_PACKAGE}
     - rm ${DEB_PACKAGE}
@@ -287,6 +292,7 @@ convert_raspbian_raspberrypi4_trixie_64bit:
       junit: results_*.xml
   rules:
     - if: '$TEST_MENDER_CONVERT == "true"'
+  parallel: !reference [.acc-test-distros-image-matrix, parallel]
 
 .template_test_acceptance_prebuilt_raspberrypi: &test_acceptance_prebuilt_raspberrypi
   <<: *test_acceptance
