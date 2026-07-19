@@ -25,8 +25,13 @@ if [ -z "$OVMF_CODE_FILE" ]; then
     # Look for OVMF_CODE.fd in /usr/share
     OVMF_CODE_FILE=$(find /usr/share -type f -and -name OVMF_CODE.fd 2>/dev/null | head -1)
     if [ -z "${OVMF_CODE_FILE}" ]; then
-        echo "ERROR: could not find OVMF file"
-        exit 1
+        echo "FAILURE: could not find OVMF_CODE file, trying OVMF_CODE_4M"
+        # On the Debian 13 and Ubuntu 24.04 OVMF_CODE (2M) has been migrated to OVMF_CODE_4M
+        OVMF_CODE_FILE=$(find /usr/share -type f -and -name OVMF_CODE_4M.fd 2>/dev/null | head -1)
+        if [ -z "${OVMF_CODE_FILE}" ]; then
+            echo "ERROR: could not find OVMF_CODE or OVMF_CODE_4M files"
+            exit 1
+        fi
     fi
 fi
 
