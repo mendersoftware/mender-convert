@@ -8,7 +8,7 @@ variables:
   # These variables are present elsewhere in the repository too. Make sure to
   # search for and change them too.
   MENDER_ARTIFACT_VERSION:
-    value: "3.11.2"
+    value: "4.4.1"
     description: |-
       Version of mender-artifact for the builder image - a specific version
   MENDER_CLIENT_VERSION:
