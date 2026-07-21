@@ -1,4 +1,11 @@
 ---
+## 5.2.2 - 2026-07-21
+
+
+### Bug fixes
+
+- *(disk)* Support Technologic Systems tssdcard paths
+
 ## 5.2.1 - 2026-04-09
 
 
