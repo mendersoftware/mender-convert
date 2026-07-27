@@ -156,7 +156,7 @@ build:docker-multiplatform:
   needs:
     - job: build:docker-multiplatform
       artifacts: false
-  image: ubuntu:24.04
+  image: ubuntu:26.04
   services:
     - docker:dind
   tags:
