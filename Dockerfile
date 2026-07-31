@@ -1,5 +1,5 @@
 # Cross-compile pxz (Parallel LZMA compression) in separate image
-FROM --platform=$BUILDPLATFORM debian:12 AS build
+FROM --platform=$BUILDPLATFORM debian:13 AS build
 ARG TARGETARCH
 RUN dpkg --add-architecture ${TARGETARCH} && \
     apt-get update && \
@@ -12,7 +12,7 @@ RUN git clone https://github.com/jnovy/pxz.git /root/pxz
 WORKDIR /root/pxz
 RUN if [ "$TARGETARCH" = "arm64" ]; then CC=aarch64-linux-gnu-gcc; else CC=cc; fi; env CC=$CC make
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 ARG TARGETARCH
 ARG MENDER_ARTIFACT_VERSION
 RUN if [ "$MENDER_ARTIFACT_VERSION" = "" ]; then echo "MENDER_ARTIFACT_VERSION must be set!" 1>&2; exit 1; fi
