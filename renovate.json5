@@ -19,7 +19,7 @@
   "prHourlyLimit": 2,
   "prConcurrentLimit": 10,
 
-  "baseBranchPatterns": ["master", "4.3.x"],
+  "baseBranchPatterns": ["master"],
 
   // Security PRs bypass the schedule
   "vulnerabilityAlerts": {
