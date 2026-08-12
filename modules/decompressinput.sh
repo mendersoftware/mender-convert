@@ -27,7 +27,7 @@ function compression_type()  {
     fi
     local -r disk_image="${1}"
     case "${disk_image}" in
-        *.img | *.sdimg | *.wic | *.rpi-sdimg)
+        *.img | *.sdimg | *.wic | *.rpi-sdimg | *.raw)
             echo "none"
             ;;
         *.gz)
@@ -88,7 +88,7 @@ function decompress_image()  {
             zstdcat "${input_image}" > "${disk_image}"
             ;;
         *)
-            log_fatal "Unsupported input image format: ${input_image}. We support: '.img', '.gz', '.zip', '.xz', '.zst'."
+            log_fatal "Unsupported input image format: ${input_image}. We support: '.img', 'raw', '.gz', '.zip', '.xz', '.zst'."
             ;;
     esac
     echo "${disk_image}"
