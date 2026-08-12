@@ -89,7 +89,7 @@ variables:
       - DISTRO: debian
         RELEASE: [bookworm, trixie]
       - DISTRO: ubuntu
-        RELEASE: [jammy, noble, resolute]
+        RELEASE: [noble, resolute]
 
 include:
   - project: Northern.tech/Mender/mendertesting
@@ -329,36 +329,70 @@ test_acceptance_prebuilt_raspberrypi4_trixie_64bit:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_trixie_64bit
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
-test_acceptance_ubuntu_qemux86_64:
+
+test_acceptance_ubuntu_22_qemux86_64:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
-      --only ubuntu-qemux86-64
+      --only ubuntu-22-qemux86-64
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_ubuntu_qemux86_64_no_grub_d:
+test_acceptance_ubuntu_22_qemux86_64_no_grub_d:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
-      --only ubuntu-qemux86-64-no-grub-d
+      --only ubuntu-22-qemux86-64-no-grub-d
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_debian_qemux86_64:
+test_acceptance_ubuntu_24_qemux86_64_no_grub_d:
   <<: *test_acceptance
   script:
     - mkdir -p input/config
     - cp versions_override_config input/config/versions_override_config
     - ./scripts/test/run-tests.sh
       --config input/config/versions_override_config
-      --only debian-qemux86-64
+      --only ubuntu-24-qemux86-64-no-grub-d
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
+
+test_acceptance_ubuntu_26_qemux86_64_no_grub_d:
+  <<: *test_acceptance
+  script:
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only ubuntu-26-qemux86-64-no-grub-d
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
+
+test_acceptance_debian_12_qemux86_64:
+  <<: *test_acceptance
+  script:
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only debian-12-qemux86-64
+      --
+      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
+
+test_acceptance_debian_13_qemux86_64:
+  <<: *test_acceptance
+  script:
+    - mkdir -p input/config
+    - cp versions_override_config input/config/versions_override_config
+    - ./scripts/test/run-tests.sh
+      --config input/config/versions_override_config
+      --only debian-13-qemux86-64
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
