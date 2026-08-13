@@ -352,6 +352,22 @@ source configs/mender_grub_config
 source configs/systemd_common_config
 
 # Function to create Mender Artifact
+# Include mender-binary-delta update-module provides in generated artifacts
+#
+# When set to "y", each artifact produced by mender-convert will declare:
+#
+#   rootfs-image.update-module.mender-binary-delta.mender_update_module:mender-binary-delta
+#   rootfs-image.update-module.mender-binary-delta.version:<artifact-name>
+#
+# These provides are required for the Mender server to generate and serve
+# binary delta updates (using mender-binary-delta) against this artifact as
+# the base. Without them the server has no record that the device supports
+# delta updates from this rootfs version and will fall back to full updates.
+#
+# Set to "y" if your devices have mender-binary-delta installed.
+# Leave as "n" (default) for standard full-image updates only.
+MENDER_DELTA_PROVIDES="n"
+
 #
 # This function is defined here, to allow it to be overridden which can be
 # achieved by providing this function in a custom configuration file which will
@@ -369,10 +385,18 @@ mender_create_artifact() {
     log_info "Writing Mender artifact to: ${mender_artifact}"
     log_info "This can take up to 20 minutes depending on which compression method is used"
 
+    local delta_provides_arg=""
+    if [ "${MENDER_DELTA_PROVIDES}" = "y" ]; then
+        delta_provides_arg="--provides rootfs-image.update-module.mender-binary-delta.mender_update_module:mender-binary-delta \
+      --provides rootfs-image.update-module.mender-binary-delta.version:${artifact_name}"
+        log_info "MENDER_DELTA_PROVIDES=y: declaring mender-binary-delta provides in artifact"
+    fi
+
     run_and_log_cmd "mender-artifact --compression ${MENDER_ARTIFACT_COMPRESSION} \
       write rootfs-image \
       --file work/rootfs.img \
       --output-path ${mender_artifact} \
       --artifact-name ${artifact_name} \
-      ${all_device_types}"
+      ${all_device_types} \
+      ${delta_provides_arg}"
 }
