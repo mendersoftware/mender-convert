@@ -190,8 +190,28 @@ disk_boot_part() {
     # We also need to adjust the part number of the rootfs part depending on if
     # boot part was extracted or generated.
     boot_part="work/boot-generated.vfat"
+    # Let me add a little more dance here with the "modern" paritioning schema.
+    # In short this madness is called systemd-repart convention and it has two
+    # pools: 1-11 for "stable" partitions like root and 12-15 for "special"
+    # partitions like boot, EFI etc.
+    # In the classic schema there is:
+    # * part-1.fs representing EFI
+    # * part-2.fs representing rootfs
+    # In the modern schema the numbering is different:
+    # * part-1.fs representing rootfs
+    # * part-14.fs representing BIOS
+    # * part-15.fs representing EFI
+    # Idea behind above enumerating schema is to always keep rootfs and core
+    # partitions assigned to numbers from range 1 - 11. This way any changes
+    # to special partitions shall not break the hardcoded references to rootfs
+    # (like assumption that root will always be /dev/mmcblk0p1)
     if [ ! -f ${boot_part} ]; then
-        boot_part="work/part-1.fs"
+        # Detect systemd-repart schema
+        if [ -f "work/part-15.fs" ]; then
+            boot_part="work/part-15.fs"
+        else
+            boot_part="work/part-1.fs"
+        fi
     fi
     echo "${boot_part}"
 }
@@ -201,7 +221,12 @@ disk_boot_part() {
 disk_root_part() {
     boot_part="work/boot-generated.vfat"
     if [ ! -f ${boot_part} ]; then
-        root_part="work/part-2.fs"
+        # Detect systemd-repart schema
+        if [ -f "work/part-15.fs" ]; then
+            root_part="work/part-1.fs"
+        else
+            root_part="work/part-2.fs"
+        fi
     else
         root_part="work/part-1.fs"
     fi
