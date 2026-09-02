@@ -117,16 +117,12 @@ include:
   - component: gitlab.com/Northern.tech/Mender/mendertesting/release-docs-changelog@master
     inputs:
       remote_changelog_file: "32.mender-convert/docs.md"
-  - component: gitlab.com/Northern.tech/Mender/mendertesting/renovate@master
-    inputs:
-      stage: "renovate"
 
 default:
   tags: !reference [.qa-common-default-runner, tags]
   retry: !reference [.qa-common-default-retry, retry]
 
 stages:
-  - renovate
   - test
   - build
   - convert
