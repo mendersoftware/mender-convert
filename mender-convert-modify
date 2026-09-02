@@ -254,8 +254,7 @@ log_info "Using data partition device in fstab: $data_part_device"
 # On systemd-repart based distros fstab may be runtime created and missing in the image file
 fstab=""
 if [ -f work/rootfs/etc/fstab ]; then
-    fstab=$(sed '/\/boot/d' work/rootfs/etc/fstab)
-    fstab=$(sed '/.*\s\/\s.*/d' <<< "$fstab")
+    fstab=$(sed -e '/\/boot/d' -e '/.*\s\/\s.*/d' work/rootfs/etc/fstab)
 fi
 cat <<- EOF > work/rootfs/etc/fstab
 ${boot_part_device}   ${MENDER_BOOT_PART_MOUNT_LOCATION}          auto       ${MENDER_BOOT_PART_FSTAB_OPTS}    0  0
