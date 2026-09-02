@@ -1,4 +1,26 @@
 ---
+## 5.3.0 - 2026-09-02
+
+
+### New features
+
+- Support zstd compression ([f7eb170](https://github.com/mendersoftware/mender-convert/commit/f7eb1709bab223785bbfc0efe499a4483dfaef0c)) by @MarlonAtStogger
+- Rootfs b filesystem inclusion can be switched off ([7b5d8b9](https://github.com/mendersoftware/mender-convert/commit/7b5d8b924460ed42a6183358f883ffe78e567fb0)) by @MarlonAtStogger
+- Recognize systemd-repart schema ([8a9402b](https://github.com/mendersoftware/mender-convert/commit/8a9402b844747e7dfd6c725ed721ea1bf1281afd)) by @elkoniu
+
+### Bug fixes
+
+- *(disk)* Support Technologic Systems tssdcard paths ([8b84f56](https://github.com/mendersoftware/mender-convert/commit/8b84f564017d40e2176635f49485e97c5410db0e)) by @dottaviano-ipa
+- Prevent sudo prompt for help and version commands ([MEN-10070](https://northerntech.atlassian.net/browse/MEN-10070)) ([e7efef7](https://github.com/mendersoftware/mender-convert/commit/e7efef74369a89d4662add76c48d2c606ec6ed7c)) by @LudvigAnderson
+
+---
+### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [MEN-10070](https://northerntech.atlassian.net/browse/MEN-10070) |
+
+
 ## 5.2.1 - 2026-04-09
 
 
