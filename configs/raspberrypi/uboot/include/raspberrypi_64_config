@@ -1,8 +1,8 @@
 # Binaries generated with the following script:
 #    https://github.com/mendersoftware/mender-convert-integration-scripts/blob/master/build-uboot-rpi64.sh
 
-# in the Aarch64 case, it seems to always be "kernel8.img"
-RASPBERRYPI_KERNEL_IMAGE="kernel8.img"
+# Default to kernel8.img for aarch64 but allow to overwrite this in other config file
+RASPBERRYPI_KERNEL_IMAGE="${RASPBERRYPI_KERNEL_IMAGE:-kernel8.img}"
 
 RASPBERRYPI_BINARIES="raspberrypi_arm64-2024.04.tar.gz"
 RASPBERRYPI_BINARIES_URL="${MENDER_STORAGE_URL}/mender-convert/uboot/raspberrypi64/${RASPBERRYPI_BINARIES}"
