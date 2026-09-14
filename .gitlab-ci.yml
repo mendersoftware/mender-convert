@@ -163,7 +163,7 @@ build:docker-multiplatform:
     - mender-qa-worker-generic
   before_script:
     - !reference [.qa-common-network-apt-retry, before_script]
-    - apt update && apt install -yy bash wget xz-utils docker.io curl unzip
+    - apt update && apt install -yy bash wget xz-utils docker.io curl unzip git
 
     # Install awscli
     - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
