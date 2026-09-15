@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+# Enable root SSH login
+sed -E -i \
+    's/^#? *PermitRootLogin .*/PermitRootLogin yes/' \
+    "/etc/ssh/sshd_config"
+
+# Enable password authentication
+sed -E -i \
+    's/^#? *PasswordAuthentication .*/PasswordAuthentication yes/' \
+    "/etc/ssh/sshd_config"
+
+# Make sure ssh service will be up
+ln -sf /lib/systemd/system/ssh.service \
+    "/etc/systemd/system/multi-user.target.wants/ssh.service"
