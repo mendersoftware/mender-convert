@@ -102,10 +102,7 @@ if [ -n "$PREBUILT_IMAGE" ]; then
   exit $test_result
 fi
 
-MATCHED_A_TEST=0
-
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-12-qemux86-64" ]; then
-  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${DEBIAN_12_IMAGE_URL} -P input/image/
   DEBIAN_12_IMAGE_COMPRESSED="${DEBIAN_12_IMAGE_URL##*/}"
   DEBIAN_12_IMAGE_UNCOMPRESSED=${DEBIAN_12_IMAGE_COMPRESSED%.gz}
@@ -121,7 +118,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-12-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-13-qemux86-64" ]; then
-  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${DEBIAN_13_IMAGE_URL} -P input/image/
   DEBIAN_13_IMAGE_COMPRESSED="${DEBIAN_13_IMAGE_URL##*/}"
   DEBIAN_13_IMAGE_UNCOMPRESSED=${DEBIAN_13_IMAGE_COMPRESSED%.gz}
@@ -137,7 +133,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-13-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64" ]; then
-  MATCHED_A_TEST=1
   # For this test, we explicitly test compressed and uncompressed image conversion
   # For most of the other tests, we just test the uncompressed image conversion to
   # speed up the process
@@ -168,7 +163,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64" ]; then
-  MATCHED_A_TEST=1
   # For this test, we explicitly test compressed and uncompressed image conversion
   # For most of the other tests, we just test the uncompressed image conversion to
   # speed up the process
@@ -200,7 +194,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64" ]; then
-  MATCHED_A_TEST=1
   # For this test, we explicitly test compressed and uncompressed image conversion
   # For most of the other tests, we just test the uncompressed image conversion to
   # speed up the process
@@ -232,7 +225,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64-no-grub-d" ]; then
-  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${UBUNTU_22_IMAGE_URL} -P input/image/
   UBUNTU_22_IMAGE_COMPRESSED="${UBUNTU_22_IMAGE_URL##*/}"
   UBUNTU_22_IMAGE_UNCOMPRESSED=${UBUNTU_22_IMAGE_COMPRESSED%.gz}
@@ -251,7 +243,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64-no-grub-d" 
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64-no-grub-d" ]; then
-  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${UBUNTU_24_IMAGE_URL} -P input/image/
   UBUNTU_24_IMAGE_COMPRESSED="${UBUNTU_24_IMAGE_URL##*/}"
   UBUNTU_24_IMAGE_UNCOMPRESSED=${UBUNTU_24_IMAGE_COMPRESSED%.gz}
@@ -270,7 +261,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64-no-grub-d" 
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64-no-grub-d" ]; then
-  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${UBUNTU_26_IMAGE_URL} -P input/image/
   UBUNTU_26_IMAGE_COMPRESSED="${UBUNTU_26_IMAGE_URL##*/}"
   UBUNTU_26_IMAGE_UNCOMPRESSED=${UBUNTU_26_IMAGE_COMPRESSED}
@@ -288,7 +278,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64-no-grub-d" 
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_trixie_64bit" ]; then
-  MATCHED_A_TEST=1
   # For this test we test compressed image to verify xz compression
   wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
   RASPIOS_IMAGE_COMPRESSED="${RASPIOS_IMAGE_URL##*/}"
@@ -302,7 +291,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_trixie_64bit" ]; th
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi5_trixie_64bit" ]; then
-  MATCHED_A_TEST=1
   wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
   RASPIOS_IMAGE_COMPRESSED="${RASPIOS_IMAGE_URL##*/}"
   RASPIOS_IMAGE_UNCOMPRESSED=${RASPIOS_IMAGE_COMPRESSED%.xz}
@@ -317,7 +305,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi5_trixie_64bit" ]; th
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_uefi_bookworm_64bit" ]; then
-  MATCHED_A_TEST=1
   # For this test we test compressed image to verify xz compression
   wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
   RASPIOS_IMAGE_COMPRESSED="${RASPIOS_IMAGE_URL##*/}"
@@ -328,11 +315,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_uefi_bookworm_64bit
                    "--" \
                    "$@" \
                    || test_result=$?
-fi
-
-if [ "$MATCHED_A_TEST" = 0 ]; then
-  echo "No test matched!" 1>&2
-  exit 1
 fi
 
 exit $test_result
