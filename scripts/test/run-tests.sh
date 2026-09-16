@@ -133,9 +133,6 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-13-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64" ]; then
-  # For this test, we explicitly test compressed and uncompressed image conversion
-  # For most of the other tests, we just test the uncompressed image conversion to
-  # speed up the process
   wget --progress=dot:giga -N ${UBUNTU_22_IMAGE_URL} -P input/image/
   UBUNTU_22_IMAGE_COMPRESSED="${UBUNTU_22_IMAGE_URL##*/}"
   UBUNTU_22_IMAGE_UNCOMPRESSED=${UBUNTU_22_IMAGE_COMPRESSED%.gz}
@@ -148,24 +145,9 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64" ]; then
                    "--" \
                    "$@" \
                    || test_result=$?
-
-  echo >&2 "----------------------------------------"
-  echo >&2 "Running the uncompressed test"
-  echo >&2 "----------------------------------------"
-  rm -rf deploy
-  run_convert "release-2" \
-              "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}" \
-              "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
-  ret=0
-  UBUNTU_22_IMAGE_MENDER="${UBUNTU_22_IMAGE_UNCOMPRESSED%.img}-qemux86-64-mender.img"
-  test -f deploy/${UBUNTU_22_IMAGE_MENDER} || ret=$?
-  assert "${ret}" "0" "Expected uncompressed file deploy/${UBUNTU_22_IMAGE_MENDER}"
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64" ]; then
-  # For this test, we explicitly test compressed and uncompressed image conversion
-  # For most of the other tests, we just test the uncompressed image conversion to
-  # speed up the process
   wget --progress=dot:giga -N ${UBUNTU_24_IMAGE_URL} -P input/image/
   UBUNTU_24_IMAGE_COMPRESSED="${UBUNTU_24_IMAGE_URL##*/}"
   UBUNTU_24_IMAGE_UNCOMPRESSED=${UBUNTU_24_IMAGE_COMPRESSED%.gz}
@@ -178,25 +160,14 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64" ]; then
                    "--" \
                    "$@" \
                    || test_result=$?
-
-  echo >&2 "----------------------------------------"
-  echo >&2 "Running the uncompressed test"
-  echo >&2 "----------------------------------------"
-  rm -rf deploy
-  UBUNTU_24_IMAGE_UNCOMPRESSED=${UBUNTU_24_IMAGE_COMPRESSED}
-  run_convert "release-2" \
-              "input/image/${UBUNTU_24_IMAGE_UNCOMPRESSED}" \
-              "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
-  ret=0
-  UBUNTU_24_IMAGE_MENDER="${UBUNTU_24_IMAGE_UNCOMPRESSED%.img}-qemux86-64-mender.img"
-  test -f deploy/${UBUNTU_24_IMAGE_MENDER} || ret=$?
-  assert "${ret}" "0" "Expected uncompressed file deploy/${UBUNTU_24_IMAGE_MENDER}"
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64" ]; then
   # For this test, we explicitly test compressed and uncompressed image conversion
   # For most of the other tests, we just test the uncompressed image conversion to
-  # speed up the process
+  # speed up the process.
+  # We shall do this in the future only on the one selected distro,
+  # today Ubuntu 26.04 has been selected.
   wget --progress=dot:giga -N ${UBUNTU_26_IMAGE_URL} -P input/image/
   UBUNTU_26_IMAGE_COMPRESSED="${UBUNTU_26_IMAGE_URL##*/}"
   UBUNTU_26_IMAGE_UNCOMPRESSED=${UBUNTU_26_IMAGE_COMPRESSED%.gz}
