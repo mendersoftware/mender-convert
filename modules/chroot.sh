@@ -44,6 +44,8 @@ function chroot_setup() {
     mkdir -p "$directory/etc/ssl"
     cp -a /etc/ssl/certs "$directory/etc/ssl/"
     cp -a /etc/ca-certificates* "$directory/etc/"
+    # New apt uses openssl and looks for certs in /usr/lib/ssl rather than /etc/ssl/certs
+    echo 'Acquire::https::CaInfo "/etc/ssl/certs/ca-certificates.crt";' > "$directory/etc/apt/apt.conf.d/99mender-convert-ca"
 
     # Mender-convert usually runs in a container. It's difficult to launch additional containers
     # from within an existing one, but we need to run some commands on a simulated device using
@@ -121,6 +123,7 @@ function chroot_teardown() {
         mv "$directory/etc/ca-certificates.conf.orig" "$directory/etc/ca-certificates.conf"
     fi
 
+    rm -f "$directory/etc/apt/apt.conf.d/99mender-convert-ca"
     rm -rf "$directory/etc/ssl/certs"
     rm -rf "$directory/etc/ca-certificates"
     for cert_dir in "$directory/etc/ca-certificates" "$directory/etc/ssl/certs"; do

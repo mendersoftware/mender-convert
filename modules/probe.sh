@@ -44,12 +44,9 @@ probe_arch() {
     # --dereference, means to follow symlinks because 'ls' could be a symlink
     # to busybox
     file_info=""
-    for location in bin/ls usr/bin/ls; do
-        if [ -L work/rootfs/${location} ]; then
-            location=$(readlink work/rootfs/${location})
-        fi
-        if [ -e work/rootfs/${location} ]; then
-            file_info=$(file -b --dereference work/rootfs/${location})
+    for location in "work/rootfs/bin/ls" "work/rootfs/usr/bin/ls"; do
+        if [ -e "${location}" ]; then
+            file_info=$(file -bL "${location}")
             break
         fi
     done
@@ -59,13 +56,13 @@ probe_arch() {
     fi
 
     target_arch="unknown"
-    if grep -Eq "ELF 64-bit.*x86-64" <<< "${file_info}"; then
+    if grep -Eq 'ELF 64-bit.*x86-64' <<< "${file_info}"; then
         target_arch="x86_64"
-    elif grep -Eq "ELF 32-bit.*386" <<< "${file_info}"; then
+    elif grep -Eq 'ELF 32-bit.*386' <<< "${file_info}"; then
         target_arch="i386"
-    elif grep -Eq "ELF 32-bit.*ARM" <<< "${file_info}"; then
+    elif grep -Eq 'ELF 32-bit.*ARM' <<< "${file_info}"; then
         target_arch="arm"
-    elif grep -Eq "ELF 64-bit.*aarch64" <<< "${file_info}"; then
+    elif grep -Eq 'ELF 64-bit.*aarch64' <<< "${file_info}"; then
         target_arch="aarch64"
     else
         log_fatal "Unsupported architecture: ${file_info}"
