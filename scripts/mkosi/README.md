@@ -55,14 +55,31 @@ The alternative is a manual image creation. It has been done now for Debian
 family images (Debian 12, Debian 13) as the mkosi based image has
 issues with the grub update due to kernel placement in /boot/efi.
 
-For manual image conversion:
-1) Select the source image. For Debian the source was nocloud cloud images:
+For manual image preparation:
+1) Select the source image. This would represent the source which user would
+   normally use for system installation.
+   It can be a standard live iso available for distribution or the compatible
+   qemu cloud image. Using cloud images may minimize update effort in future
+   as ideally it would be just bump of the link to the latest available
+   cloud image release (still, may require some manual changes on top - see
+   followup items on this list).
+   For Debian the source was nocloud cloud images:
    https://cloud.debian.org/images/cloud/bookworm/20260806-2562/debian-12-nocloud-amd64-20260806-2562.raw
-2) Make sure image is compatible with grub (we do not suport systemd-boot yet)
-3) Boot the image using qemu. There are two scripts helping with that:
+2) Install image on a virtual hard drive (`qemu-img create vm-disk.img 20G`) or
+   boot the cloud image virtual hdd.
+3) Make sure image is compatible with grub (we do not suport systemd-boot yet).
+   It should be possible to run `update-grub` without extra flags so:
+   - grub is installed in the default location `/boot/...`
+   - kernel is presented in the default location `/boot/...`
+   If kernel or grub will not be in the default search path the converted image
+   (which calls `update-grub` during conversion) will not boot.
+   Also make sure that default partitioning schema is used:
+   - two partitions (boot/efi and rootfs)
+   - no disk encryption
+4) Make post install adjustments. There are two scripts helping with that:
    * run-vm.sh (for EFI requiring images)
    * run-vm-no-ovmf.sh (for basic qemu support).
-4) Install the same packages which mkosi.conf would install
+5) Install the same packages which mkosi.conf would install
 
 [Debian 12]
 grub-efi-amd64-signed \
@@ -84,9 +101,31 @@ libarchive13 \
 libboost-log1.83.0 \
 lsb-release
 
-5) Make sure root password is `password`
-5) Make sure ssh server is running
-6) Make sure ssh has root and password login enabled
+[Ubuntu 24.04]
+grub-efi-amd64-signed \
+shim-signed \
+openssh-server \
+dhcpcd5 \
+liblmdb0 \
+libarchive13 \
+libboost-log1.74.0 \
+lsb-release \
+apt
+
+[Ubuntu 26.04]
+grub-efi-amd64-signed \
+shim-signed \
+openssh-server \
+dhcpcd5 \
+liblmdb0 \
+libarchive13 \
+libboost-log1.83.0 \
+lsb-release \
+apt
+
+6) Make sure root password is `password`
+7) Make sure ssh server is running
+8) Make sure ssh has root and password login enabled
 
 ```
 sed -E -i \
@@ -97,11 +136,11 @@ sed -E -i \
 's/^#? *PasswordAuthentication .*/PasswordAuthentication yes/' \
 "/etc/ssh/sshd_config"
 ```
-7) Try to ssh to machine as root using qemu port forwarding (heler script
+9) Try to ssh to machine as root using qemu port forwarding (helper script
    exposes ssh on port 8822)
-8) Shut down the machine
-9) Rename disk image to *.img (or convert if needed)
-10) gzip the disk image to final form NAME.tar.gz
-11) Upload to S3
-12) Update download link in the scripts/test/run-tests.sh
+10) Shut down the machine
+11) Rename disk image to *.img (or convert if needed)
+12) gzip the disk image to final form NAME.tar.gz
+13) Upload to S3
+14) Update download link in the scripts/test/run-tests.sh
 
