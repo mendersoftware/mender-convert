@@ -4,6 +4,7 @@ variables:
   MULTIPLATFORM_BUILD: "true"
   MULTIPLATFORM_PLATFORMS: "linux/amd64,linux/arm64"
   S3_BUCKET_NAME: mender-convert-images
+  AWS_S3_PUBLISH_ROLE_ARN: "arn:aws:iam::175683096866:role/nt-mender-convert-s3-publishing"
 
   AWS_CLI_V2_VERSION: "2.27.56"
   AWS_CLI_V2_CHECKSUM: "48c7a449b6bbb1f679ca25fe32dca9bc410b4abd2622d4640ccee922f504458f"
@@ -441,8 +442,23 @@ publish:image-multiplatform:
       when: never
     - if: $CI_COMMIT_TAG
 
+.aws-oidc-auth: &aws-oidc-auth
+  - >
+    export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+    $(aws sts assume-role-with-web-identity
+    --role-arn ${AWS_S3_PUBLISH_ROLE_ARN}
+    --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+    --web-identity-token ${AWS_OIDC_TOKEN}
+    --duration-seconds 900
+    --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+    --output text))
+  - aws sts get-caller-identity
+
 .template:publish:s3:
   stage: publish
+  id_tokens:
+    AWS_OIDC_TOKEN:
+      aud: https://gitlab.com
   needs:
     - job: convert_raspbian_raspberrypi4_trixie_64bit
       artifacts: true
@@ -459,6 +475,9 @@ publish:image-multiplatform:
     - for RASPBERRYPI_CONFIG_NAME in raspberrypi5_trixie_64bit raspberrypi4_trixie_64bit; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
+    #   Assume the publish role per board: the session is short-lived, and the
+    #   tmp storage download above must not run with the publish credentials
+    -   *aws-oidc-auth
     -   PUBLISH_NAME=${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
     -   echo "Publishing ${PUBLISH_NAME} version to S3"
     #   It is not possible deduce filename from RASPBERRY_PI_OS_UBOOT_PREFIX and RASPBERRYPI_CONFIG_NAME,
@@ -475,6 +494,7 @@ publish:image-multiplatform:
     -   aws s3api put-object-acl --acl public-read --bucket $S3_BUCKET_NAME
           --key ${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${PUBLISH_NAME}
 
+    -   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
     #   Remove after upload to free disk space for the next board
     -   rm -rf ${RASPBERRYPI_CONFIG_NAME}.tar.gz ${RASPBERRYPI_CONFIG_NAME}/
     - done
