@@ -1,17 +1,3 @@
-# Cross-compile pxz (Parallel LZMA compression) in separate image
-FROM --platform=$BUILDPLATFORM debian:13 AS build
-ARG TARGETARCH
-RUN dpkg --add-architecture ${TARGETARCH} && \
-    apt-get update && \
-    env DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes \
-    build-essential \
-    gcc-aarch64-linux-gnu \
-    git \
-    liblzma-dev:${TARGETARCH}
-RUN git clone https://github.com/jnovy/pxz.git /root/pxz
-WORKDIR /root/pxz
-RUN if [ "$TARGETARCH" = "arm64" ]; then CC=aarch64-linux-gnu-gcc; else CC=cc; fi; env CC=$CC make
-
 FROM ubuntu:24.04
 ARG TARGETARCH
 ARG MENDER_ARTIFACT_VERSION
@@ -50,8 +36,6 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install --assum
     bmap-tools \
 # to regenerate the U-Boot boot.scr on platforms that need customization
     u-boot-tools \
-# needed to run pxz
-    libgomp1  \
 # artifact compression
     zip  \
     unzip \
@@ -65,8 +49,6 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install --assum
 # to be able to run package installations on foreign architectures
     binfmt-support \
     qemu-user-static
-
-COPY --from=build /root/pxz/pxz /usr/bin/pxz
 
 # allow us to keep original PATH variables when sudoing
 RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
