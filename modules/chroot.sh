@@ -153,6 +153,19 @@ function run_with_chroot_setup() {
     return $ret
 }
 
+# qemu-user refuses brk() growth for 64-bit guests, glibc leaves errno=ENOMEM
+# behind and apt 2.6 reports it as a getline() error. Reserving the guest
+# address space avoids it. Only for `apt update`: the variable is inherited by
+# children, and qemu aborts when dpkg runs the mender-setup postinst with it.
+# $1 - chroot architecture, $2 - command
+function chroot_qemu_env() {
+    [ "$1" != "$(uname -m)" ] || return 0
+    [ "$1" = "aarch64" ] || return 0
+    if [[ "$2" =~ (^|[[:space:]])apt(-get)?[[:space:]]+update([[:space:]]|$) ]]; then
+        echo "QEMU_RESERVED_VA=0x100000000000"
+    fi
+}
+
 function run_in_chroot_and_log_cmd() {
     local -r directory="$1"
     shift
@@ -165,7 +178,7 @@ function run_in_chroot_and_log_cmd() {
         maybe_qemu="/tmp/qemu-$arch-static /usr/bin/env"
     fi
 
-    run_and_log_cmd "sudo chroot $directory $maybe_qemu $@"
+    run_and_log_cmd "sudo env $(chroot_qemu_env "$arch" "$*") chroot $directory $maybe_qemu $@"
 }
 
 function run_in_chroot_and_log_cmd_with_output() {
@@ -180,7 +193,7 @@ function run_in_chroot_and_log_cmd_with_output() {
         maybe_qemu="/tmp/qemu-$arch-static /usr/bin/env"
     fi
 
-    run_and_log_cmd_with_output "sudo chroot $directory $maybe_qemu $@"
+    run_and_log_cmd_with_output "sudo env $(chroot_qemu_env "$arch" "$*") chroot $directory $maybe_qemu $@"
 }
 
 function run_in_chroot_and_log_cmd_noexit() {
@@ -196,7 +209,7 @@ function run_in_chroot_and_log_cmd_noexit() {
     fi
 
     local ret=0
-    run_and_log_cmd_noexit "sudo chroot $directory $maybe_qemu $@" || ret=$?
+    run_and_log_cmd_noexit "sudo env $(chroot_qemu_env "$arch" "$*") chroot $directory $maybe_qemu $@" || ret=$?
     return $ret
 }
 
@@ -213,6 +226,6 @@ function run_in_chroot_and_log_cmd_with_output_noexit() {
     fi
 
     local ret=0
-    run_and_log_cmd_with_output_noexit "sudo chroot $directory $maybe_qemu $@" || ret=$?
+    run_and_log_cmd_with_output_noexit "sudo env $(chroot_qemu_env "$arch" "$*") chroot $directory $maybe_qemu $@" || ret=$?
     return $ret
 }
