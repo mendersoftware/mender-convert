@@ -21,3 +21,8 @@ MENDER_DEVICE_TYPE="qemux86-64"
 MENDER_COPY_BOOT_GAP="n"
 
 MENDER_SPARSE_IMAGE="y"
+
+# Modern Ubuntu ISO based images uses initially around 6.5G for data only
+# so to make it safe 22G shall be big enough to fit two data partitions, EFI
+# and have some spare size.
+MENDER_STORAGE_TOTAL_SIZE_MB="21968"
