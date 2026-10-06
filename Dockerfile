@@ -1,3 +1,20 @@
+# QA-1780 qemu-user 8.2 and later refuses brk() growth for arm64 guests
+# which makes apt fail with ENOMEM. Take the static qemu-user binaries from
+# Debian 12 (qemu 7.2, which grants brk) and copy them over the ones of the
+# Ubuntu qemu-user-static package in the final image. The build fails if
+# Debian 12 ever ships another qemu series.
+FROM debian:12 AS qemu
+RUN apt-get update && \
+    env DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends \
+    qemu-user-static && \
+    version="$(qemu-aarch64-static --version | head -n 1)" && \
+    case "$version" in \
+      "qemu-aarch64 version 7.2."*) ;; \
+      *) echo >&2 "ERROR: expected qemu 7.2 from Debian 12, got: $version (see QA-1780)"; exit 1 ;; \
+    esac && \
+    mkdir /out && \
+    for f in /usr/bin/qemu-*-static; do cp -L "$f" /out/; done
+
 FROM ubuntu:24.04
 ARG TARGETARCH
 ARG MENDER_ARTIFACT_VERSION
@@ -49,6 +66,8 @@ RUN apt-get update && env DEBIAN_FRONTEND=noninteractive apt-get install --assum
 # to be able to run package installations on foreign architectures
     binfmt-support \
     qemu-user-static
+
+COPY --from=qemu /out/ /usr/bin/
 
 # allow us to keep original PATH variables when sudoing
 RUN echo "Defaults        secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH\"" > /etc/sudoers.d/secure_path_override
