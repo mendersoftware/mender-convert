@@ -32,9 +32,9 @@ DEBIAN_12_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-12
 # Based on original nocloud images and manually converted
 DEBIAN_13_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Debian-13-nocloud-amd64.img.gz"
 # Generated from live iso
-UBUNTU_24_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-24.04-iso.img.gz"
+UBUNTU_24_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-24.04-efi-iso.img.gz"
 # Generated from live iso
-UBUNTU_26_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-26.04-iso.img.gz"
+UBUNTU_26_IMAGE_URL="https://downloads.mender.io/mender-convert/images/Ubuntu-26.04-efi-iso.img.gz"
 
 # Keep common function declarations in separate utils script
 UTILS_PATH=${0/$(basename $0)/test-utils.sh}
