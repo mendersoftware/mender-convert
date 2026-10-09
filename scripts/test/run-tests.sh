@@ -15,7 +15,7 @@
 set -e
 
 usage() {
-  echo "$0 [--config EXTRA_CONFIG_FILE] <--all | --only DEVICE_TYPE | --raspios-image-url RASPIOS_IMAGE_URL | --prebuilt-image DEVICE_TYPE IMAGE_NAME> [-- <pytest-options>]"
+  echo "$0 [--config EXTRA_CONFIG_FILE] [--phase convert|test|all] <--all | --only DEVICE_TYPE | --raspios-image-url RASPIOS_IMAGE_URL | --prebuilt-image DEVICE_TYPE IMAGE_NAME> [-- <pytest-options>]"
   exit 1
 }
 
@@ -62,6 +62,7 @@ TEST_PLATFORM=
 TEST_ALL=0
 EXTRA_CONFIG=
 RASPIOS_IMAGE_URL=
+PHASE=all
 while [ -n "$1" ]; do
   case "$1" in
     --prebuilt-image)
@@ -86,6 +87,11 @@ while [ -n "$1" ]; do
       EXTRA_CONFIG="$EXTRA_CONFIG --config $2"
       shift
       ;;
+    --phase)
+      usage_if_empty "$2"
+      PHASE="$2"
+      shift
+      ;;
     --)
       shift
       break
@@ -93,6 +99,24 @@ while [ -n "$1" ]; do
   esac
   shift
 done
+
+case "$PHASE" in
+  all | convert | test) ;;
+  *) usage ;;
+esac
+
+# The test phase reuses the images converted by a previous convert phase.
+fetch_image() {
+  if [ "$PHASE" != "test" ]; then
+    wget --progress=dot:giga -N "$1" -P input/image/
+  fi
+}
+
+unpack_image() {
+  if [ "$PHASE" != "test" ]; then
+    "$@"
+  fi
+}
 
 test_result=0
 
@@ -103,10 +127,10 @@ if [ -n "$PREBUILT_IMAGE" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-12-qemux86-64" ]; then
-  wget --progress=dot:giga -N ${DEBIAN_12_IMAGE_URL} -P input/image/
+  fetch_image ${DEBIAN_12_IMAGE_URL}
   DEBIAN_12_IMAGE_COMPRESSED="${DEBIAN_12_IMAGE_URL##*/}"
   DEBIAN_12_IMAGE_UNCOMPRESSED=${DEBIAN_12_IMAGE_COMPRESSED%.gz}
-  gunzip --force "input/image/${DEBIAN_12_IMAGE_COMPRESSED}"
+  unpack_image gunzip --force "input/image/${DEBIAN_12_IMAGE_COMPRESSED}"
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${DEBIAN_12_IMAGE_UNCOMPRESSED}" \
@@ -118,10 +142,10 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-12-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-13-qemux86-64" ]; then
-  wget --progress=dot:giga -N ${DEBIAN_13_IMAGE_URL} -P input/image/
+  fetch_image ${DEBIAN_13_IMAGE_URL}
   DEBIAN_13_IMAGE_COMPRESSED="${DEBIAN_13_IMAGE_URL##*/}"
   DEBIAN_13_IMAGE_UNCOMPRESSED=${DEBIAN_13_IMAGE_COMPRESSED%.gz}
-  gunzip --force "input/image/${DEBIAN_13_IMAGE_COMPRESSED}"
+  unpack_image gunzip --force "input/image/${DEBIAN_13_IMAGE_COMPRESSED}"
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${DEBIAN_13_IMAGE_UNCOMPRESSED}" \
@@ -133,10 +157,10 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "debian-13-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64" ]; then
-  wget --progress=dot:giga -N ${UBUNTU_22_IMAGE_URL} -P input/image/
+  fetch_image ${UBUNTU_22_IMAGE_URL}
   UBUNTU_22_IMAGE_COMPRESSED="${UBUNTU_22_IMAGE_URL##*/}"
   UBUNTU_22_IMAGE_UNCOMPRESSED=${UBUNTU_22_IMAGE_COMPRESSED%.gz}
-  gunzip --force "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}"
+  unpack_image gunzip --force "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}"
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}" \
@@ -148,10 +172,10 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64" ]; then
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64" ]; then
-  wget --progress=dot:giga -N ${UBUNTU_24_IMAGE_URL} -P input/image/
+  fetch_image ${UBUNTU_24_IMAGE_URL}
   UBUNTU_24_IMAGE_COMPRESSED="${UBUNTU_24_IMAGE_URL##*/}"
   UBUNTU_24_IMAGE_UNCOMPRESSED=${UBUNTU_24_IMAGE_COMPRESSED%.gz}
-  gunzip --force "input/image/${UBUNTU_24_IMAGE_COMPRESSED}"
+  unpack_image gunzip --force "input/image/${UBUNTU_24_IMAGE_COMPRESSED}"
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${UBUNTU_24_IMAGE_UNCOMPRESSED}" \
@@ -168,10 +192,10 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64" ]; then
   # speed up the process.
   # We shall do this in the future only on the one selected distro,
   # today Ubuntu 26.04 has been selected.
-  wget --progress=dot:giga -N ${UBUNTU_26_IMAGE_URL} -P input/image/
+  fetch_image ${UBUNTU_26_IMAGE_URL}
   UBUNTU_26_IMAGE_COMPRESSED="${UBUNTU_26_IMAGE_URL##*/}"
   UBUNTU_26_IMAGE_UNCOMPRESSED=${UBUNTU_26_IMAGE_COMPRESSED%.gz}
-  gunzip --force "input/image/${UBUNTU_26_IMAGE_COMPRESSED}"
+  unpack_image gunzip --force "input/image/${UBUNTU_26_IMAGE_COMPRESSED}"
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${UBUNTU_26_IMAGE_UNCOMPRESSED}" \
@@ -181,25 +205,28 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64" ]; then
                    "$@" \
                    || test_result=$?
 
-  echo >&2 "----------------------------------------"
-  echo >&2 "Running the uncompressed test"
-  echo >&2 "----------------------------------------"
-  rm -rf deploy
-  UBUNTU_26_IMAGE_UNCOMPRESSED=${UBUNTU_26_IMAGE_COMPRESSED}
-  run_convert "release-2" \
-              "input/image/${UBUNTU_26_IMAGE_UNCOMPRESSED}" \
-              "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
-  ret=0
-  UBUNTU_26_IMAGE_MENDER="${UBUNTU_26_IMAGE_UNCOMPRESSED%.img}-qemux86-64-mender.img"
-  test -f deploy/${UBUNTU_26_IMAGE_MENDER} || ret=$?
-  assert "${ret}" "0" "Expected uncompressed file deploy/${UBUNTU_26_IMAGE_MENDER}"
+  if [ "$PHASE" != "test" ]; then
+    echo >&2 "----------------------------------------"
+    echo >&2 "Running the uncompressed test"
+    echo >&2 "----------------------------------------"
+    rm -rf deploy-uncompressed
+    UBUNTU_26_IMAGE_UNCOMPRESSED=${UBUNTU_26_IMAGE_COMPRESSED}
+    DEPLOY_DIRECTORY="${PWD}/deploy-uncompressed" \
+      run_convert "release-2" \
+                  "input/image/${UBUNTU_26_IMAGE_UNCOMPRESSED}" \
+                  "--config configs/ubuntu-qemux86-64_config $EXTRA_CONFIG" || test_result=$?
+    ret=0
+    UBUNTU_26_IMAGE_MENDER="${UBUNTU_26_IMAGE_UNCOMPRESSED%.img}-qemux86-64-mender.img"
+    test -f deploy-uncompressed/${UBUNTU_26_IMAGE_MENDER} || ret=$?
+    assert "${ret}" "0" "Expected uncompressed file deploy-uncompressed/${UBUNTU_26_IMAGE_MENDER}"
+  fi
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64-no-grub-d" ]; then
-  wget --progress=dot:giga -N ${UBUNTU_22_IMAGE_URL} -P input/image/
+  fetch_image ${UBUNTU_22_IMAGE_URL}
   UBUNTU_22_IMAGE_COMPRESSED="${UBUNTU_22_IMAGE_URL##*/}"
   UBUNTU_22_IMAGE_UNCOMPRESSED=${UBUNTU_22_IMAGE_COMPRESSED%.gz}
-  gunzip --force "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}"
+  unpack_image gunzip --force "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}"
   QEMU_NO_SECURE_BOOT=1 \
                    convert_and_test \
                    "qemux86-64" \
@@ -214,10 +241,10 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64-no-grub-d" 
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64-no-grub-d" ]; then
-  wget --progress=dot:giga -N ${UBUNTU_24_IMAGE_URL} -P input/image/
+  fetch_image ${UBUNTU_24_IMAGE_URL}
   UBUNTU_24_IMAGE_COMPRESSED="${UBUNTU_24_IMAGE_URL##*/}"
   UBUNTU_24_IMAGE_UNCOMPRESSED=${UBUNTU_24_IMAGE_COMPRESSED%.gz}
-  gunzip --force "input/image/${UBUNTU_24_IMAGE_COMPRESSED}"
+  unpack_image gunzip --force "input/image/${UBUNTU_24_IMAGE_COMPRESSED}"
   QEMU_NO_SECURE_BOOT=1 \
                    convert_and_test \
                    "qemux86-64" \
@@ -232,7 +259,7 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64-no-grub-d" 
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64-no-grub-d" ]; then
-  wget --progress=dot:giga -N ${UBUNTU_26_IMAGE_URL} -P input/image/
+  fetch_image ${UBUNTU_26_IMAGE_URL}
   UBUNTU_26_IMAGE_COMPRESSED="${UBUNTU_26_IMAGE_URL##*/}"
   UBUNTU_26_IMAGE_UNCOMPRESSED=${UBUNTU_26_IMAGE_COMPRESSED}
   QEMU_NO_SECURE_BOOT=1 \
@@ -250,7 +277,7 @@ fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_trixie_64bit" ]; then
   # For this test we test compressed image to verify xz compression
-  wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
+  fetch_image ${RASPIOS_IMAGE_URL}
   RASPIOS_IMAGE_COMPRESSED="${RASPIOS_IMAGE_URL##*/}"
   convert_and_test "raspberrypi4_64" \
                    "release-1" \
@@ -262,10 +289,10 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_trixie_64bit" ]; th
 fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi5_trixie_64bit" ]; then
-  wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
+  fetch_image ${RASPIOS_IMAGE_URL}
   RASPIOS_IMAGE_COMPRESSED="${RASPIOS_IMAGE_URL##*/}"
   RASPIOS_IMAGE_UNCOMPRESSED=${RASPIOS_IMAGE_COMPRESSED%.xz}
-  unxz --force "input/image/${RASPIOS_IMAGE_COMPRESSED}"
+  unpack_image unxz --force "input/image/${RASPIOS_IMAGE_COMPRESSED}"
   convert_and_test "raspberrypi5_64" \
                    "release-1" \
                    "input/image/${RASPIOS_IMAGE_UNCOMPRESSED}" \
@@ -277,7 +304,7 @@ fi
 
 if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "raspberrypi4_uefi_bookworm_64bit" ]; then
   # For this test we test compressed image to verify xz compression
-  wget --progress=dot:giga -N ${RASPIOS_IMAGE_URL} -P input/image/
+  fetch_image ${RASPIOS_IMAGE_URL}
   RASPIOS_IMAGE_COMPRESSED="${RASPIOS_IMAGE_URL##*/}"
   convert_and_test "raspberrypi4_64_uefi" \
                    "release-1" \

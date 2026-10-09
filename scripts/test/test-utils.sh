@@ -93,9 +93,15 @@ convert_and_test() {
 
   local ret=0
 
-  run_convert ${artifact_name} ${image_file} ${extra_args} || ret=$?
+  if [ "${PHASE:-all}" != "test" ]; then
+    run_convert ${artifact_name} ${image_file} ${extra_args} || ret=$?
 
-  assert "${ret}" "0" "Failed to convert ${image_file}"
+    assert "${ret}" "0" "Failed to convert ${image_file}"
+  fi
+
+  if [ "${PHASE:-all}" == "convert" ]; then
+    return 0
+  fi
 
   local compression="${image_file##*.}"
 

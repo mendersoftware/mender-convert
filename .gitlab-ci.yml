@@ -161,7 +161,7 @@ build:docker-multiplatform:
   services:
     - docker:dind
   tags:
-    - mender-qa-worker-generic
+    - k8s
   before_script:
     - !reference [.qa-common-network-apt-retry, before_script]
     - apt update && apt install -yy bash wget xz-utils docker.io curl unzip git
@@ -173,6 +173,7 @@ build:docker-multiplatform:
 
     - docker pull ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
     - export IMAGE_NAME=${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+    - !reference [.create_loop_devices, script]
 
     - export RASPBERRYPI_CONFIG_NAME="$(basename "$RASPBERRYPI_PLATFORM")"
 
@@ -292,9 +293,9 @@ convert_raspbian_raspberrypi4_trixie_64bit:
   parallel: !reference [.acc-test-distros-image-matrix, parallel]
 
 .template_test_acceptance_prebuilt_raspberrypi: &test_acceptance_prebuilt_raspberrypi
-  <<: *test_acceptance
+  extends: .template_test_image
   script:
-    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
+    - export RASPBERRYPI_CONFIG_NAME="$(basename "$RASPBERRYPI_PLATFORM")"
     # Fetch artifacts from temporary S3 bucket
     - mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     - tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
@@ -311,8 +312,6 @@ convert_raspbian_raspberrypi4_trixie_64bit:
 test_acceptance_prebuilt_raspberrypi5_trixie_64bit:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
-    - job: build:docker-multiplatform
-      artifacts: false
     - job: convert_raspbian_raspberrypi5_trixie_64bit
       artifacts: true
   variables:
@@ -322,8 +321,6 @@ test_acceptance_prebuilt_raspberrypi5_trixie_64bit:
 test_acceptance_prebuilt_raspberrypi4_trixie_64bit:
   <<: *test_acceptance_prebuilt_raspberrypi
   needs:
-    - job: build:docker-multiplatform
-      artifacts: false
     - job: convert_raspbian_raspberrypi4_trixie_64bit
       artifacts: true
   variables:
@@ -331,107 +328,298 @@ test_acceptance_prebuilt_raspberrypi4_trixie_64bit:
     MENDER_DEVICE_TYPE: raspberrypi4_64
 
 
-test_acceptance_ubuntu_22_qemux86_64:
-  <<: *test_acceptance
+.install_awscli:
+  script:
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_V2_VERSION}.zip" -o "awscliv2.zip"
+    - echo "${AWS_CLI_V2_CHECKSUM}  awscliv2.zip" |  sha256sum -c
+    - unzip awscliv2.zip
+    - ./aws/install --bin-dir /usr/bin
+
+.create_loop_devices:
+  script:
+    # The k8s dind container lacks /dev/loopN. Create them in its /dev, which
+    # docker-mender-convert bind-mounts (-v /dev:/dev).
+    - docker run --rm --privileged -v /dev:/dev --entrypoint sh ${IMAGE_NAME} -c 'for i in $(seq 0 15); do [ -e /dev/loop$i ] || mknod /dev/loop$i b 7 $i; done'
+
+.template_convert_image: &convert_image
+  stage: convert
+  needs:
+    - job: build:docker-multiplatform
+      artifacts: false
+  image: ubuntu:26.04
+  services:
+    - docker:dind
+  tags:
+    - k8s
+  timeout: 1h
+  before_script:
+    - !reference [.qa-common-network-apt-retry, before_script]
+    - apt install -qyy bash wget git sudo ca-certificates curl unzip xz-utils docker.io
+    - !reference [.install_awscli, script]
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+    - export IMAGE_NAME=${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+    - !reference [.create_loop_devices, script]
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
+  artifacts:
+    paths:
+      - checksums
+  rules:
+    - if: '$TEST_MENDER_CONVERT == "true"'
+
+.template_test_image: &test_image
+  stage: test_acceptance
+  image: ${DISTRO}:${RELEASE}
+  tags:
+    - k8s-small
+  timeout: 2h
+  before_script:
+    - !reference [.qa-common-network-apt-retry, before_script]
+    - apt install -qyy bash wget git util-linux mtools python3 python3-pip lmdb-utils
+      gcc python3-dev libffi-dev liblzo2-dev libc-dev libssl-dev make sudo
+      unzip qemu-system-x86 ovmf curl s3cmd fdisk gnupg-agent xz-utils
+    - !reference [.install_awscli, script]
+
+    - export PIP_BREAK_SYSTEM_PACKAGES=1
+    - pip3 install --ignore-installed -r tests/requirements_py3.txt
+    - git submodule update --init --recursive
+    - DEB_PACKAGE="$(echo mender-artifact_${MENDER_ARTIFACT_VERSION}-1+${DISTRO}+${RELEASE}_amd64.deb)"
+    - wget "https://downloads.mender.io/repos/workstation-tools/pool/main/m/mender-artifact/${DEB_PACKAGE}"
+    - apt install -yq ./${DEB_PACKAGE}
+    - rm ${DEB_PACKAGE}
+    - if [ "${MENDER_CLIENT_VERSION}" = "latest" ]; then
+    -   mender_version=master
+    - else
+    -   mender_version="${MENDER_CLIENT_VERSION}"
+    - fi
+    - curl -f -O https://raw.githubusercontent.com/mendersoftware/mender/${mender_version}/support/modules-artifact-gen/directory-artifact-gen
+    - curl -f -O https://raw.githubusercontent.com/mendersoftware/mender/${mender_version}/support/modules-artifact-gen/single-file-artifact-gen
+    - chmod ugo+x directory-artifact-gen single-file-artifact-gen
+    - mv directory-artifact-gen single-file-artifact-gen /usr/bin/
+    - eval "$(curl https://raw.githubusercontent.com/mendersoftware/mendertesting/master/mender-ci-common.sh)"
+  artifacts:
+    expire_in: 2w
+    when: always
+    paths:
+      - results_*.xml
+      - report_*.html
+    reports:
+      junit: results_*.xml
+  rules:
+    - if: '$TEST_MENDER_CONVERT == "true"'
+  parallel: !reference [.acc-test-distros-image-matrix, parallel]
+
+convert_raspberrypi4_uefi_bookworm_64bit:
+  <<: *convert_image
+  variables:
+    IMAGE_ARCHIVE: raspberrypi4_uefi_bookworm_64bit.tar.gz
   script:
     - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > input/config/versions_override_config
+    - echo "MENDER_FLASH_VERSION=${MENDER_FLASH_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONFIGURE_VERSION=${MENDER_ADDON_CONFIGURE_VERSION}" >> input/config/versions_override_config
     - ./scripts/test/run-tests.sh
+      --phase convert
       --config input/config/versions_override_config
-      --only ubuntu-22-qemux86-64
+      --only raspberrypi4_uefi_bookworm_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UEFI_URL}
+    - tar czf ${IMAGE_ARCHIVE} deploy
+    - mender_ci_save_tmp_artifact ${IMAGE_ARCHIVE}
+
+test_raspberrypi4_uefi_bookworm_64bit:
+  <<: *test_image
+  variables:
+    IMAGE_ARCHIVE: raspberrypi4_uefi_bookworm_64bit.tar.gz
+  needs:
+    - job: convert_raspberrypi4_uefi_bookworm_64bit
+      artifacts: true
+  script:
+    - mender_ci_load_tmp_artifact ${IMAGE_ARCHIVE}
+    - tar xzf ${IMAGE_ARCHIVE}
+    - ./scripts/test/run-tests.sh
+      --phase test
+      --only raspberrypi4_uefi_bookworm_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UEFI_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_ubuntu_22_qemux86_64_no_grub_d:
-  <<: *test_acceptance
+convert_raspberrypi5_trixie_64bit:
+  <<: *convert_image
+  variables:
+    IMAGE_ARCHIVE: raspberrypi5_trixie_64bit-test.tar.gz
   script:
     - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > input/config/versions_override_config
+    - echo "MENDER_FLASH_VERSION=${MENDER_FLASH_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONFIGURE_VERSION=${MENDER_ADDON_CONFIGURE_VERSION}" >> input/config/versions_override_config
     - ./scripts/test/run-tests.sh
+      --phase convert
       --config input/config/versions_override_config
-      --only ubuntu-22-qemux86-64-no-grub-d
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
+      --only raspberrypi5_trixie_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
+    - tar czf ${IMAGE_ARCHIVE} deploy
+    - mender_ci_save_tmp_artifact ${IMAGE_ARCHIVE}
 
-test_acceptance_ubuntu_24_qemux86_64_no_grub_d:
-  <<: *test_acceptance
+test_raspberrypi5_trixie_64bit:
+  <<: *test_image
+  variables:
+    IMAGE_ARCHIVE: raspberrypi5_trixie_64bit-test.tar.gz
+  needs:
+    - job: convert_raspberrypi5_trixie_64bit
+      artifacts: true
   script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
+    - mender_ci_load_tmp_artifact ${IMAGE_ARCHIVE}
+    - tar xzf ${IMAGE_ARCHIVE}
     - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
-      --only ubuntu-24-qemux86-64-no-grub-d
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
-
-test_acceptance_ubuntu_26_qemux86_64_no_grub_d:
-  <<: *test_acceptance
-  script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
-      --only ubuntu-26-qemux86-64-no-grub-d
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
-
-test_acceptance_debian_12_qemux86_64:
-  <<: *test_acceptance
-  script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
-      --only debian-12-qemux86-64
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
-
-test_acceptance_debian_13_qemux86_64:
-  <<: *test_acceptance
-  script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
-      --only debian-13-qemux86-64
-      --
-      -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
-
-test_acceptance_raspberrypi5_trixie_64bit:
-  <<: *test_acceptance
-  script:
-    - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
-    - ./scripts/test/run-tests.sh
-      --config input/config/versions_override_config
+      --phase test
       --only raspberrypi5_trixie_64bit
       --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_raspberrypi4_trixie_64bit:
-  <<: *test_acceptance
+convert_raspberrypi4_trixie_64bit:
+  <<: *convert_image
+  variables:
+    IMAGE_ARCHIVE: raspberrypi4_trixie_64bit-test.tar.gz
   script:
     - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > input/config/versions_override_config
+    - echo "MENDER_FLASH_VERSION=${MENDER_FLASH_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONFIGURE_VERSION=${MENDER_ADDON_CONFIGURE_VERSION}" >> input/config/versions_override_config
     - ./scripts/test/run-tests.sh
+      --phase convert
       --config input/config/versions_override_config
+      --only raspberrypi4_trixie_64bit
+      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
+    - tar czf ${IMAGE_ARCHIVE} deploy
+    - mender_ci_save_tmp_artifact ${IMAGE_ARCHIVE}
+
+test_raspberrypi4_trixie_64bit:
+  <<: *test_image
+  variables:
+    IMAGE_ARCHIVE: raspberrypi4_trixie_64bit-test.tar.gz
+  needs:
+    - job: convert_raspberrypi4_trixie_64bit
+      artifacts: true
+  script:
+    - mender_ci_load_tmp_artifact ${IMAGE_ARCHIVE}
+    - tar xzf ${IMAGE_ARCHIVE}
+    - ./scripts/test/run-tests.sh
+      --phase test
       --only raspberrypi4_trixie_64bit
       --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UBOOT_URL}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-test_acceptance_raspberrypi4_uefi_bookworm_64bit:
-  <<: *test_acceptance
+.template_convert_qemux86: &convert_qemux86
+  <<: *convert_image
   script:
     - mkdir -p input/config
-    - cp versions_override_config input/config/versions_override_config
+    - echo "MENDER_CLIENT_VERSION=${MENDER_CLIENT_VERSION}" > input/config/versions_override_config
+    - echo "MENDER_FLASH_VERSION=${MENDER_FLASH_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONNECT_VERSION=${MENDER_ADDON_CONNECT_VERSION}" >> input/config/versions_override_config
+    - echo "MENDER_ADDON_CONFIGURE_VERSION=${MENDER_ADDON_CONFIGURE_VERSION}" >> input/config/versions_override_config
     - ./scripts/test/run-tests.sh
+      --phase convert
       --config input/config/versions_override_config
-      --only raspberrypi4_uefi_bookworm_64bit
-      --raspios-image-url ${RASPBERRY_PI_OS_IMAGE_UEFI_URL}
+      --only ${IMAGE_PLATFORM}
+    - tar czf ${IMAGE_PLATFORM}.tar.gz deploy
+    - mender_ci_save_tmp_artifact ${IMAGE_PLATFORM}.tar.gz
+
+.template_test_qemux86: &test_qemux86
+  <<: *test_image
+  tags:
+    - k8s-qemu
+  script:
+    - echo "node $(hostname)"
+    - test -c /dev/kvm || { echo "no /dev/kvm on $(hostname)"; exit 1; }
+    - mender_ci_load_tmp_artifact ${IMAGE_PLATFORM}.tar.gz
+    - tar xzf ${IMAGE_PLATFORM}.tar.gz
+    - ./scripts/test/run-tests.sh
+      --phase test
+      --only ${IMAGE_PLATFORM}
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
+
+convert_ubuntu_22_qemux86_64:
+  <<: *convert_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-22-qemux86-64
+
+test_ubuntu_22_qemux86_64:
+  <<: *test_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-22-qemux86-64
+  needs:
+    - job: convert_ubuntu_22_qemux86_64
+      artifacts: true
+
+convert_ubuntu_22_qemux86_64_no_grub_d:
+  <<: *convert_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-22-qemux86-64-no-grub-d
+
+test_ubuntu_22_qemux86_64_no_grub_d:
+  <<: *test_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-22-qemux86-64-no-grub-d
+  needs:
+    - job: convert_ubuntu_22_qemux86_64_no_grub_d
+      artifacts: true
+
+convert_ubuntu_24_qemux86_64_no_grub_d:
+  <<: *convert_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-24-qemux86-64-no-grub-d
+
+test_ubuntu_24_qemux86_64_no_grub_d:
+  <<: *test_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-24-qemux86-64-no-grub-d
+  needs:
+    - job: convert_ubuntu_24_qemux86_64_no_grub_d
+      artifacts: true
+
+convert_ubuntu_26_qemux86_64_no_grub_d:
+  <<: *convert_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-26-qemux86-64-no-grub-d
+
+test_ubuntu_26_qemux86_64_no_grub_d:
+  <<: *test_qemux86
+  variables:
+    IMAGE_PLATFORM: ubuntu-26-qemux86-64-no-grub-d
+  needs:
+    - job: convert_ubuntu_26_qemux86_64_no_grub_d
+      artifacts: true
+
+convert_debian_12_qemux86_64:
+  <<: *convert_qemux86
+  variables:
+    IMAGE_PLATFORM: debian-12-qemux86-64
+
+test_debian_12_qemux86_64:
+  <<: *test_qemux86
+  variables:
+    IMAGE_PLATFORM: debian-12-qemux86-64
+  needs:
+    - job: convert_debian_12_qemux86_64
+      artifacts: true
+
+convert_debian_13_qemux86_64:
+  <<: *convert_qemux86
+  variables:
+    IMAGE_PLATFORM: debian-13-qemux86-64
+
+test_debian_13_qemux86_64:
+  <<: *test_qemux86
+  variables:
+    IMAGE_PLATFORM: debian-13-qemux86-64
+  needs:
+    - job: convert_debian_13_qemux86_64
+      artifacts: true
 
 # Override rules to publish from Git tags for Mender Convert 4.3 onwards
 # Once Mender 3.7 LTS is EOL, we can instead publish from all Git tags always from mendertesting
@@ -543,6 +731,8 @@ publish:image-multiplatform:mender:
 
 test:hardware:convert:
   <<: *convert_raspbian
+  tags:
+    - mender-qa-worker-generic
   variables:
     RASPBERRYPI_PLATFORM: uboot/debian/raspberrypi4_bookworm_64bit
   when: manual
