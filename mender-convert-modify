@@ -314,7 +314,7 @@ if [ "${MENDER_DOCKER_COMPOSE_INSTALL}" = "y" ]; then
     pkgs_to_install["mender-docker-compose"]="${MENDER_DOCKER_COMPOSE_VERSION}"
 fi
 
-if [ "${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_INSTALL}" = "y" ]; then
+if [ "${MENDER_CLIENT_INSTALL}" = "y" ] && [ "${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_INSTALL}" = "y" ]; then
     # Note that there is no explicit handling of "auto" option; apt will install
     # it only when all the other packages being installed are compatible with it
     log_info "Installing mender-client-version-inventory-script version ${MENDER_CLIENT_VERSION_INVENTORY_SCRIPT_VERSION}"
