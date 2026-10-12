@@ -3,7 +3,7 @@
 # Debian 12 (qemu 7.2, which grants brk) and copy them over the ones of the
 # Ubuntu qemu-user-static package in the final image. The build fails if
 # Debian 12 ever ships another qemu series.
-FROM debian:12 AS qemu
+FROM debian:13 AS qemu
 RUN apt-get update && \
     env DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends \
     qemu-user-static && \
@@ -15,7 +15,7 @@ RUN apt-get update && \
     mkdir /out && \
     for f in /usr/bin/qemu-*-static; do cp -L "$f" /out/; done
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 ARG TARGETARCH
 ARG MENDER_ARTIFACT_VERSION
 RUN if [ "$MENDER_ARTIFACT_VERSION" = "" ]; then echo "MENDER_ARTIFACT_VERSION must be set!" 1>&2; exit 1; fi
