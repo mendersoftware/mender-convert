@@ -42,6 +42,17 @@
       "groupName": "docker-base-images",
       "groupSlug": "docker-base-images"
     },
+
+    // QA-1780: debian:12 is pinned on purpose to get qemu-user 7.2. Newer
+    // Debian ships qemu 8.2+ which breaks apt in arm64 chroots, and the
+    // Dockerfile version check fails the build. Re-enable once fixed upstream.
+    {
+      "matchManagers": ["dockerfile"],
+      "matchFileNames": ["Dockerfile"],
+      "matchDepNames": ["debian"],
+      "matchCurrentValue": "12",
+      "enabled": false
+    },
   ],
 
   "customManagers": [
