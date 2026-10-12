@@ -200,6 +200,7 @@ MENDER_SNAPSHOT_INSTALL="auto"
 MENDER_SNAPSHOT_VERSION="latest"
 
 # Install Mender-client-version-inventory-script
+# Only installed when MENDER_CLIENT_INSTALL is "y", as it depends on mender-update
 # If set to "auto" then it is not explicitly installed; Mender client 5.1.0 or later
 # recommends this package and hence it will be implicitly installed if no other
 # incompatible software is selected
