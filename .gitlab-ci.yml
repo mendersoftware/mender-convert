@@ -55,6 +55,9 @@ variables:
   # tagged version.
   MENDER_CONVERT_PUBLISH_VERSION: ""
 
+  # Raspberry Pi configs that are published on tags
+  RASPBERRYPI_PUBLISH_CONFIG_NAMES: "raspberrypi5_trixie_64bit raspberrypi4_trixie_64bit"
+
   TEST_MENDER_CONVERT:
     value: "true"
     options:
@@ -660,7 +663,7 @@ publish:image-multiplatform:
     - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
   script:
     # One by one, fetch artifacts from temporary S3 bucket and publish to production S3 bucket
-    - for RASPBERRYPI_CONFIG_NAME in raspberrypi5_trixie_64bit raspberrypi4_trixie_64bit; do
+    - for RASPBERRYPI_CONFIG_NAME in ${RASPBERRYPI_PUBLISH_CONFIG_NAMES}; do
     -   mender_ci_load_tmp_artifact ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     -   tar xzf ${RASPBERRYPI_CONFIG_NAME}.tar.gz
     #   Assume the publish role per board: the session is short-lived, and the
@@ -699,6 +702,62 @@ publish:s3:automatic:
     # don't update the Mender Docs they are to be treated as release candidates.
     - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
   extends: .template:publish:s3
+
+# Open a PR in mender-docs-site pointing the Raspberry Pi Imager schema to the
+# images published above.
+release:rpi-imager-schema:
+  stage: publish
+  needs:
+    - job: publish:s3:automatic
+      optional: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
+      allow_failure: true
+    - if: '$CI_COMMIT_REF_PROTECTED == "true"'
+      when: manual
+  image: registry.gitlab.com/northern.tech/mender/mender-test-containers/base-alpine:master
+  variables:
+    SCHEMA: releases/rpi_imager_schema.json
+  before_script:
+    - !reference [.qa-common-network-git-clone-retry, before_script]
+    - apk add --no-cache github-cli
+    - git config --global user.name "mender-test-bot"
+    - git config --global user.email "mender@northern.tech"
+    - export GITHUB_TOKEN=${GITHUB_CLI_TOKEN}
+    - IMAGE_VERSION=${MENDER_CONVERT_PUBLISH_VERSION:-${CI_COMMIT_REF_NAME}}
+    # The prefix starts with the Raspberry Pi OS release date (YYYY-MM-DD)
+    - RELEASE_DATE=$(echo "$RASPBERRY_PI_OS_UBOOT_PREFIX" | cut -c1-10)
+    - 'TITLE="chore: Update rpi_imager_schema.json to mender-convert ${IMAGE_VERSION}"'
+  script:
+    - git clone https://mender-test-bot:${GITHUB_BOT_TOKEN_REPO_FULL}@github.com/mendersoftware/mender-docs-site
+    - cd mender-docs-site
+    - git checkout -b rpi-imager-${CI_JOB_ID}
+    - |
+      for RASPBERRYPI_CONFIG_NAME in ${RASPBERRYPI_PUBLISH_CONFIG_NAMES}; do
+        URL=https://d4o6e0uccgv40.cloudfront.net/${RASPBERRY_PI_OS_UBOOT_PREFIX}/arm/${RASPBERRY_PI_OS_UBOOT_PREFIX}-${RASPBERRYPI_CONFIG_NAME}-mender-convert-${IMAGE_VERSION}.img.xz
+        SIZE=$(curl -fsSLI "$URL" | grep -i '^content-length:' | tail -n1 | tr -dc 0-9)
+        SHA=$(curl -fsSL "$URL" | xz -dc | sha256sum | cut -d' ' -f1)
+
+        jq --arg board "-${RASPBERRYPI_CONFIG_NAME}-" --arg version "$IMAGE_VERSION" --arg url "$URL" \
+          --arg date "$RELEASE_DATE" --argjson size "$SIZE" --arg sha "$SHA" '
+          (.os_list[] | select(.url | contains($board))) |= (
+            .name |= sub("[0-9.]+$"; $version)
+            | .description |= sub("[0-9.]+$"; $version)
+            | .url = $url
+            | .release_date = $date
+            | .image_download_size = $size
+            | .extract_sha256 = $sha
+          )' $SCHEMA > schema.json
+        mv schema.json $SCHEMA
+      done
+    - git commit -s -am "$TITLE"
+    - git push origin rpi-imager-${CI_JOB_ID}
+    - >
+      gh pr create
+      --title "$TITLE"
+      --body "Automated change from ${CI_JOB_URL}"
+      --base master
+      --head rpi-imager-${CI_JOB_ID}
 
 # excludes non multiplatform build job
 build:docker:
