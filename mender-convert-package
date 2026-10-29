@@ -419,7 +419,7 @@ fi
 mender_features="${mender_features} ${bootloader_feature}"
 
 if [ "${MENDER_CLIENT_INSTALL}" = "y" ]; then
-    mender_features="${mender_features} mender-client-install"
+    mender_features="${mender_features} mender-update-install"
 fi
 
 testscfg_add "MENDER_BOOT_PART" "${boot_part_device}"
