@@ -715,6 +715,7 @@ release:rpi-imager-schema:
       allow_failure: true
     - if: '$CI_COMMIT_REF_PROTECTED == "true"'
       when: manual
+      allow_failure: true
   image: registry.gitlab.com/northern.tech/mender/mender-test-containers/base-alpine:master
   variables:
     SCHEMA: releases/rpi_imager_schema.json
