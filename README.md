@@ -65,6 +65,7 @@ These configurations have been submitted by community contributors.
 | Configuration | Supported OS / hardware |
 | :------------ | :---------------------- |
 | comfile_pi_config | Comfile Pi, Raspbian 32bit |
+| openkylin-3.0-qemux86-64_config | openKylin 3.0 Server x86 64bit, QEMU (UEFI) |
 | rockpro64_emmc_config | RockPro64, Debian 32bit on internal eMMC storage |
 | rockpro64_sd_config | RockPro64, Debian 32bit on external SD card storage |
 
