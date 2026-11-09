@@ -1,2 +1,0 @@
-source configs/raspberrypi/uboot/include/bookworm_config
-source configs/raspberrypi/uboot/include/raspberrypi4_config
