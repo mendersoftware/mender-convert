@@ -111,6 +111,11 @@ MENDER_BOOT_PART_SIZE_MB="40"
 # on first boot to occupy the renaming free blocks on the physical storage.
 MENDER_DATA_PART_SIZE_MB="128"
 
+# The size of the data filesystems, in MiB. If the value is -1, mender-convert
+# will use the maximum size that will fit inside the created partition.
+#
+MENDER_DATA_FS_SIZE_MB="-1"
+
 # Alignment of partitions used when building partitioned images, expressed in
 # bytes
 #

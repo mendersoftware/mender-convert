@@ -240,8 +240,33 @@ run_and_log_cmd "mender-artifact write bootstrap-artifact \
                     --clears-provides 'rootfs-image.*' \
                     --output-path work/data/mender/bootstrap.mender"
 
+actual_datafs_size=$(sudo du -s --block-size=512 work/data | cut -f 1)
+
+# MiB -> 512 sectors
+image_datafs_size_sectors=$(disk_mb_to_sectors ${MENDER_DATA_FS_SIZE_MB})
+
+if [ "${MENDER_DATA_FS_SIZE_MB}" -eq -1 ]; then
+    datafs_image_sectors="${data_part_sectors}"
+else
+    datafs_image_sectors="${image_datafs_size_sectors}"
+fi
+
+if [ "${datafs_image_sectors}" -lt "${actual_datafs_size}" ]; then
+    log_warn "The configured data filesystem size ${MENDER_DATA_FS_SIZE_MB} MiB is too small."
+    log_warn "The file content size is ${actual_datafs_size} MiB"
+    log_fatal "You can try adjusting MENDER_DATA_FS_SIZE_MB and/or MENDER_DATA_PART_SIZE_MB to increase the filesystem size."
+fi
+
+if [ ${datafs_image_sectors} -gt ${data_part_sectors} ]; then
+    log_warn "The calculated data partition size $(disk_sectors_to_mb ${data_part_sectors}) MiB is too small."
+    log_warn "The actual data image size is $(disk_sectors_to_mb ${datafs_image_sectors}) MiB"
+    log_fatal "You can try adjusting the MENDER_STORAGE_TOTAL_SIZE_MB or MENDER_DATA_PART_SIZE_MB variable to increase available space, or modify MENDER_DATA_PART_FS_SIZE to reduce the size of the data filesystem."
+fi
+
+log_info "Data filesystem size will be $(disk_sectors_to_mb ${datafs_image_sectors}) MiB"
+
 disk_create_file_system_from_folder "work/data/" "work/data.img" \
-    "${data_part_sectors}" "${image_fs_type}"
+    "${datafs_image_sectors}" "${image_fs_type}"
 run_and_log_cmd "rm -rf work/data"
 
 if [ "${MENDER_CLIENT_INSTALL}" != "y" ]; then
