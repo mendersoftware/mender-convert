@@ -1,4 +1,30 @@
 ---
+## 6.0.0 - 2026-11-11
+
+
+### Breaking changes
+
+- *(raspberrypi)* Remove Raspberry Pi OS 32bit configurations ([MEN-10346](https://northerntech.atlassian.net/browse/MEN-10346)) ([887522e](https://github.com/mendersoftware/mender-convert/commit/887522e085778e04fe6ec143c802559eaa3c1d0b)) by @tactmaster
+  - **BREAKING**: The Raspberry Pi OS 32bit configurations are removed.
+Convert Raspberry Pi OS 64bit images with the matching *_64bit_config
+instead. ARMv6 boards (Raspberry Pi Zero, Zero W and 1) are no longer
+supported.
+
+### Bug fixes
+
+- Do not copy the selinux xattr when building the output image ([QA-1780](https://northerntech.atlassian.net/browse/QA-1780)) ([b42c021](https://github.com/mendersoftware/mender-convert/commit/b42c0216cea04030493259da60f316af9a9e33a2)) by @oldgiova
+- Use qemu-user 7.2 to avoid "Cannot allocate memory" in apt ([QA-1780](https://northerntech.atlassian.net/browse/QA-1780)) ([9d5929b](https://github.com/mendersoftware/mender-convert/commit/9d5929bcfb496e685eada14d094f0abdfe5270f9)) by @oldgiova
+- Don't install version inventory script without mender-update ([f2ac8bf](https://github.com/mendersoftware/mender-convert/commit/f2ac8bf04dbfc4e72c4411ad720154a58d5cac63)) by @danielskinstad
+
+---
+### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [QA-1780](https://northerntech.atlassian.net/browse/QA-1780) |
+| [MEN-10346](https://northerntech.atlassian.net/browse/MEN-10346) |
+
+
 ## 5.3.0 - 2026-09-30
 
 
