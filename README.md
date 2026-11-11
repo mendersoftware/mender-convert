@@ -7,7 +7,7 @@ devices. Mender comprises a client running at the embedded device, as well as a
 server that manages deployments across many devices.
 
 This repository contains mender-convert, which is used to convert pre-built disk
-images (Debian, Ubuntu, Raspbian, etc) to a Mender compatible image by
+images (Debian, Ubuntu, Raspberry Pi OS, etc) to a Mender compatible image by
 restructuring partition table and injecting the necessary files.
 
 For a full list of tested devices and images please visit [Mender
@@ -53,10 +53,14 @@ These configurations are officially supported.
 | Configuration | Supported OS / hardware |
 | :------------ | :---------------------- |
 | generic_x86-64_hdd_config | Generic x86, 64bit distribution *use this as a starting point only!*  |
-| raspberrypi/uboot/raspberrypi0w_config | RaspberryPi 0w, Raspbian 32bit |
 | raspberrypi/uboot/debian/raspberrypi3_bookworm_64bit_config | RaspberryPi 3, Raspberry Pi OS "bookworm" 64bit |
 | raspberrypi/uboot/debian/raspberrypi4_bookworm_64bit_config | RaspberryPi 4, Raspberry Pi OS "bookworm" 64bit |
 | raspberrypi/uboot/ubuntu/raspberrypi4_ubuntu_32bit_config | RaspberryPi 4, Ubuntu 32bit |
+
+Raspberry Pi OS 32bit is not supported. The Mender Client packages are built
+for Debian ARMv7: they do not install on ARMv6 boards (Raspberry Pi Zero, Zero W
+and 1), and updates fail on the Raspberry Pi OS 32bit userland even on ARMv7
+boards. Use Raspberry Pi OS 64bit instead.
 
 ### Contributed configurations
 
@@ -64,7 +68,6 @@ These configurations have been submitted by community contributors.
 
 | Configuration | Supported OS / hardware |
 | :------------ | :---------------------- |
-| comfile_pi_config | Comfile Pi, Raspbian 32bit |
 | rockpro64_emmc_config | RockPro64, Debian 32bit on internal eMMC storage |
 | rockpro64_sd_config | RockPro64, Debian 32bit on external SD card storage |
 
@@ -72,7 +75,7 @@ These configurations have been submitted by community contributors.
 
 ### Prepare image and configuration
 
-The following steps give a quick start using Raspbian. For a more detailed guide,
+The following steps give a quick start using Raspberry Pi OS. For a more detailed guide,
 especially concerning version compatibilities, please visit [the the corresponding thread](https://hub.mender.io/t/raspberry-pi-3-model-b-b-raspbian/140) on the Mender Hub.
 
 Download the raw Raspberry Pi disk image into a subdirectory input:
