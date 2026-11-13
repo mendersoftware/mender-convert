@@ -24,4 +24,4 @@ qemu-system-x86_64 \
     -net nic,macaddr=52:54:00$(od -txC -An -N3 /dev/urandom | tr \  :) \
     -serial mon:stdio \
     -nographic \
-    -drive format=raw,file="$1"
+    -drive format=raw,file="$1",if=virtio

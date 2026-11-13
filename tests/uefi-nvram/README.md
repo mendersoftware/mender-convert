@@ -71,9 +71,8 @@ the firmware memory, and Secure Boot enabled.
 ### Notes for Ubuntu 24.04 - ovmf deb package
 
 This section describes how Secure Boot testing works on the modern (4M) OVMF
-shipped by Debian 13 / Ubuntu 24.04 and newer: which firmware and QEMU machine we
-use when Secure Boot is on vs. off, and why Ubuntu images currently cannot be
-tested with Secure Boot enabled.
+shipped by Debian 13 / Ubuntu 24.04 and newer: which firmware, QEMU machine and
+disk we use, and how Secure Boot on vs. off is selected.
 
 #### ovmf deb package
 
@@ -90,38 +89,30 @@ disabled. To enable it, you'll need to manually import PK/KEK/DB keys".
 References:
 * https://changelogs.ubuntu.com/changelogs/pool/main/e/edk2/edk2_2024.02-2/changelog
 
-#### Secure Boot on vs. off, and the q35 / Ubuntu limitation
+#### Secure Boot on vs. off
 
 The 4M `OVMF_CODE_4M.secboot.fd` is built `SMM_REQUIRE`, so it only initializes
-on a `q35` machine with `smm=on` and a secure pflash. `scripts/test/mender-convert-qemu`
-therefore picks the machine based on whether Secure Boot is being tested:
+on a `q35` machine with `smm=on` and a secure pflash. To make this work for every
+guest, the test disk is attached as `virtio-blk` (`/dev/vda`; see
+`MENDER_STORAGE_DEVICE_BASE` in the `*-qemux86-64` configs). `virtio` is
+machine-independent and its driver is present in both Debian's and Ubuntu's
+initramfs, so both distros boot under `q35` -- unlike IDE/SATA, where Ubuntu's
+initramfs lacks the `ahci` driver and hangs on the root device.
 
-* **Secure Boot on** (default, e.g. the Debian grub.d images): the `.secboot`
-  firmware plus the Microsoft-enrolled vars store (`OVMF_VARS_4M.ms.fd`), run on
-  `-machine q35,smm=on` with a secure pflash. This is real, SMM-protected Secure
-  Boot.
-* **Secure Boot off** (`QEMU_NO_SECURE_BOOT=1`): the plain `OVMF_CODE_4M.fd`,
-  which is not `SMM_REQUIRE` and so boots on the default i440fx machine.
+`scripts/test/mender-convert-qemu` therefore always runs the `.secboot` firmware
+on `-machine q35,smm=on` with a secure pflash, and selects Secure Boot on or off
+purely by the vars store:
 
-The machine choice matters because `q35` moves the guest disk from IDE to
-SATA/AHCI. Guests whose initramfs lacks the `ahci` driver -- notably our
-converted **Ubuntu** images -- hang on `Waiting for root device /dev/sda2` under
-`q35` and never boot. Debian's initramfs has `ahci`, so Debian boots fine and
-gets full Secure Boot testing. Ubuntu cannot currently boot the `.secboot` / q35
-firmware, so `scripts/test/run-tests.sh` runs the Ubuntu images with
-`QEMU_NO_SECURE_BOOT=1` (plain firmware, i440fx). The plain firmware exposes no
-Secure Boot state, so `mokutil --sb-state` cannot report it, and the
-`test_secure_boot` test skips itself in that case.
+* **Secure Boot on** (the grub.d images, e.g. Debian and Ubuntu): the
+  Microsoft-enrolled vars store (`OVMF_VARS_4M.ms.fd`). This is real,
+  SMM-protected Secure Boot, and `mokutil --sb-state` reports
+  `SecureBoot enabled`.
+* **Secure Boot off** (`QEMU_NO_SECURE_BOOT=1`, used for the `no-grub.d` images
+  whose unsigned grub cannot run with Secure Boot enforced): the plain,
+  un-enrolled vars store (`OVMF_VARS_4M.fd`). The firmware is still
+  Secure-Boot-capable, so it boots in setup mode and `mokutil --sb-state`
+  reports `SecureBoot disabled`.
 
-#### Impact and the planned fix
-
-Right now Debian gets real Secure Boot coverage on modern hosts; Ubuntu boots
-and runs the rest of the suite, but its Secure Boot state is not verified.
-
-The planned fix (tracked as a follow-up) is to attach the test disk as
-`virtio-blk` (`/dev/vda`) instead of IDE/SATA. `virtio` is machine-independent
-(it works under `q35`) and `virtio_blk` is present in both Debian and Ubuntu
-cloud initramfs, so both distros would then boot under the `.secboot` / q35
-firmware and get real Secure Boot testing. That requires switching
-`MENDER_STORAGE_DEVICE_BASE` to `/dev/vda` in the `*-qemux86-64` configs and the
-qemu run scripts together.
+Both Debian and Ubuntu get real Secure Boot coverage on modern hosts, matching
+the legacy (2M OVMF) behaviour, and `test_secure_boot` always has a Secure Boot
+state to assert.
