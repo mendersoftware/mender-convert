@@ -546,30 +546,30 @@ test_raspberrypi4_trixie_64bit:
       --
       -n $TESTS_IN_PARALLEL_CLIENT_ACCEPTANCE
 
-convert_ubuntu_22_qemux86_64:
+convert_ubuntu_24_qemux86_64:
   <<: *convert_qemux86
   variables:
-    IMAGE_PLATFORM: ubuntu-22-qemux86-64
+    IMAGE_PLATFORM: ubuntu-24-qemux86-64
 
-test_ubuntu_22_qemux86_64:
+test_ubuntu_24_qemux86_64:
   <<: *test_qemux86
   variables:
-    IMAGE_PLATFORM: ubuntu-22-qemux86-64
+    IMAGE_PLATFORM: ubuntu-24-qemux86-64
   needs:
-    - job: convert_ubuntu_22_qemux86_64
+    - job: convert_ubuntu_24_qemux86_64
       artifacts: true
 
-convert_ubuntu_22_qemux86_64_no_grub_d:
+convert_ubuntu_26_qemux86_64:
   <<: *convert_qemux86
   variables:
-    IMAGE_PLATFORM: ubuntu-22-qemux86-64-no-grub-d
+    IMAGE_PLATFORM: ubuntu-26-qemux86-64
 
-test_ubuntu_22_qemux86_64_no_grub_d:
+test_ubuntu_26_qemux86_64:
   <<: *test_qemux86
   variables:
-    IMAGE_PLATFORM: ubuntu-22-qemux86-64-no-grub-d
+    IMAGE_PLATFORM: ubuntu-26-qemux86-64
   needs:
-    - job: convert_ubuntu_22_qemux86_64_no_grub_d
+    - job: convert_ubuntu_26_qemux86_64
       artifacts: true
 
 convert_ubuntu_24_qemux86_64_no_grub_d:
