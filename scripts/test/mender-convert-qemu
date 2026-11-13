@@ -51,31 +51,65 @@ case "${OS_VERSION}" in
         -enable-kvm \
         -nographic \
         -m 512 \
+        ${EXTRA_PARAMS} \
         -net user,hostfwd=tcp::${PORT_NUMBER:-8822}-:22 \
         -net nic,macaddr=52:54:00$(od -txC -An -N3 /dev/urandom|tr \  :) \
         -drive file=${OVMF_CODE},if=pflash,format=raw,unit=0,readonly=on \
         $OVMF_VARS \
-        -drive format=raw,file=${DISK_IMG} &
+        -drive format=raw,file=${DISK_IMG},if=virtio &
 
         ;;
     *)
         echo "Running on modern Ubuntu / Debian"
 
-        # Look for OVMF_CODE.fd in /usr/share
-        # On the Debian 13 and Ubuntu 24.04 OVMF_CODE (2M) has been migrated to OVMF_CODE_4M
-        OVMF_CODE=$(find /usr/share -type f -and -name OVMF_CODE_4M.fd 2>/dev/null | head -1)
+        # Firmware choice for modern (4M OVMF) hosts. On Debian 13 / Ubuntu
+        # 24.04+ the 2M OVMF is gone and the Secure Boot code has been compiled
+        # out of the base OVMF_CODE_4M.fd; it survives only in
+        # OVMF_CODE_4M.secboot.fd, which is built SMM_REQUIRE and so only
+        # initializes on -machine q35,smm=on with a secure pflash.
+        #
+        # The test disk is attached as virtio-blk (/dev/vda; see the
+        # *-qemux86-64 configs), which is machine-independent and whose driver is
+        # in both Debian's and Ubuntu's initramfs, so both distros boot fine
+        # under q35. We therefore always run the .secboot firmware on q35 and
+        # choose Secure Boot on/off purely by the vars store:
+        #
+        #   * Secure Boot ON  -> OVMF_VARS_4M.ms.fd (Microsoft certs enrolled).
+        #   * Secure Boot OFF (QEMU_NO_SECURE_BOOT=1) -> plain OVMF_VARS_4M.fd
+        #     (setup mode, no keys), used for the no-grub.d images whose unsigned
+        #     grub cannot run with Secure Boot enforced. The firmware is still
+        #     Secure-Boot-capable, so it reports a state and the test can assert
+        #     "SecureBoot disabled".
+        OVMF_CODE=$(find /usr/share -type f -and -name OVMF_CODE_4M.secboot.fd 2>/dev/null | head -1)
         if [ -z "${OVMF_CODE}" ]; then
-            echo "ERROR: could not find OVMF_CODE_4M file in /usr/share"
+            echo "ERROR: could not find OVMF_CODE_4M.secboot.fd file in /usr/share"
             exit 1
         fi
-
         if [ "$QEMU_NO_SECURE_BOOT" != "1" ]; then
             echo "Secure boot testing"
-            # Use legacy vars file
-            VARS=$(dirname "$0")/../../tests/uefi-nvram/OVMF_VARS.fd
-            OVMF_VARS="-drive file=${VARS},if=pflash,format=raw,unit=1"
-            EXTRA_PARAMS="-machine q35,smm=on"
+            # MS-enrolled vars (OVMF_VARS_4M.ms.fd) -> Secure Boot enabled. That
+            # MS UEFI CA is the same cert carried by our checked-in 2M
+            # tests/uefi-nvram vars and is what signs Debian's and Ubuntu's shim.
+            VARS_TEMPLATE=$(find /usr/share -type f -and -name OVMF_VARS_4M.ms.fd 2>/dev/null | head -1)
+            if [ -z "${VARS_TEMPLATE}" ]; then
+                echo "ERROR: could not find OVMF_VARS_4M.ms.fd file in /usr/share"
+                exit 1
+            fi
+        else
+            echo "Secure boot disabled"
+            VARS_TEMPLATE=$(find /usr/share -type f -and -name OVMF_VARS_4M.fd 2>/dev/null | head -1)
+            if [ -z "${VARS_TEMPLATE}" ]; then
+                echo "ERROR: could not find OVMF_VARS_4M.fd file in /usr/share"
+                exit 1
+            fi
         fi
+        EXTRA_PARAMS="-machine q35,smm=on -global driver=cfi.pflash01,property=secure,value=on"
+        # Writable per-run copy of the vars store: the vars pflash must be
+        # writable (OVMF crashes if it is read-only) and each parallel worker
+        # needs its own copy.
+        VARS=$(mktemp /tmp/OVMF_VARS_4M.XXXXXX.fd)
+        cp "${VARS_TEMPLATE}" "${VARS}"
+        OVMF_VARS="-drive file=${VARS},if=pflash,format=raw,unit=1"
 
         echo "OVMF_CODE: ${OVMF_CODE}"
         echo "OVMF_VARS: ${OVMF_VARS}"
@@ -84,11 +118,12 @@ case "${OS_VERSION}" in
         -enable-kvm \
         -nographic \
         -m 512 \
+        ${EXTRA_PARAMS} \
         -net user,hostfwd=tcp::${PORT_NUMBER:-8822}-:22 \
         -net nic,macaddr=52:54:00$(od -txC -An -N3 /dev/urandom|tr \  :) \
         -drive file=${OVMF_CODE},if=pflash,format=raw,unit=0,readonly=on \
         $OVMF_VARS \
-        -drive format=raw,file=${DISK_IMG} &
+        -drive format=raw,file=${DISK_IMG},if=virtio &
 
         ;;
 esac

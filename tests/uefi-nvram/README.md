@@ -70,10 +70,9 @@ the firmware memory, and Secure Boot enabled.
 
 ### Notes for Ubuntu 24.04 - ovmf deb package
 
-At the time of writing, we have not yet been able to make our image run on
-Ubuntu 24.04 OVMF. However, some progress has been made and this subsection
-has some information to avoid repeating the same pitfalls the next time that we
-come here to update to Ubuntu 24.04.
+This section describes how Secure Boot testing works on the modern (4M) OVMF
+shipped by Debian 13 / Ubuntu 24.04 and newer: which firmware, QEMU machine and
+disk we use, and how Secure Boot on vs. off is selected.
 
 #### ovmf deb package
 
@@ -90,30 +89,30 @@ disabled. To enable it, you'll need to manually import PK/KEK/DB keys".
 References:
 * https://changelogs.ubuntu.com/changelogs/pool/main/e/edk2/edk2_2024.02-2/changelog
 
-#### explict SMM for QEMU
+#### Secure Boot on vs. off
 
-For SecureBoot to run correctly on QEMU, SMM needs to be enabled. This is
-explicitly mentioned in the ovmf package README file.
+The 4M `OVMF_CODE_4M.secboot.fd` is built `SMM_REQUIRE`, so it only initializes
+on a `q35` machine with `smm=on` and a secure pflash. To make this work for every
+guest, the test disk is attached as `virtio-blk` (`/dev/vda`; see
+`MENDER_STORAGE_DEVICE_BASE` in the `*-qemux86-64` configs). `virtio` is
+machine-independent and its driver is present in both Debian's and Ubuntu's
+initramfs, so both distros boot under `q35` -- unlike IDE/SATA, where Ubuntu's
+initramfs lacks the `ahci` driver and hangs on the root device.
 
-Why it was not needed on Ubuntu 22.04 is unknown, but for Ubuntu 24.04 the
-`qemu-system-x86_64` call needs an explict parameter `-machine q35,smm=on` to
-enable SMM and SecureBoot to work correctly.
+`scripts/test/mender-convert-qemu` therefore always runs the `.secboot` firmware
+on `-machine q35,smm=on` with a secure pflash, and selects Secure Boot on or off
+purely by the vars store:
 
-With these first two tips we are able to do the steps on this guide and get the
-`OVMF_VARS.fd` set up with the certificates for our image testing.
+* **Secure Boot on** (the grub.d images, e.g. Debian and Ubuntu): the
+  Microsoft-enrolled vars store (`OVMF_VARS_4M.ms.fd`). This is real,
+  SMM-protected Secure Boot, and `mokutil --sb-state` reports
+  `SecureBoot enabled`.
+* **Secure Boot off** (`QEMU_NO_SECURE_BOOT=1`, used for the `no-grub.d` images
+  whose unsigned grub cannot run with Secure Boot enforced): the plain,
+  un-enrolled vars store (`OVMF_VARS_4M.fd`). The firmware is still
+  Secure-Boot-capable, so it boots in setup mode and `mokutil --sb-state`
+  reports `SecureBoot disabled`.
 
-#### Running the mender-convert'ed image
-
-At the time of writing, we were not able to run it. The _closest_ we got is for
-the kernel to start booting and crash. To get there, we need to modify a few
-things in the `mender-convert-qemu` script:
-
-1. Replace `-nographic` with `-vga virtio` (this is mainly to _see_ QEMU boot)
-2. Add `-machine q35,smm=on -cpu host` options. The former is to enable
-   SecureBoot but the latter has been found experimentally (maybe is wrong? or
-   maybe does not have an effect?)
-3. Remove `,readonly=on` from `OVMF_VARS`. Without this qemu crashes before
-   starting the bootloader (??)
-
-Even with these tweaks the kernel crashes, as stated above, so more reserach is
-needed to get this up and running in Ubuntu 24.04
+Both Debian and Ubuntu get real Secure Boot coverage on modern hosts, matching
+the legacy (2M OVMF) behaviour, and `test_secure_boot` always has a Secure Boot
+state to assert.
