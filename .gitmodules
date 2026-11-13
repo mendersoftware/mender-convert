@@ -1,5 +1,5 @@
 [submodule "tests/mender-image-tests"]
 	path = tests/mender-image-tests
-	url = https://github.com/mendersoftware/mender-image-tests
-	branch = master
+	url = https://github.com/michalkopczan/mender-image-tests
+	branch = men-10115-secure-boot-tests-failing-on-modern-debianoids
 	ignore = untracked
