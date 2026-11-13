@@ -70,10 +70,10 @@ the firmware memory, and Secure Boot enabled.
 
 ### Notes for Ubuntu 24.04 - ovmf deb package
 
-At the time of writing, we have not yet been able to make our image run on
-Ubuntu 24.04 OVMF. However, some progress has been made and this subsection
-has some information to avoid repeating the same pitfalls the next time that we
-come here to update to Ubuntu 24.04.
+This section describes how Secure Boot testing works on the modern (4M) OVMF
+shipped by Debian 13 / Ubuntu 24.04 and newer: which firmware and QEMU machine we
+use when Secure Boot is on vs. off, and why Ubuntu images currently cannot be
+tested with Secure Boot enabled.
 
 #### ovmf deb package
 
@@ -90,30 +90,38 @@ disabled. To enable it, you'll need to manually import PK/KEK/DB keys".
 References:
 * https://changelogs.ubuntu.com/changelogs/pool/main/e/edk2/edk2_2024.02-2/changelog
 
-#### explict SMM for QEMU
+#### Secure Boot on vs. off, and the q35 / Ubuntu limitation
 
-For SecureBoot to run correctly on QEMU, SMM needs to be enabled. This is
-explicitly mentioned in the ovmf package README file.
+The 4M `OVMF_CODE_4M.secboot.fd` is built `SMM_REQUIRE`, so it only initializes
+on a `q35` machine with `smm=on` and a secure pflash. `scripts/test/mender-convert-qemu`
+therefore picks the machine based on whether Secure Boot is being tested:
 
-Why it was not needed on Ubuntu 22.04 is unknown, but for Ubuntu 24.04 the
-`qemu-system-x86_64` call needs an explict parameter `-machine q35,smm=on` to
-enable SMM and SecureBoot to work correctly.
+* **Secure Boot on** (default, e.g. the Debian grub.d images): the `.secboot`
+  firmware plus the Microsoft-enrolled vars store (`OVMF_VARS_4M.ms.fd`), run on
+  `-machine q35,smm=on` with a secure pflash. This is real, SMM-protected Secure
+  Boot.
+* **Secure Boot off** (`QEMU_NO_SECURE_BOOT=1`): the plain `OVMF_CODE_4M.fd`,
+  which is not `SMM_REQUIRE` and so boots on the default i440fx machine.
 
-With these first two tips we are able to do the steps on this guide and get the
-`OVMF_VARS.fd` set up with the certificates for our image testing.
+The machine choice matters because `q35` moves the guest disk from IDE to
+SATA/AHCI. Guests whose initramfs lacks the `ahci` driver -- notably our
+converted **Ubuntu** images -- hang on `Waiting for root device /dev/sda2` under
+`q35` and never boot. Debian's initramfs has `ahci`, so Debian boots fine and
+gets full Secure Boot testing. Ubuntu cannot currently boot the `.secboot` / q35
+firmware, so `scripts/test/run-tests.sh` runs the Ubuntu images with
+`QEMU_NO_SECURE_BOOT=1` (plain firmware, i440fx). The plain firmware exposes no
+Secure Boot state, so `mokutil --sb-state` cannot report it, and the
+`test_secure_boot` test skips itself in that case.
 
-#### Running the mender-convert'ed image
+#### Impact and the planned fix
 
-At the time of writing, we were not able to run it. The _closest_ we got is for
-the kernel to start booting and crash. To get there, we need to modify a few
-things in the `mender-convert-qemu` script:
+Right now Debian gets real Secure Boot coverage on modern hosts; Ubuntu boots
+and runs the rest of the suite, but its Secure Boot state is not verified.
 
-1. Replace `-nographic` with `-vga virtio` (this is mainly to _see_ QEMU boot)
-2. Add `-machine q35,smm=on -cpu host` options. The former is to enable
-   SecureBoot but the latter has been found experimentally (maybe is wrong? or
-   maybe does not have an effect?)
-3. Remove `,readonly=on` from `OVMF_VARS`. Without this qemu crashes before
-   starting the bootloader (??)
-
-Even with these tweaks the kernel crashes, as stated above, so more reserach is
-needed to get this up and running in Ubuntu 24.04
+The planned fix (tracked as a follow-up) is to attach the test disk as
+`virtio-blk` (`/dev/vda`) instead of IDE/SATA. `virtio` is machine-independent
+(it works under `q35`) and `virtio_blk` is present in both Debian and Ubuntu
+cloud initramfs, so both distros would then boot under the `.secboot` / q35
+firmware and get real Secure Boot testing. That requires switching
+`MENDER_STORAGE_DEVICE_BASE` to `/dev/vda` in the `*-qemux86-64` configs and the
+qemu run scripts together.

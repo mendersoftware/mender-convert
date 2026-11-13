@@ -118,6 +118,20 @@ unpack_image() {
   fi
 }
 
+# Ubuntu grub.d images can do real Secure Boot only on legacy (2M OVMF) hosts.
+# On modern (4M OVMF) hosts the only Secure-Boot-capable firmware is the
+# SMM-required .secboot build, which needs -machine q35; q35 moves the disk to
+# SATA/AHCI and Ubuntu's initramfs lacks the ahci driver, so the guest cannot
+# boot. There we convert and boot Ubuntu with Secure Boot off (the secure_boot
+# test skips itself), while legacy hosts keep real Secure Boot on. Debian is
+# unaffected either way (its initramfs has ahci). See MEN-10115 and the virtio
+# followup.
+HOST_VERSION_CODENAME=$(. /etc/os-release 2>/dev/null && echo "$VERSION_CODENAME")
+case "$HOST_VERSION_CODENAME" in
+    bookworm|jammy) UBUNTU_QEMU_NO_SECURE_BOOT="" ;;
+    *)              UBUNTU_QEMU_NO_SECURE_BOOT=1 ;;
+esac
+
 test_result=0
 
 if [ -n "$PREBUILT_IMAGE" ]; then
@@ -161,6 +175,12 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-22-qemux86-64" ]; then
   UBUNTU_22_IMAGE_COMPRESSED="${UBUNTU_22_IMAGE_URL##*/}"
   UBUNTU_22_IMAGE_UNCOMPRESSED=${UBUNTU_22_IMAGE_COMPRESSED%.gz}
   unpack_image gunzip --force "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}"
+  # On modern hosts Ubuntu cannot boot the SMM-required .secboot firmware under
+  # q35 (its initramfs lacks the q35 SATA/AHCI driver), so there we convert with
+  # Secure Boot off and boot on the plain i440fx firmware instead, and the
+  # secure_boot test skips itself. On legacy hosts Secure Boot stays on. See the
+  # UBUNTU_QEMU_NO_SECURE_BOOT comment above, MEN-10115, and the virtio followup.
+  QEMU_NO_SECURE_BOOT="$UBUNTU_QEMU_NO_SECURE_BOOT" \
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${UBUNTU_22_IMAGE_UNCOMPRESSED}" \
@@ -176,6 +196,8 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-24-qemux86-64" ]; then
   UBUNTU_24_IMAGE_COMPRESSED="${UBUNTU_24_IMAGE_URL##*/}"
   UBUNTU_24_IMAGE_UNCOMPRESSED=${UBUNTU_24_IMAGE_COMPRESSED%.gz}
   unpack_image gunzip --force "input/image/${UBUNTU_24_IMAGE_COMPRESSED}"
+  # Secure Boot off on modern hosts only: see the ubuntu-22 block.
+  QEMU_NO_SECURE_BOOT="$UBUNTU_QEMU_NO_SECURE_BOOT" \
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${UBUNTU_24_IMAGE_UNCOMPRESSED}" \
@@ -196,6 +218,8 @@ if [ "$TEST_ALL" == "1" -o "$TEST_PLATFORM" == "ubuntu-26-qemux86-64" ]; then
   UBUNTU_26_IMAGE_COMPRESSED="${UBUNTU_26_IMAGE_URL##*/}"
   UBUNTU_26_IMAGE_UNCOMPRESSED=${UBUNTU_26_IMAGE_COMPRESSED%.gz}
   unpack_image gunzip --force "input/image/${UBUNTU_26_IMAGE_COMPRESSED}"
+  # Secure Boot off on modern hosts only: see the ubuntu-22 block.
+  QEMU_NO_SECURE_BOOT="$UBUNTU_QEMU_NO_SECURE_BOOT" \
   convert_and_test "qemux86-64" \
                    "release-1" \
                    "input/image/${UBUNTU_26_IMAGE_UNCOMPRESSED}" \

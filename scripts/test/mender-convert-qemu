@@ -51,6 +51,7 @@ case "${OS_VERSION}" in
         -enable-kvm \
         -nographic \
         -m 512 \
+        ${EXTRA_PARAMS} \
         -net user,hostfwd=tcp::${PORT_NUMBER:-8822}-:22 \
         -net nic,macaddr=52:54:00$(od -txC -An -N3 /dev/urandom|tr \  :) \
         -drive file=${OVMF_CODE},if=pflash,format=raw,unit=0,readonly=on \
@@ -61,21 +62,72 @@ case "${OS_VERSION}" in
     *)
         echo "Running on modern Ubuntu / Debian"
 
-        # Look for OVMF_CODE.fd in /usr/share
-        # On the Debian 13 and Ubuntu 24.04 OVMF_CODE (2M) has been migrated to OVMF_CODE_4M
-        OVMF_CODE=$(find /usr/share -type f -and -name OVMF_CODE_4M.fd 2>/dev/null | head -1)
-        if [ -z "${OVMF_CODE}" ]; then
-            echo "ERROR: could not find OVMF_CODE_4M file in /usr/share"
-            exit 1
-        fi
-
+        # Firmware choice for modern (4M OVMF) hosts. On Debian 13 / Ubuntu
+        # 24.04+ the 2M OVMF is gone and the Secure Boot code has been compiled
+        # out of the base OVMF_CODE_4M.fd; it survives only in
+        # OVMF_CODE_4M.secboot.fd. We pick the firmware (and machine) by whether
+        # Secure Boot is being tested:
+        #
+        #   * Secure Boot ON  -> OVMF_CODE_4M.secboot.fd. It is built
+        #     SMM_REQUIRE, so it only initializes on -machine q35,smm=on with a
+        #     secure pflash. This is real, SMM-protected Secure Boot.
+        #   * Secure Boot OFF (QEMU_NO_SECURE_BOOT=1) -> plain OVMF_CODE_4M.fd,
+        #     which is not SMM_REQUIRE and boots on the default i440fx machine.
+        #
+        # The machine is the crux: q35 moves the disk onto a SATA/AHCI
+        # controller, and guests whose initramfs lacks the `ahci` driver --
+        # notably our Ubuntu images -- then hang on the root device and never
+        # boot. Debian's initramfs has `ahci`, so Debian boots under q35 and gets
+        # Secure Boot tested. Ubuntu cannot, so run-tests.sh runs every Ubuntu
+        # image with QEMU_NO_SECURE_BOOT=1 to take the plain / i440fx (IDE disk)
+        # path here.
+        #
+        # Consequence: the plain firmware exposes no SecureBoot EFI variable, so
+        # `mokutil --sb-state` cannot report a state; test_secure_boot.py detects
+        # this case (modern host + QEMU_NO_SECURE_BOOT) and skips itself.
+        #
+        # Future fix: attach the disk as virtio-blk (/dev/vda) instead of IDE.
+        # virtio is machine-independent and virtio_blk IS in Ubuntu's initramfs
+        # (unlike ahci), so Ubuntu could then boot under q35 and use .secboot too.
+        # See tests/uefi-nvram/README.md and MEN-10115.
         if [ "$QEMU_NO_SECURE_BOOT" != "1" ]; then
             echo "Secure boot testing"
-            # Use legacy vars file
-            VARS=$(dirname "$0")/../../tests/uefi-nvram/OVMF_VARS.fd
-            OVMF_VARS="-drive file=${VARS},if=pflash,format=raw,unit=1"
-            EXTRA_PARAMS="-machine q35,smm=on"
+            # MS-enrolled vars (OVMF_VARS_4M.ms.fd) -> Secure Boot enabled. That
+            # MS UEFI CA is the same cert carried by our checked-in 2M
+            # tests/uefi-nvram vars and is what signs Debian's shim.
+            OVMF_CODE=$(find /usr/share -type f -and -name OVMF_CODE_4M.secboot.fd 2>/dev/null | head -1)
+            if [ -z "${OVMF_CODE}" ]; then
+                echo "ERROR: could not find OVMF_CODE_4M.secboot.fd file in /usr/share"
+                exit 1
+            fi
+            VARS_TEMPLATE=$(find /usr/share -type f -and -name OVMF_VARS_4M.ms.fd 2>/dev/null | head -1)
+            if [ -z "${VARS_TEMPLATE}" ]; then
+                echo "ERROR: could not find OVMF_VARS_4M.ms.fd file in /usr/share"
+                exit 1
+            fi
+            EXTRA_PARAMS="-machine q35,smm=on -global driver=cfi.pflash01,property=secure,value=on"
+        else
+            echo "Secure boot disabled"
+            # Plain, non-Secure-Boot firmware + plain vars on the default i440fx
+            # machine (see the firmware-choice comment above).
+            OVMF_CODE=$(find /usr/share -type f -and -name OVMF_CODE_4M.fd 2>/dev/null | head -1)
+            if [ -z "${OVMF_CODE}" ]; then
+                echo "ERROR: could not find OVMF_CODE_4M.fd file in /usr/share"
+                exit 1
+            fi
+            VARS_TEMPLATE=$(find /usr/share -type f -and -name OVMF_VARS_4M.fd 2>/dev/null | head -1)
+            if [ -z "${VARS_TEMPLATE}" ]; then
+                echo "ERROR: could not find OVMF_VARS_4M.fd file in /usr/share"
+                exit 1
+            fi
+            EXTRA_PARAMS=""
         fi
+        # Writable per-run copy of the vars store: the vars pflash must be
+        # writable (OVMF crashes if it is read-only) and each parallel worker
+        # needs its own copy.
+        VARS=$(mktemp /tmp/OVMF_VARS_4M.XXXXXX.fd)
+        cp "${VARS_TEMPLATE}" "${VARS}"
+        OVMF_VARS="-drive file=${VARS},if=pflash,format=raw,unit=1"
 
         echo "OVMF_CODE: ${OVMF_CODE}"
         echo "OVMF_VARS: ${OVMF_VARS}"
@@ -84,6 +136,7 @@ case "${OS_VERSION}" in
         -enable-kvm \
         -nographic \
         -m 512 \
+        ${EXTRA_PARAMS} \
         -net user,hostfwd=tcp::${PORT_NUMBER:-8822}-:22 \
         -net nic,macaddr=52:54:00$(od -txC -An -N3 /dev/urandom|tr \  :) \
         -drive file=${OVMF_CODE},if=pflash,format=raw,unit=0,readonly=on \
