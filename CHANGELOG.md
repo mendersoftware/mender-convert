@@ -1,4 +1,23 @@
 ---
+## 6.0.0 - 2026-11-18
+
+
+### Breaking changes
+
+- *(raspberrypi)* Remove Raspberry Pi OS 32bit configurations ([MEN-10346](https://northerntech.atlassian.net/browse/MEN-10346)) ([37d42ce](https://github.com/mendersoftware/mender-convert/commit/37d42cec3ee9b99ae8cbbba4a3f9991f3ab0affa)) by @tactmaster
+  - **BREAKING**: The Raspberry Pi OS 32bit configurations are removed.
+Convert Raspberry Pi OS 64bit images with the matching *_64bit_config
+instead. ARMv6 boards (Raspberry Pi Zero, Zero W and 1) are no longer
+supported.
+
+---
+### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [MEN-10346](https://northerntech.atlassian.net/browse/MEN-10346) |
+
+
 ## 5.3.1 - 2026-11-16
 
 
