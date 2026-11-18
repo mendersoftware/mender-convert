@@ -1,0 +1,70 @@
+# Configuration for openKylin 3.0 (huanghe) Server, x86-64, on a QEMU/UEFI machine.
+#
+# Input image: install openKylin-Server-V3.0-*-x86_64.iso to a 14 GB raw disk image in
+# qemu-system-x86_64 with OVMF (UEFI), using the installer's whole-disk layout (ESP + root).
+#
+# Convert:
+#
+#    MENDER_ARTIFACT_NAME=release-1 ./docker-mender-convert \
+#        --disk-image input/openKylin-3.0-x86-64.img \
+#        --config configs/openkylin-3.0-qemux86-64_config
+#
+# Boot with fresh UEFI variables, so the firmware starts EFI/BOOT/BOOTX64.EFI and not the
+# installer's boot entry:
+#
+#    cp /usr/share/OVMF/OVMF_VARS_4M.fd vars.fd
+#    qemu-system-x86_64 -enable-kvm -m 2048 -smp 2 -nographic \
+#        -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd \
+#        -drive if=pflash,format=raw,file=vars.fd \
+#        -drive format=raw,file=deploy/openKylin-3.0-x86-64-qemux86-64-mender.img
+
+MENDER_DEVICE_TYPE="qemux86-64"
+MENDER_STORAGE_DEVICE_BASE=/dev/sda
+
+# Nothing to copy before the boot partition
+MENDER_COPY_BOOT_GAP="n"
+
+# The openKylin installer creates a 512 MiB ESP
+MENDER_BOOT_PART_SIZE_MB=512
+
+# Two root filesystem partitions plus data, for the 14 GB installed image
+MENDER_STORAGE_TOTAL_SIZE_MB=24000
+
+# There is no Mender APT repository for openkylin/huanghe. Its userland (glibc 2.43, t64
+# libraries, Boost 1.83) matches Debian trixie, so use the Debian trixie packages.
+# Configs are sourced after modules/probe.sh, so these replace the probes.
+probe_debian_distro_name() {
+    echo "debian"
+}
+
+probe_debian_distro_codename() {
+    echo "trixie"
+}
+
+# The openKylin installer diverts grub-install to a wrapper that refuses --removable, which
+# mender-convert needs. Restore the stock binary, and remove the installer's EFI/openkylin-<id>
+# GRUB, which points at the old root filesystem UUID.
+openkylin_restore_grub_install() {
+    if [ -e work/rootfs/usr/sbin/grub-install.openkylin-original ]; then
+        log_info "Restoring stock grub-install (removing openKylin installer divert)"
+        run_and_log_cmd "sudo rm -f work/rootfs/usr/sbin/grub-install"
+        run_and_log_cmd "sudo chroot work/rootfs dpkg-divert --local --rename --remove /usr/sbin/grub-install"
+    fi
+    log_info "Removing openKylin installer EFI entries (EFI/openkylin-*)"
+    run_and_log_cmd "sudo rm -rf work/boot/EFI/openkylin-*"
+}
+PLATFORM_PRE_MODIFY_HOOKS+=(openkylin_restore_grub_install)
+
+# grub-install in the chroot can't probe the ESP device, so it embeds the prefix
+# "()/grub-mender-grubenv" and GRUB fails with "unknown filesystem". Rebuild the EFI images
+# with a device-less prefix (GRUB then uses the partition it was loaded from), using the
+# image's own grub-mkimage so the modules match those on the ESP.
+openkylin_rebuild_grub_efi() {
+    local -r modules="part_gpt part_msdos fat ext2 normal configfile search search_fs_uuid echo test loadenv regexp linux gzio all_video efi_gop sleep"
+    log_info "Rebuilding GRUB EFI images with ESP-relative prefix"
+    run_and_log_cmd "sudo chroot work/rootfs grub-mkimage -O x86_64-efi -p /grub-mender-grubenv -o /tmp/okgrubx64.efi ${modules}"
+    run_and_log_cmd "sudo install -m 644 work/rootfs/tmp/okgrubx64.efi work/boot/EFI/BOOT/BOOTX64.EFI"
+    run_and_log_cmd "sudo install -m 644 work/rootfs/tmp/okgrubx64.efi work/boot/EFI/openkylin/grubx64.efi"
+    run_and_log_cmd "sudo rm -f work/rootfs/tmp/okgrubx64.efi"
+}
+PLATFORM_MODIFY_HOOKS+=(openkylin_rebuild_grub_efi)
